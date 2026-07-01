@@ -5,7 +5,7 @@
     "cooling_setpoint_f": 70,
     "resting_setpoint_f": 80,
     "cooling_minutes": 20,
-    "resting_minutes": 15,
+    "resting_minutes": 20,
     "hvac_mode": "cool",
     "fan_mode": null
   },

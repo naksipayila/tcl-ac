@@ -6,7 +6,7 @@ Varsayılan döngü:
 
 ```text
 20 dakika 70°F hedef sıcaklık
-15 dakika 80°F hedef sıcaklık
+20 dakika 80°F hedef sıcaklık
 tekrar
 ```
 

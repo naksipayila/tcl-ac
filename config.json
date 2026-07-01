@@ -32,10 +32,13 @@
         "cognito-identity.amazonaws.com"
       ],
       "command_method": "mqtt_ws",
+      "startup_desired": {
+        "swingWind": 1
+      },
       "send_full_state": false,
       "default_desired": {
         "workMode": 1,
-        "swingWind": 0,
+        "swingWind": 1,
         "powerSwitch": 1,
         "windSpeed": 2
       },

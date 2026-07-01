@@ -123,9 +123,24 @@ py tcl_cycle.py status --config config.json
 Status çalışırsa tek komut testleri:
 
 ```powershell
+py tcl_cycle.py startup --config config.json
 py tcl_cycle.py once cooling --config config.json
 py tcl_cycle.py once resting --config config.json
 ```
+
+`startup` komutu swing'i açmak için tek seferlik başlangıç komutu gönderir:
+
+```json
+{
+  "state": {
+    "desired": {
+      "swingWind": 1
+    }
+  }
+}
+```
+
+`run` komutu başladığında bu başlangıç komutunu bir kez gönderir. Sonraki `70°F` ve `80°F` sıcaklık komutları swing alanını tekrar göndermez.
 
 Varsayılan olarak sadece `targetCelsiusDegree` ve `targetFahrenheitDegree` gönderilir. Fan hızı, swing veya mod ayarlarını da her komutta zorlamak istersen `send_full_state` değerini `true` yapabilirsin.
 

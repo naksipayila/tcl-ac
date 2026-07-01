@@ -120,6 +120,9 @@ def read_json_response(response: Any) -> Any:
 
 
 class ClimateBackend:
+    def startup(self) -> None:
+        return
+
     def apply_setpoint_f(self, setpoint_f: float, phase: str) -> None:
         raise NotImplementedError
 
@@ -139,6 +142,9 @@ class MockBackend(ClimateBackend):
             setpoint_f,
             fahrenheit_to_celsius(setpoint_f),
         )
+
+    def startup(self) -> None:
+        logging.info("MOCK: device=%s startup", self.device_id)
 
     def status(self) -> Any:
         return {"backend": "mock", "device_id": self.device_id}
@@ -413,6 +419,12 @@ class TclHomeAwsBackend(ClimateBackend):
         if not isinstance(default_desired, dict):
             raise ConfigError("backends.tcl_home_aws.default_desired must be an object")
         self.default_desired = default_desired
+        startup_desired = backend_config.get("startup_desired", {})
+        if startup_desired is None:
+            startup_desired = {}
+        if not isinstance(startup_desired, dict):
+            raise ConfigError("backends.tcl_home_aws.startup_desired must be an object")
+        self.startup_desired = startup_desired
         self.send_full_state = bool(backend_config.get("send_full_state", False))
         self.command_method = str(backend_config.get("command_method", "mqtt_ws"))
         if self.command_method not in {"mqtt_ws", "shadow_update", "topic_publish"}:
@@ -748,18 +760,11 @@ class TclHomeAwsBackend(ClimateBackend):
         desired["targetFahrenheitDegree"] = int(round(setpoint_f))
         return desired
 
-    def apply_setpoint_f(self, setpoint_f: float, phase: str) -> None:
-        desired = self._build_desired_state(setpoint_f)
+    def _send_desired_state(self, desired: dict[str, Any], token_prefix: str) -> None:
         payload = {
             "state": {"desired": desired},
-            "clientToken": f"python_{int(time.time() * 1000)}",
+            "clientToken": f"{token_prefix}_{int(time.time() * 1000)}",
         }
-        logging.info(
-            "TCL Home AWS: sending %s setpoint %sF / %sC",
-            phase,
-            desired["targetFahrenheitDegree"],
-            desired["targetCelsiusDegree"],
-        )
         if self.command_method == "topic_publish":
             self._iot_data(
                 "POST",
@@ -774,6 +779,22 @@ class TclHomeAwsBackend(ClimateBackend):
             return
 
         self._iot_data("POST", f"/things/{self.device_id}/shadow", payload)
+
+    def startup(self) -> None:
+        if not self.startup_desired:
+            return
+        logging.info("TCL Home AWS: sending startup desired state: %s", self.startup_desired)
+        self._send_desired_state(self.startup_desired, "python_startup")
+
+    def apply_setpoint_f(self, setpoint_f: float, phase: str) -> None:
+        desired = self._build_desired_state(setpoint_f)
+        logging.info(
+            "TCL Home AWS: sending %s setpoint %sF / %sC",
+            phase,
+            desired["targetFahrenheitDegree"],
+            desired["targetCelsiusDegree"],
+        )
+        self._send_desired_state(desired, "python")
 
     def status(self) -> Any:
         return self._iot_data("GET", f"/things/{self.device_id}/shadow")
@@ -840,6 +861,7 @@ class CycleRunner:
 
     def run(self, max_cycles: int | None = None) -> None:
         cycle_number = 0
+        self.backend.startup()
         while not self.stop_event.is_set():
             cycle_number += 1
             logging.info("Cycle %d started", cycle_number)
@@ -877,6 +899,9 @@ def build_parser() -> argparse.ArgumentParser:
     add_common_args(once_parser)
     once_parser.add_argument("phase", choices=["cooling", "resting"], help="Phase to send")
 
+    startup_parser = subparsers.add_parser("startup", help="Send startup command")
+    add_common_args(startup_parser)
+
     status_parser = subparsers.add_parser("status", help="Read backend status")
     add_common_args(status_parser)
     return parser
@@ -910,6 +935,10 @@ def main(argv: list[str] | None = None) -> int:
 
         if args.command == "once":
             runner.apply_phase(args.phase)
+            return 0
+
+        if args.command == "startup":
+            backend.startup()
             return 0
 
         if args.command == "run":

@@ -1,0 +1,68 @@
+{
+  "backend": "tcl_home_aws",
+  "device_id": "DWG42RFAAAE",
+  "cycle": {
+    "cooling_setpoint_f": 70,
+    "resting_setpoint_f": 80,
+    "cooling_minutes": 20,
+    "resting_minutes": 15,
+    "hvac_mode": "cool",
+    "fan_mode": null
+  },
+  "safety": {
+    "min_seconds_between_commands": 30,
+    "status_log_seconds": 60
+  },
+  "backends": {
+    "home_assistant": {
+      "base_url": "http://homeassistant.local:8123",
+      "token": "${HA_TOKEN}",
+      "entity_id": "climate.tcl_portatif_klima",
+      "temperature_unit": "F",
+      "timeout_seconds": 20
+    },
+    "tcl_home_aws": {
+      "api_base_url": "https://eu-iot-api-prod.tcljd.com",
+      "iot_data_endpoint": "https://data.iot.eu-central-1.amazonaws.com",
+      "region": "eu-central-1",
+      "app_id": "wx6e1af3fa84fbe523",
+      "device_id": "DWG42RFAAAE",
+      "sso_token": "${TCL_SSO_TOKEN}",
+      "login_providers": [
+        "cognito-identity.amazonaws.com"
+      ],
+      "command_method": "mqtt_ws",
+      "send_full_state": false,
+      "default_desired": {
+        "workMode": 1,
+        "swingWind": 0,
+        "powerSwitch": 1,
+        "windSpeed": 2
+      },
+      "timeout_seconds": 20
+    },
+    "tuya_cloud": {
+      "endpoint": "https://openapi.tuyaeu.com",
+      "access_id": "${TUYA_ACCESS_ID}",
+      "access_secret": "${TUYA_ACCESS_SECRET}",
+      "device_id": "${TUYA_DEVICE_ID}",
+      "timeout_seconds": 20,
+      "commands": {
+        "mode": {
+          "code": "mode",
+          "cool_value": "cold"
+        },
+        "temperature": {
+          "code": "temp_set",
+          "unit": "C",
+          "scale": 1,
+          "value_type": "integer"
+        },
+        "fan": {
+          "code": "fan_speed_enum",
+          "value": "auto"
+        }
+      }
+    }
+  }
+}

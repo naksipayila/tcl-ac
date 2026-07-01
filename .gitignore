@@ -1,0 +1,15 @@
+__pycache__/
+*.py[cod]
+
+logs/
+*.log
+
+.env
+.venv/
+venv/
+
+*.apk
+*.apkm
+*.xapk
+
+opencode.json

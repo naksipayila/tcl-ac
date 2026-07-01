@@ -26,6 +26,70 @@ Mevcut `config.json` gerçek TCL Home AWS backend'i kullanır. `once cooling` ve
 
 Sadece log ile deneme yapmak istersen `config.json` içindeki `backend` değerini geçici olarak `mock` yap.
 
+## Lokal Web Panel
+
+CMD komutları yerine lokal browser paneli kullanabilirsin:
+
+```powershell
+py web_app.py --config config.json
+```
+
+Veya `run_web.bat` dosyasını çift tıkla. Bilgisayarda panel otomatik olarak şu adreste açılır:
+
+```text
+http://127.0.0.1:8787/
+```
+
+Panel varsayılan olarak `0.0.0.0:8787` üzerinde çalışır, yani aynı Wi-Fi ağına bağlı telefondan da açılabilir. Telefonda kullanman gereken adres panelin üst kısmında `Telefon: http://...:8787/` olarak görünür. Windows Firewall izin sorarsa yerel ağ erişimine izin ver.
+
+Browser sekmesi kontrol panelidir; 20/20 dakika döngüyü arka plandaki Python web server yürütür. Sekmeyi kapatırsan server açık kaldığı sürece döngü devam eder. Bilgisayarı kapatırsan sistem durur.
+
+Web paneldeki şu butonlar gerçek cihaza komut gönderir:
+
+- `Donguyu Baslat`
+- `Swing Baslangic`
+- `Simdi 70F`
+- `Simdi 80F`
+
+`Cihaz Durumu Oku` sadece status okur, sıcaklık veya swing komutu göndermez.
+
+## Sistem Tepsisi ve EXE
+
+CMD penceresi olmadan sistem tepsisinde çalışan uygulama için kaynak modda şunu çalıştırabilirsin:
+
+```powershell
+py -m pip install -r requirements.txt
+py tray_app.py --config config.json
+```
+
+Veya `run_tray.bat` dosyasını çift tıkla.
+
+Tepsi menüsünde şu seçenekler bulunur:
+
+- `Paneli Ac`
+- `Donguyu Baslat`
+- `Donguyu Durdur`
+- `Swing Baslangic`
+- `Simdi 70F`
+- `Simdi 80F`
+- `Cikis`
+
+EXE üretmek için:
+
+```powershell
+build_exe.bat
+```
+
+Build çıktısı:
+
+```text
+dist\TCL-Klima-Panel\TCL-Klima-Panel.exe
+```
+
+EXE çift tıklanınca CMD penceresi açılmaz. Sistem tepsisinde `assets/fan.png` ikonundan üretilen fan ikonu görünür ve web panel arka planda başlar. Aynı Wi-Fi ağındaki telefondan panelde gösterilen `Telefon:` adresiyle bağlanabilirsin. `config.json` EXE klasörüne kopyalanır; ayar değiştirmek istersen EXE yanındaki `config.json` dosyasını düzenle.
+
+`TCL_SSO_TOKEN` EXE içine gömülmez. Windows ortam değişkeni olarak kalır.
+
 ## Döngüyü Başlatma
 
 ```powershell

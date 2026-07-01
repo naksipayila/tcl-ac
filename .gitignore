@@ -4,6 +4,11 @@ __pycache__/
 logs/
 *.log
 
+build/
+dist/
+*.spec
+assets/fan.ico
+
 .env
 .venv/
 venv/

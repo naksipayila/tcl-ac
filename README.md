@@ -44,7 +44,7 @@ Phones on the same Wi‑Fi can use the LAN address shown in the panel footer.
 
 ## Web Panel
 
-![UI](./favicon.png) *Modern dark-themed responsive panel.*
+
 
 | Control | Action |
 |---------|--------|
@@ -112,8 +112,6 @@ TCL Home API  →  AWS Cognito  →  SigV4‑signed MQTT/WS  →  Device Shadow
 | `config.json` | Device ID, cycle timings, API keys |
 | `start_server_hidden.cmd` | Double‑click launcher (hidden console) |
 | `requirements.txt` | `websocket-client>=1.8.0` — the only runtime dependency |
-| `favicon.png` | Panel favicon |
-
 ---
 
 ## Notes

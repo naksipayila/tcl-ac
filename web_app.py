@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import argparse
-import collections
 import json
 import logging
 import pathlib
@@ -81,87 +80,6 @@ PAGE_HTML = r"""<!doctype html>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
-<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-<script>
-  tailwind.config = {
-    darkMode: "class",
-    theme: {
-      extend: {
-        "colors": {
-          "bgDark": "#0a0a0a",
-          "panelDark": "#18181b",
-          "cardBg": "#27272a",
-          "cardBorder": "#3f3f46",
-          "textMain": "#ffffff",
-          "textMuted": "#a1a1aa",
-          "accentCyan": "#4ad9d9",
-          "accentCyanBg": "rgba(74, 217, 217, 0.1)",
-          "accentCyanBorder": "rgba(74, 217, 217, 0.2)",
-          "accentRed": "#ff6b6b",
-          "accentRedBg": "rgba(255, 107, 107, 0.05)",
-          "accentRedBorder": "rgba(255, 107, 107, 0.2)",
-          "accentOrange": "#f5a623",
-          "surface": "#131315",
-          "background": "#131315",
-          "primary-container": "#0f172a",
-          "outline": "#909097",
-          "on-background": "#e4e2e4",
-          "surface-container": "#1f1f21",
-          "surface-dim": "#131315",
-          "on-primary-container": "#798098",
-          "on-secondary-fixed-variant": "#3c475a",
-          "on-error": "#690005",
-          "inverse-on-surface": "#303032",
-          "error": "#ffb4ab",
-          "surface-tint": "#bec6e0",
-          "on-primary-fixed": "#131b2e",
-          "on-primary-fixed-variant": "#3f465c",
-          "surface-variant": "#353436",
-          "primary": "#bec6e0",
-          "on-tertiary-container": "#957d5a",
-          "surface-container-highest": "#353436",
-          "on-secondary": "#263143",
-          "on-tertiary": "#3e2d11",
-          "primary-fixed-dim": "#bec6e0",
-          "tertiary-container": "#231500",
-          "surface-container-low": "#1b1b1d",
-          "on-surface-variant": "#c6c6cd",
-          "surface-bright": "#39393b",
-          "surface-container-lowest": "#0e0e10",
-          "tertiary": "#dec29a",
-          "primary-fixed": "#dae2fd",
-          "outline-variant": "#45464d",
-          "on-secondary-container": "#aeb9d0",
-          "on-surface": "#e4e2e4",
-          "inverse-surface": "#e4e2e4",
-          "secondary-container": "#3e495d",
-          "secondary-fixed": "#d8e3fb",
-          "secondary": "#bcc7de",
-          "emerald": {
-            500: "#10b981",
-            600: "#059669",
-            900: "#064e3b"
-          },
-          "rose": {
-            500: "#f43f5e",
-            600: "#e11d48",
-            900: "#881337"
-          }
-        },
-        "fontSize": {
-          "label-sm": ["10px", { "lineHeight": "14px", "letterSpacing": "0.05em", "fontWeight": "600" }],
-          "title-md": ["16px", { "lineHeight": "22px", "fontWeight": "600" }],
-          "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }]
-        },
-        "fontFamily": {
-          "label-sm": ["Inter"],
-          "title-md": ["Inter"],
-          "body-md": ["Inter"]
-        }
-      }
-    }
-  }
-</script>
 <style>
   .material-symbols-outlined {
     font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20;
@@ -178,6 +96,12 @@ PAGE_HTML = r"""<!doctype html>
   }
   .animate-breathe {
     animation: breathe 3s ease-in-out infinite;
+  }
+
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
   }
 
   :root {
@@ -216,7 +140,13 @@ PAGE_HTML = r"""<!doctype html>
 
   button,
   a {
+    font: inherit;
     -webkit-tap-highlight-color: transparent;
+  }
+
+  button {
+    appearance: none;
+    margin: 0;
   }
 
   .app-shell {
@@ -233,6 +163,7 @@ PAGE_HTML = r"""<!doctype html>
   }
 
   .hero-card {
+    width: 100%;
     padding: 22px;
     border: 1px solid var(--card-border);
     border-radius: 24px;
@@ -261,9 +192,12 @@ PAGE_HTML = r"""<!doctype html>
   .metric-label,
   .section-label,
   .control-meta,
-  .footer-link,
-  #message {
+  .footer-link {
     color: var(--text-muted);
+  }
+
+  .min-w-0 {
+    min-width: 0;
   }
 
   .eyebrow,
@@ -338,6 +272,7 @@ PAGE_HTML = r"""<!doctype html>
   }
 
   .refresh-button {
+    flex: 0 0 auto;
     min-height: 42px;
     padding: 0 14px;
     border: 1px solid var(--card-border);
@@ -364,6 +299,7 @@ PAGE_HTML = r"""<!doctype html>
   }
 
   .action-button {
+    width: 100%;
     min-height: 76px;
     padding: 16px;
     border: 1px solid transparent;
@@ -548,6 +484,7 @@ PAGE_HTML = r"""<!doctype html>
 
   .utility-button {
     flex: 0 0 auto;
+    min-width: 122px;
     padding: 0 14px;
     color: var(--red);
     font-size: 12px;
@@ -614,6 +551,7 @@ PAGE_HTML = r"""<!doctype html>
   }
 
   .confirm-button {
+    width: 100%;
     min-height: 44px;
     border: 1px solid var(--card-border);
     border-radius: 15px;
@@ -624,6 +562,11 @@ PAGE_HTML = r"""<!doctype html>
 
   .confirm-button:active {
     transform: scale(0.985);
+  }
+
+  .confirm-button:disabled {
+    opacity: 0.55;
+    cursor: wait;
   }
 
   .confirm-cancel {
@@ -645,6 +588,54 @@ PAGE_HTML = r"""<!doctype html>
   .confirm-danger:hover {
     border-color: rgba(251, 113, 133, 0.42);
     background: rgba(251, 113, 133, 0.18);
+  }
+
+  .hidden {
+    display: none !important;
+  }
+
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    background: rgba(0, 0, 0, 0.68);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+  }
+
+  .modal-overlay.flex {
+    display: flex;
+  }
+
+  .close-confirm-overlay {
+    z-index: 40;
+  }
+
+  .shutdown-overlay {
+    z-index: 50;
+    background: rgba(0, 0, 0, 0.74);
+  }
+
+  .shutdown-icon {
+    color: #bec6e0;
+    font-size: 30px;
+  }
+
+  .shutdown-title {
+    margin-top: 12px;
+    color: #fff;
+    font-size: 18px;
+    font-weight: 700;
+  }
+
+  .shutdown-detail {
+    margin-top: 4px;
+    color: var(--text-soft);
+    font-size: 12px;
+    line-height: 1.55;
   }
 
   @media (max-width: 560px) {
@@ -752,14 +743,12 @@ PAGE_HTML = r"""<!doctype html>
         <span class="control-title">Start Compressor</span>
         <span class="control-meta">Set target to cooling</span>
       </span>
-      <span class="control-value cool">70F</span>
     </button>
     <button id="stopCompressorBtn" onclick="sendPhase('resting')" class="dashboard-button control-row" aria-label="Stop compressor">
       <span class="control-copy">
         <span class="control-title">Stop Compressor</span>
         <span class="control-meta">Raise target to resting</span>
       </span>
-      <span class="control-value warm">80F</span>
     </button>
     <div onclick="toggleSwing()" class="control-row swing-control" role="button" aria-label="Toggle swing">
       <span class="control-copy">
@@ -786,7 +775,7 @@ PAGE_HTML = r"""<!doctype html>
   </div>
 </main>
 
-<div id="closeConfirmOverlay" class="fixed inset-0 z-40 hidden items-center justify-center bg-black/65 backdrop-blur-md p-4" role="dialog" aria-modal="true" aria-labelledby="closeConfirmTitle">
+<div id="closeConfirmOverlay" class="modal-overlay close-confirm-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="closeConfirmTitle">
   <div class="confirm-card">
     <h2 id="closeConfirmTitle" class="confirm-title">Close Server?</h2>
     <p class="confirm-detail">The cycle will stop and the local panel server will shut down. You can reopen it from the server shortcut later.</p>
@@ -797,11 +786,11 @@ PAGE_HTML = r"""<!doctype html>
   </div>
 </div>
 
-<div id="shutdownOverlay" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/75 backdrop-blur-md p-4">
+<div id="shutdownOverlay" class="modal-overlay shutdown-overlay hidden">
   <div class="shutdown-card">
-    <span id="shutdownIcon" class="material-symbols-outlined text-[30px]">hourglass_top</span>
-    <div id="shutdownTitle" class="mt-3 text-lg font-semibold text-white">Closing server</div>
-    <div id="shutdownDetail" class="mt-1 text-xs leading-5 text-slate-300">Stopping the cycle and shutting down the local panel.</div>
+    <span id="shutdownIcon" class="material-symbols-outlined shutdown-icon">hourglass_top</span>
+    <div id="shutdownTitle" class="shutdown-title">Closing server</div>
+    <div id="shutdownDetail" class="shutdown-detail">Stopping the cycle and shutting down the local panel.</div>
   </div>
 </div>
 
@@ -809,10 +798,6 @@ PAGE_HTML = r"""<!doctype html>
   const closeConfirmOverlay = document.getElementById('closeConfirmOverlay');
   const closeConfirmAccept = document.getElementById('closeConfirmAccept');
   let refreshTimer = null;
-
-  function setMessage(text, kind) {
-    return;
-  }
 
   function openCloseConfirm() {
     closeConfirmAccept.disabled = false;
@@ -916,7 +901,7 @@ PAGE_HTML = r"""<!doctype html>
       const data = await requestJson('/api/state');
       renderState(data.state);
     } catch (error) {
-      setMessage(error.message, 'error');
+      console.error(error);
     }
   }
 
@@ -925,8 +910,6 @@ PAGE_HTML = r"""<!doctype html>
   function renderState(state) {
     latestState = state;
     const dot = document.getElementById('statusDot');
-    const glowRose = document.getElementById('glowRose');
-    const glowBlue = document.getElementById('glowBlue');
 
     document.getElementById('phase').textContent = state.phase || 'stopped';
     document.getElementById('remaining').textContent = fmtSeconds(state.remaining_seconds);
@@ -989,16 +972,14 @@ PAGE_HTML = r"""<!doctype html>
       powerMeta.textContent = 'AC is off';
     }
 
-    if (state.last_error) setMessage(state.last_error, 'error');
   }
 
   async function postAction(path) {
     try {
       const data = await requestJson(path, { method: 'POST' });
-      setMessage(data.message || 'Done.', 'ok');
       renderState(data.state);
     } catch (error) {
-      setMessage(error.message, 'error');
+      console.error(error);
       refreshState();
     }
   }
@@ -1010,30 +991,21 @@ PAGE_HTML = r"""<!doctype html>
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ phase })
       });
-      setMessage(data.message || 'Command sent.', 'ok');
       renderState(data.state);
     } catch (error) {
-      setMessage(error.message, 'error');
+      console.error(error);
       refreshState();
     }
   }
 
   async function readDeviceStatus(silent) {
     try {
-      if (!silent) setMessage('Reading...', '');
       const data = await requestJson('/api/device-status');
       if (data.state) renderState(data.state);
       const temperature = data.active_temperature || (data.state && data.state.active_temperature);
       renderTemperature(temperature);
-      if (!silent) {
-        if (temperature && temperature.fahrenheit !== null && temperature.fahrenheit !== undefined) {
-          setMessage('AC: ' + fmtTemperature(temperature.fahrenheit, 'F'), 'ok');
-        } else {
-          setMessage('Target not found.', 'ok');
-        }
-      }
     } catch (error) {
-      setMessage(error.message, 'error');
+      console.error(error);
       if (silent) await refreshState();
     }
   }
@@ -1061,7 +1033,6 @@ PAGE_HTML = r"""<!doctype html>
           'check_circle',
           '#6ee7b7'
         );
-        setMessage('Server closed. You can close this tab.', 'ok');
       } else {
         showShutdownOverlay(
           'Shutdown requested',
@@ -1069,7 +1040,6 @@ PAGE_HTML = r"""<!doctype html>
           'info',
           '#fcd34d'
         );
-        setMessage('Shutdown requested, but not verified yet.', 'ok');
       }
     } catch (error) {
       const closed = await waitForServerClose();
@@ -1080,7 +1050,6 @@ PAGE_HTML = r"""<!doctype html>
           'check_circle',
           '#6ee7b7'
         );
-        setMessage('Server closed. You can close this tab.', 'ok');
       } else {
         showShutdownOverlay(
           'Close failed',
@@ -1088,7 +1057,6 @@ PAGE_HTML = r"""<!doctype html>
           'error',
           '#fda4af'
         );
-        setMessage(error.message, 'error');
         refreshTimer = setInterval(refreshState, 2000);
       }
     }
@@ -1105,7 +1073,7 @@ PAGE_HTML = r"""<!doctype html>
       });
       refreshState();
     } catch (error) {
-      setMessage(error.message, 'error');
+      console.error(error);
     }
   }
 
@@ -1120,7 +1088,7 @@ PAGE_HTML = r"""<!doctype html>
       });
       refreshState();
     } catch (error) {
-      setMessage(error.message, 'error');
+      console.error(error);
     }
   }
 
@@ -1144,25 +1112,6 @@ PAGE_HTML = r"""<!doctype html>
 </body>
 </html>
 """
-
-
-class MemoryLogHandler(logging.Handler):
-    def __init__(self, limit: int = 250):
-        super().__init__(logging.INFO)
-        self.records: collections.deque[str] = collections.deque(maxlen=limit)
-        self.records_lock = threading.Lock()
-
-    def emit(self, record: logging.LogRecord) -> None:
-        try:
-            message = self.format(record)
-        except Exception:
-            message = record.getMessage()
-        with self.records_lock:
-            self.records.append(message)
-
-    def tail(self, limit: int = 120) -> list[str]:
-        with self.records_lock:
-            return list(self.records)[-limit:]
 
 
 def empty_temperature(error: str | None = None, updated_at: float | None = None) -> dict[str, Any]:
@@ -1268,9 +1217,7 @@ def extract_active_temperature(status: Any) -> dict[str, Any]:
     return empty_temperature(updated_at=time.time())
 
 class WebController:
-    def __init__(self, config_path: pathlib.Path, log_handler: MemoryLogHandler, host: str = DEFAULT_HOST, port: int = DEFAULT_PORT):
-        self.config_path = config_path
-        self.log_handler = log_handler
+    def __init__(self, config_path: pathlib.Path, host: str = DEFAULT_HOST, port: int = DEFAULT_PORT):
         self.host = host
         self.port = port
         self.config = load_config(config_path)
@@ -1295,10 +1242,6 @@ class WebController:
         self.cycle_number = 0
         self.phase_started_at: float | None = None
         self.phase_end_at: float | None = None
-        self.started_at: float | None = None
-        self.stopped_at: float | None = None
-        self.last_action = "Panel ready."
-        self.last_error: str | None = None
         self.active_temperature = empty_temperature()
         self.power_switch = False
         self.swing_wind = False
@@ -1314,17 +1257,7 @@ class WebController:
                 "phase": self.phase,
                 "power_switch": self.power_switch,
                 "swing_wind": self.swing_wind,
-                "cycle_number": self.cycle_number,
-                "phase_started_at": self.phase_started_at,
-                "phase_end_at": self.phase_end_at,
                 "remaining_seconds": remaining,
-                "started_at": self.started_at,
-                "stopped_at": self.stopped_at,
-                "last_action": self.last_action,
-                "last_error": self.last_error,
-                "backend": str(self.config.get("backend", "mock")),
-                "config_path": str(self.config_path),
-                "local_url": browser_url(self.host, self.port),
                 "network_urls": network_urls(self.host, self.port),
                 "cycle": {
                     "cooling_setpoint_f": float(self.cycle["cooling_setpoint_f"]),
@@ -1333,7 +1266,6 @@ class WebController:
                     "resting_minutes": float(self.cycle["resting_minutes"]),
                 },
                 "active_temperature": dict(self.active_temperature),
-                "logs": self.log_handler.tail(),
             }
 
     def start_cycle(self) -> str:
@@ -1345,10 +1277,6 @@ class WebController:
             self.phase = "starting"
             self.phase_started_at = None
             self.phase_end_at = None
-            self.started_at = time.time()
-            self.stopped_at = None
-            self.last_error = None
-            self.last_action = "Cycle started."
             self.thread = threading.Thread(target=self._run_cycle, name="tcl-web-cycle", daemon=True)
             self.thread.start()
         logging.info("Web: cycle start requested")
@@ -1359,41 +1287,20 @@ class WebController:
             if not self.running:
                 return "Cycle is already stopped."
             self.stop_event.set()
-            self.last_action = "Stopping cycle."
         thread = self.thread
         if thread and thread.is_alive():
             thread.join(timeout=2.0)
         logging.info("Web: cycle stop requested")
         return "Stopping cycle."
 
-    def send_startup(self) -> str:
-        self._ensure_stopped_for_manual_command()
-        def updater(done: bool, error: str | None) -> None:
-            if done:
-                self.last_action = "Swing startup done."
-            elif error:
-                self.last_action = f"Swing startup failed: {error}"
-                self.last_error = error
-            else:
-                self.last_action = "Swing startup queued."
-                self.last_error = None
-        self._enqueue_command(lambda: self.backend.startup(), "Swing startup", updater)
-        return "Swing startup queued."
-
     def set_power_switch(self, enabled: bool) -> str:
         status = "on" if enabled else "off"
         prev = self.power_switch
         def updater(done: bool, error: str | None) -> None:
-            if done:
-                pass
-            elif error:
+            if error:
                 self.power_switch = prev
-                self.last_action = f"AC power failed: {error}"
-                self.last_error = error
-            else:
+            elif not done:
                 self.power_switch = enabled
-                self.last_action = f"AC power turned {status}."
-                self.last_error = None
         self._enqueue_command(
             lambda ev=enabled: self.backend.set_power_switch(ev), f"AC power {status}", updater
         )
@@ -1403,16 +1310,10 @@ class WebController:
         status = "on" if enabled else "off"
         prev = self.swing_wind
         def updater(done: bool, error: str | None) -> None:
-            if done:
-                pass
-            elif error:
+            if error:
                 self.swing_wind = prev
-                self.last_action = f"Swing failed: {error}"
-                self.last_error = error
-            else:
+            elif not done:
                 self.swing_wind = enabled
-                self.last_action = f"Swing turned {status}."
-                self.last_error = None
         self._enqueue_command(
             lambda ev=enabled: self.backend.set_swing_wind(ev), f"Swing {status}", updater
         )
@@ -1438,13 +1339,6 @@ class WebController:
                     "updated_at": time.time(),
                     "error": None,
                 }
-                self.last_action = f"{setpoint:g}F {label} done."
-            elif error:
-                self.last_action = f"{label} command failed: {error}"
-                self.last_error = error
-            else:
-                self.last_action = f"{setpoint:g}F {label} queued."
-                self.last_error = None
         self._enqueue_command(
             lambda sp=setpoint, lb=label: self._safe_apply_sync(sp, lb),
             f"{setpoint:g}F {label}", updater,
@@ -1522,7 +1416,6 @@ class WebController:
                 with self.state_lock:
                     self.cycle_number += 1
                     cycle_number = self.cycle_number
-                    self.last_action = f"Cycle {cycle_number} started."
                 logging.info("Web cycle %d started", cycle_number)
 
                 if not self._run_phase("cooling", float(self.cycle["cooling_setpoint_f"]), float(self.cycle["cooling_minutes"])):
@@ -1530,20 +1423,14 @@ class WebController:
                 if not self._run_phase("resting", float(self.cycle["resting_setpoint_f"]), float(self.cycle["resting_minutes"])):
                     break
                 logging.info("Web cycle %d finished", cycle_number)
-        except Exception as exc:
+        except Exception:
             logging.exception("Web cycle failed")
-            with self.state_lock:
-                self.last_error = str(exc)
-                self.last_action = "Cycle stopped with an error."
         finally:
             with self.state_lock:
                 self.running = False
                 self.phase = "stopped"
                 self.phase_started_at = None
                 self.phase_end_at = None
-                self.stopped_at = time.time()
-                if self.last_error is None:
-                    self.last_action = "Cycle stopped."
             logging.info("Web cycle stopped")
 
     def _run_phase(self, phase: str, setpoint_f: float, minutes: float) -> bool:
@@ -1552,7 +1439,6 @@ class WebController:
             self.phase = phase
             self.phase_started_at = now
             self.phase_end_at = now + (minutes * 60.0)
-            self.last_action = f"{phase} phase: sending {setpoint_f:g}F target."
         if not self._safe_apply(setpoint_f, phase, self.stop_event):
             return False
         return self._wait_minutes(minutes, phase)
@@ -1616,10 +1502,6 @@ class RequestHandler(BaseHTTPRequestHandler):
                 return
             if parsed.path == "/api/stop":
                 message = self.server.controller.stop_cycle()
-                self._send_json({"ok": True, "message": message, "state": self.server.controller.snapshot()})
-                return
-            if parsed.path == "/api/startup":
-                message = self.server.controller.send_startup()
                 self._send_json({"ok": True, "message": message, "state": self.server.controller.snapshot()})
                 return
             if parsed.path == "/api/power":
@@ -1732,14 +1614,10 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main(argv: list[str] | None = None) -> int:
     setup_logging()
-    log_handler = MemoryLogHandler()
-    log_handler.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(message)s"))
-    logging.getLogger().addHandler(log_handler)
-
     parser = build_parser()
     args = parser.parse_args(argv)
     try:
-        controller = WebController(pathlib.Path(args.config), log_handler, args.host, args.port)
+        controller = WebController(pathlib.Path(args.config), args.host, args.port)
         server = WebServer((args.host, args.port), controller)
     except (ConfigError, BackendError, OSError) as exc:
         logging.error("Could not start web panel: %s", exc)

@@ -7,7 +7,6 @@ logs/
 build/
 dist/
 *.spec
-assets/fan.ico
 
 .env
 .venv/

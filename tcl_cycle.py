@@ -89,7 +89,6 @@ def get_cycle_config(config: dict[str, Any]) -> dict[str, Any]:
         if float(cycle[key]) <= 0:
             raise ConfigError(f"cycle.{key} must be greater than zero")
 
-    cycle.setdefault("hvac_mode", "cool")
     return cycle
 
 
@@ -130,7 +129,7 @@ class ClimateBackend:
         raise NotImplementedError
 
     def status(self) -> Any:
-        return {"status": "Bu backend status desteklemiyor"}
+        return {"status": "This backend does not support status reads"}
 
 
 class MockBackend(ClimateBackend):
@@ -160,7 +159,7 @@ class MockBackend(ClimateBackend):
 
 
 class TclHomeAwsBackend(ClimateBackend):
-    def __init__(self, config: dict[str, Any], cycle: dict[str, Any]):
+    def __init__(self, config: dict[str, Any]):
         backend_config = self._backend_config(config)
         self.api_base_url = require_text(
             backend_config,
@@ -181,27 +180,12 @@ class TclHomeAwsBackend(ClimateBackend):
         if not isinstance(self.login_providers, list) or not self.login_providers:
             raise ConfigError("backends.tcl_home_aws.login_providers must be a non-empty list")
 
-        default_desired = backend_config.get("default_desired")
-        if default_desired is None:
-            default_desired = {
-                "workMode": 1,
-                "swingWind": 0,
-                "powerSwitch": 1,
-                "windSpeed": 2,
-            }
-        if not isinstance(default_desired, dict):
-            raise ConfigError("backends.tcl_home_aws.default_desired must be an object")
-        self.default_desired = default_desired
         startup_desired = backend_config.get("startup_desired", {})
         if startup_desired is None:
             startup_desired = {}
         if not isinstance(startup_desired, dict):
             raise ConfigError("backends.tcl_home_aws.startup_desired must be an object")
         self.startup_desired = startup_desired
-        self.send_full_state = bool(backend_config.get("send_full_state", False))
-        self.command_method = str(backend_config.get("command_method", "mqtt_ws"))
-        if self.command_method not in {"mqtt_ws", "shadow_update", "topic_publish"}:
-            raise ConfigError("backends.tcl_home_aws.command_method must be mqtt_ws, shadow_update, or topic_publish")
 
         self.aws_access_key: str | None = None
         self.aws_secret_key: str | None = None
@@ -526,32 +510,17 @@ class TclHomeAwsBackend(ClimateBackend):
         return self._request_json(method, url, headers, body)
 
     def _build_desired_state(self, setpoint_f: float) -> dict[str, Any]:
-        desired: dict[str, Any] = {}
-        if self.send_full_state:
-            desired.update(self.default_desired)
-        desired["targetCelsiusDegree"] = fahrenheit_to_tcl_celsius(setpoint_f)
-        desired["targetFahrenheitDegree"] = int(round(setpoint_f))
-        return desired
+        return {
+            "targetCelsiusDegree": fahrenheit_to_tcl_celsius(setpoint_f),
+            "targetFahrenheitDegree": int(round(setpoint_f)),
+        }
 
     def _send_desired_state(self, desired: dict[str, Any], token_prefix: str) -> None:
         payload = {
             "state": {"desired": desired},
             "clientToken": f"{token_prefix}_{int(time.time() * 1000)}",
         }
-        if self.command_method == "topic_publish":
-            self._iot_data(
-                "POST",
-                f"/topics/$aws/things/{self.device_id}/shadow/update",
-                payload,
-                query="qos=1",
-            )
-            return
-
-        if self.command_method == "mqtt_ws":
-            self._mqtt_ws_publish(f"$aws/things/{self.device_id}/shadow/update", payload)
-            return
-
-        self._iot_data("POST", f"/things/{self.device_id}/shadow", payload)
+        self._mqtt_ws_publish(f"$aws/things/{self.device_id}/shadow/update", payload)
 
     def startup(self) -> None:
         if not self.startup_desired:
@@ -588,7 +557,7 @@ def create_backend(config: dict[str, Any], cycle: dict[str, Any]) -> ClimateBack
     if backend_name == "mock":
         return MockBackend(config)
     if backend_name == "tcl_home_aws":
-        return TclHomeAwsBackend(config, cycle)
+        return TclHomeAwsBackend(config)
     raise ConfigError(f"Unsupported backend: {backend_name}")
 
 

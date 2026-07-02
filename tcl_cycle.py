@@ -42,10 +42,7 @@ def fahrenheit_to_tcl_celsius(value: float) -> int:
 
 def expand_env(value: Any) -> Any:
     if isinstance(value, str):
-        expanded = os.path.expandvars(value)
-        if "$" in expanded or "%" in expanded:
-            return expanded
-        return expanded
+        return os.path.expandvars(value)
     if isinstance(value, list):
         return [expand_env(item) for item in value]
     if isinstance(value, dict):
@@ -126,6 +123,12 @@ class ClimateBackend:
     def apply_setpoint_f(self, setpoint_f: float, phase: str) -> None:
         raise NotImplementedError
 
+    def set_power_switch(self, enabled: bool) -> None:
+        raise NotImplementedError
+
+    def set_swing_wind(self, enabled: bool) -> None:
+        raise NotImplementedError
+
     def status(self) -> Any:
         return {"status": "Bu backend status desteklemiyor"}
 
@@ -146,244 +149,14 @@ class MockBackend(ClimateBackend):
     def startup(self) -> None:
         logging.info("MOCK: device=%s startup", self.device_id)
 
+    def set_power_switch(self, enabled: bool) -> None:
+        logging.info("MOCK: device=%s power_switch=%d", self.device_id, 1 if enabled else 0)
+
+    def set_swing_wind(self, enabled: bool) -> None:
+        logging.info("MOCK: device=%s swing_wind=%d", self.device_id, 1 if enabled else 0)
+
     def status(self) -> Any:
         return {"backend": "mock", "device_id": self.device_id}
-
-
-class HomeAssistantBackend(ClimateBackend):
-    def __init__(self, config: dict[str, Any], cycle: dict[str, Any]):
-        backend_config = self._backend_config(config)
-        self.base_url = require_text(backend_config, "base_url", "backends.home_assistant").rstrip("/")
-        self.token = require_text(backend_config, "token", "backends.home_assistant")
-        self.entity_id = require_text(backend_config, "entity_id", "backends.home_assistant")
-        self.temperature_unit = str(backend_config.get("temperature_unit", "F")).upper()
-        self.timeout_seconds = float(backend_config.get("timeout_seconds", 20))
-        self.hvac_mode = str(cycle.get("hvac_mode", "cool"))
-        self.fan_mode = cycle.get("fan_mode")
-
-        if self.temperature_unit not in {"F", "C"}:
-            raise ConfigError("backends.home_assistant.temperature_unit must be F or C")
-
-    @staticmethod
-    def _backend_config(config: dict[str, Any]) -> dict[str, Any]:
-        backends = config.get("backends")
-        if not isinstance(backends, dict) or not isinstance(backends.get("home_assistant"), dict):
-            raise ConfigError("backends.home_assistant section is required")
-        return backends["home_assistant"]
-
-    def _request(self, method: str, path: str, body: dict[str, Any] | None = None) -> Any:
-        data = None
-        if body is not None:
-            data = json.dumps(body).encode("utf-8")
-
-        request = urllib.request.Request(
-            self.base_url + path,
-            data=data,
-            method=method,
-            headers={
-                "Authorization": f"Bearer {self.token}",
-                "Content-Type": "application/json",
-            },
-        )
-        try:
-            with urllib.request.urlopen(request, timeout=self.timeout_seconds) as response:
-                return read_json_response(response)
-        except urllib.error.HTTPError as exc:
-            error_body = exc.read().decode("utf-8", errors="replace")
-            raise BackendError(f"Home Assistant HTTP {exc.code}: {error_body}") from exc
-        except urllib.error.URLError as exc:
-            raise BackendError(f"Home Assistant connection error: {exc}") from exc
-
-    def _temperature_for_backend(self, setpoint_f: float) -> float:
-        if self.temperature_unit == "F":
-            return setpoint_f
-        return fahrenheit_to_celsius(setpoint_f)
-
-    def apply_setpoint_f(self, setpoint_f: float, phase: str) -> None:
-        temperature = self._temperature_for_backend(setpoint_f)
-        logging.info(
-            "Home Assistant: sending %s setpoint %.1f%s",
-            phase,
-            temperature,
-            self.temperature_unit,
-        )
-        self._request(
-            "POST",
-            "/api/services/climate/set_hvac_mode",
-            {"entity_id": self.entity_id, "hvac_mode": self.hvac_mode},
-        )
-        self._request(
-            "POST",
-            "/api/services/climate/set_temperature",
-            {"entity_id": self.entity_id, "temperature": temperature, "hvac_mode": self.hvac_mode},
-        )
-        if self.fan_mode:
-            self._request(
-                "POST",
-                "/api/services/climate/set_fan_mode",
-                {"entity_id": self.entity_id, "fan_mode": self.fan_mode},
-            )
-
-    def status(self) -> Any:
-        encoded_entity_id = urllib.parse.quote(self.entity_id, safe="")
-        return self._request("GET", f"/api/states/{encoded_entity_id}")
-
-
-class TuyaCloudBackend(ClimateBackend):
-    def __init__(self, config: dict[str, Any], cycle: dict[str, Any]):
-        backend_config = self._backend_config(config)
-        self.endpoint = require_text(backend_config, "endpoint", "backends.tuya_cloud").rstrip("/")
-        self.access_id = require_text(backend_config, "access_id", "backends.tuya_cloud")
-        self.access_secret = require_text(backend_config, "access_secret", "backends.tuya_cloud")
-        self.device_id = require_text(backend_config, "device_id", "backends.tuya_cloud")
-        self.timeout_seconds = float(backend_config.get("timeout_seconds", 20))
-
-        commands = backend_config.get("commands")
-        if not isinstance(commands, dict):
-            raise ConfigError("backends.tuya_cloud.commands section is required")
-        self.commands = commands
-        self.hvac_mode = str(cycle.get("hvac_mode", "cool"))
-
-        self.access_token: str | None = None
-        self.token_expires_at = 0.0
-
-    @staticmethod
-    def _backend_config(config: dict[str, Any]) -> dict[str, Any]:
-        backends = config.get("backends")
-        if not isinstance(backends, dict) or not isinstance(backends.get("tuya_cloud"), dict):
-            raise ConfigError("backends.tuya_cloud section is required")
-        return backends["tuya_cloud"]
-
-    def _sign_headers(
-        self,
-        method: str,
-        path: str,
-        body_text: str,
-        token: str | None,
-    ) -> dict[str, str]:
-        timestamp = str(int(time.time() * 1000))
-        nonce = uuid.uuid4().hex
-        content_hash = hashlib.sha256(body_text.encode("utf-8")).hexdigest()
-        string_to_sign = f"{method}\n{content_hash}\n\n{path}"
-        token_part = token or ""
-        message = f"{self.access_id}{token_part}{timestamp}{nonce}{string_to_sign}"
-        signature = hmac.new(
-            self.access_secret.encode("utf-8"),
-            message.encode("utf-8"),
-            hashlib.sha256,
-        ).hexdigest().upper()
-
-        headers = {
-            "client_id": self.access_id,
-            "sign": signature,
-            "t": timestamp,
-            "nonce": nonce,
-            "sign_method": "HMAC-SHA256",
-            "Content-Type": "application/json",
-        }
-        if token:
-            headers["access_token"] = token
-        return headers
-
-    def _api(
-        self,
-        method: str,
-        path: str,
-        body: dict[str, Any] | None = None,
-        use_token: bool = True,
-        retry_on_token_error: bool = True,
-    ) -> Any:
-        token = self._ensure_token() if use_token else None
-        body_text = "" if body is None else json.dumps(body, separators=(",", ":"))
-        data = None if body is None else body_text.encode("utf-8")
-        request = urllib.request.Request(
-            self.endpoint + path,
-            data=data,
-            method=method,
-            headers=self._sign_headers(method, path, body_text, token),
-        )
-        try:
-            with urllib.request.urlopen(request, timeout=self.timeout_seconds) as response:
-                payload = read_json_response(response)
-        except urllib.error.HTTPError as exc:
-            error_body = exc.read().decode("utf-8", errors="replace")
-            raise BackendError(f"Tuya HTTP {exc.code}: {error_body}") from exc
-        except urllib.error.URLError as exc:
-            raise BackendError(f"Tuya connection error: {exc}") from exc
-
-        if not isinstance(payload, dict):
-            return payload
-
-        if payload.get("success") is False:
-            code = str(payload.get("code", ""))
-            if use_token and retry_on_token_error and code in {"1010", "1011", "1012", "1013", "1106"}:
-                self.access_token = None
-                return self._api(method, path, body, use_token=True, retry_on_token_error=False)
-            raise BackendError(f"Tuya API error: {payload}")
-        return payload.get("result", payload)
-
-    def _ensure_token(self) -> str:
-        if self.access_token and time.time() < self.token_expires_at - 60:
-            return self.access_token
-        result = self._api("GET", "/v1.0/token?grant_type=1", use_token=False)
-        if not isinstance(result, dict) or not result.get("access_token"):
-            raise BackendError(f"Tuya token could not be fetched: {result}")
-        self.access_token = str(result["access_token"])
-        expire_seconds = float(result.get("expire_time", 7200))
-        self.token_expires_at = time.time() + expire_seconds
-        return self.access_token
-
-    def _temperature_value(self, setpoint_f: float) -> int | float:
-        temperature = self.commands.get("temperature")
-        if not isinstance(temperature, dict):
-            raise ConfigError("backends.tuya_cloud.commands.temperature section is required")
-        unit = str(temperature.get("unit", "C")).upper()
-        scale = float(temperature.get("scale", 1))
-        value_type = str(temperature.get("value_type", "integer"))
-
-        if unit == "F":
-            value = setpoint_f
-        elif unit == "C":
-            value = fahrenheit_to_celsius(setpoint_f)
-        else:
-            raise ConfigError("Tuya temperature.unit must be F or C")
-
-        scaled = value * scale
-        if value_type == "integer":
-            return int(round(scaled))
-        return round(scaled, 1)
-
-    def _build_commands(self, setpoint_f: float, phase: str) -> list[dict[str, Any]]:
-        result: list[dict[str, Any]] = []
-
-        mode = self.commands.get("mode")
-        if isinstance(mode, dict) and mode.get("code") and mode.get("cool_value") is not None:
-            result.append({"code": str(mode["code"]), "value": mode["cool_value"]})
-
-        temperature = self.commands.get("temperature")
-        if not isinstance(temperature, dict) or not temperature.get("code"):
-            raise ConfigError("backends.tuya_cloud.commands.temperature.code is required")
-        result.append({"code": str(temperature["code"]), "value": self._temperature_value(setpoint_f)})
-
-        fan = self.commands.get("fan")
-        if isinstance(fan, dict) and fan.get("code") and fan.get("value") is not None:
-            result.append({"code": str(fan["code"]), "value": fan["value"]})
-
-        phase_commands = self.commands.get(f"{phase}_extra")
-        if isinstance(phase_commands, list):
-            for item in phase_commands:
-                if isinstance(item, dict) and item.get("code"):
-                    result.append({"code": str(item["code"]), "value": item.get("value")})
-
-        return result
-
-    def apply_setpoint_f(self, setpoint_f: float, phase: str) -> None:
-        commands = self._build_commands(setpoint_f, phase)
-        logging.info("Tuya Cloud: sending %s commands: %s", phase, commands)
-        self._api("POST", f"/v1.0/devices/{self.device_id}/commands", {"commands": commands})
-
-    def status(self) -> Any:
-        return self._api("GET", f"/v1.0/devices/{self.device_id}/status")
 
 
 class TclHomeAwsBackend(ClimateBackend):
@@ -796,6 +569,16 @@ class TclHomeAwsBackend(ClimateBackend):
         )
         self._send_desired_state(desired, "python")
 
+    def set_power_switch(self, enabled: bool) -> None:
+        desired = {"powerSwitch": 1 if enabled else 0}
+        logging.info("TCL Home AWS: sending powerSwitch=%d", desired["powerSwitch"])
+        self._send_desired_state(desired, "python_power")
+
+    def set_swing_wind(self, enabled: bool) -> None:
+        desired = {"swingWind": 1 if enabled else 0}
+        logging.info("TCL Home AWS: sending swingWind=%d", desired["swingWind"])
+        self._send_desired_state(desired, "python_swing")
+
     def status(self) -> Any:
         return self._iot_data("GET", f"/things/{self.device_id}/shadow")
 
@@ -804,10 +587,6 @@ def create_backend(config: dict[str, Any], cycle: dict[str, Any]) -> ClimateBack
     backend_name = str(config.get("backend", "mock")).lower()
     if backend_name == "mock":
         return MockBackend(config)
-    if backend_name == "home_assistant":
-        return HomeAssistantBackend(config, cycle)
-    if backend_name == "tuya_cloud":
-        return TuyaCloudBackend(config, cycle)
     if backend_name == "tcl_home_aws":
         return TclHomeAwsBackend(config, cycle)
     raise ConfigError(f"Unsupported backend: {backend_name}")

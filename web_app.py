@@ -5,6 +5,7 @@ import collections
 import json
 import logging
 import pathlib
+import queue
 import socket
 import threading
 import time
@@ -29,6 +30,7 @@ from tcl_cycle import (
 DEFAULT_HOST = "0.0.0.0"
 DEFAULT_PORT = 8787
 LOCAL_BROWSER_HOST = "127.0.0.1"
+FAVICON_PATH = pathlib.Path(__file__).with_name("favicon.png")
 
 
 def browser_url(host: str, port: int) -> str:
@@ -68,430 +70,1077 @@ def network_urls(host: str, port: int) -> list[str]:
 
 
 PAGE_HTML = r"""<!doctype html>
-<html lang="en">
+<html class="dark" lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>TCL AC Panel</title>
-  <style>
-    :root {
-      color-scheme: dark;
-      --bg: #080b10;
-      --card: rgba(18, 24, 33, 0.86);
-      --card-2: rgba(255, 255, 255, 0.045);
-      --line: rgba(255, 255, 255, 0.09);
-      --text: #f3f7fb;
-      --muted: #8d98a8;
-      --blue: #62a8ff;
-      --green: #38d47a;
-      --red: #ff5d5d;
-      --amber: #ffc35a;
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TCL AC Control</title>
+<link rel="icon" type="image/png" href="/favicon.png">
+<link rel="shortcut icon" type="image/png" href="/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script>
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        "colors": {
+          "bgDark": "#0a0a0a",
+          "panelDark": "#18181b",
+          "cardBg": "#27272a",
+          "cardBorder": "#3f3f46",
+          "textMain": "#ffffff",
+          "textMuted": "#a1a1aa",
+          "accentCyan": "#4ad9d9",
+          "accentCyanBg": "rgba(74, 217, 217, 0.1)",
+          "accentCyanBorder": "rgba(74, 217, 217, 0.2)",
+          "accentRed": "#ff6b6b",
+          "accentRedBg": "rgba(255, 107, 107, 0.05)",
+          "accentRedBorder": "rgba(255, 107, 107, 0.2)",
+          "accentOrange": "#f5a623",
+          "surface": "#131315",
+          "background": "#131315",
+          "primary-container": "#0f172a",
+          "outline": "#909097",
+          "on-background": "#e4e2e4",
+          "surface-container": "#1f1f21",
+          "surface-dim": "#131315",
+          "on-primary-container": "#798098",
+          "on-secondary-fixed-variant": "#3c475a",
+          "on-error": "#690005",
+          "inverse-on-surface": "#303032",
+          "error": "#ffb4ab",
+          "surface-tint": "#bec6e0",
+          "on-primary-fixed": "#131b2e",
+          "on-primary-fixed-variant": "#3f465c",
+          "surface-variant": "#353436",
+          "primary": "#bec6e0",
+          "on-tertiary-container": "#957d5a",
+          "surface-container-highest": "#353436",
+          "on-secondary": "#263143",
+          "on-tertiary": "#3e2d11",
+          "primary-fixed-dim": "#bec6e0",
+          "tertiary-container": "#231500",
+          "surface-container-low": "#1b1b1d",
+          "on-surface-variant": "#c6c6cd",
+          "surface-bright": "#39393b",
+          "surface-container-lowest": "#0e0e10",
+          "tertiary": "#dec29a",
+          "primary-fixed": "#dae2fd",
+          "outline-variant": "#45464d",
+          "on-secondary-container": "#aeb9d0",
+          "on-surface": "#e4e2e4",
+          "inverse-surface": "#e4e2e4",
+          "secondary-container": "#3e495d",
+          "secondary-fixed": "#d8e3fb",
+          "secondary": "#bcc7de",
+          "emerald": {
+            500: "#10b981",
+            600: "#059669",
+            900: "#064e3b"
+          },
+          "rose": {
+            500: "#f43f5e",
+            600: "#e11d48",
+            900: "#881337"
+          }
+        },
+        "fontSize": {
+          "label-sm": ["10px", { "lineHeight": "14px", "letterSpacing": "0.05em", "fontWeight": "600" }],
+          "title-md": ["16px", { "lineHeight": "22px", "fontWeight": "600" }],
+          "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }]
+        },
+        "fontFamily": {
+          "label-sm": ["Inter"],
+          "title-md": ["Inter"],
+          "body-md": ["Inter"]
+        }
+      }
     }
-    * { box-sizing: border-box; }
+  }
+</script>
+<style>
+  .material-symbols-outlined {
+    font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20;
+    font-size: 20px;
+  }
+
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #2a2a2b; border-radius: 2px; }
+
+  @keyframes breathe {
+    0%, 100% { opacity: 0.4; box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+    50% { opacity: 1; box-shadow: 0 0 6px 2px rgba(16, 185, 129, 0.3); }
+  }
+  .animate-breathe {
+    animation: breathe 3s ease-in-out infinite;
+  }
+
+  :root {
+    --page-bg: #07080a;
+    --panel-bg: rgba(18, 20, 24, 0.92);
+    --panel-border: rgba(255, 255, 255, 0.08);
+    --card-bg: rgba(255, 255, 255, 0.045);
+    --card-bg-strong: rgba(255, 255, 255, 0.075);
+    --card-border: rgba(255, 255, 255, 0.085);
+    --text-main: #f8fafc;
+    --text-soft: #cbd5e1;
+    --text-muted: #7f8b9d;
+    --cyan: #67e8f9;
+    --cyan-strong: #22d3ee;
+    --green: #74e6b2;
+    --red: #fb7185;
+    --amber: #fbbf24;
+  }
+
+  body {
+    min-height: 100vh;
+    min-height: 100dvh;
+    margin: 0;
+    display: grid;
+    place-items: center;
+    padding: 22px;
+    font-family: 'Inter', sans-serif;
+    color: var(--text-main);
+    overflow-x: hidden;
+    overflow-y: auto;
+    background:
+      radial-gradient(circle at 50% -20%, rgba(103, 232, 249, 0.16), transparent 34%),
+      radial-gradient(circle at 100% 10%, rgba(116, 230, 178, 0.08), transparent 28%),
+      linear-gradient(180deg, #0b0d11 0%, var(--page-bg) 58%, #050506 100%);
+  }
+
+  button,
+  a {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .app-shell {
+    width: min(100%, 520px);
+    padding: 18px;
+    border: 1px solid var(--panel-border);
+    border-radius: 30px;
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.055), transparent 24%),
+      var(--panel-bg);
+    box-shadow: 0 26px 80px rgba(0, 0, 0, 0.54), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+  }
+
+  .hero-card {
+    padding: 22px;
+    border: 1px solid var(--card-border);
+    border-radius: 24px;
+    background:
+      radial-gradient(circle at 82% 12%, rgba(103, 232, 249, 0.14), transparent 30%),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.035));
+  }
+
+  .hero-top,
+  .hero-footer,
+  .footer-row,
+  .control-row,
+  .status-pill {
+    display: flex;
+    align-items: center;
+  }
+
+  .hero-top,
+  .hero-footer,
+  .footer-row,
+  .control-row {
+    justify-content: space-between;
+  }
+
+  .eyebrow,
+  .metric-label,
+  .section-label,
+  .control-meta,
+  .footer-link,
+  #message {
+    color: var(--text-muted);
+  }
+
+  .eyebrow,
+  .metric-label,
+  .section-label {
+    margin: 0;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+
+  .temperature {
+    margin: 8px 0 2px;
+    font-size: clamp(54px, 17vw, 92px);
+    font-weight: 800;
+    letter-spacing: -0.08em;
+    line-height: 0.88;
+  }
+
+  #activeTempMeta {
+    display: block;
+    min-height: 19px;
+    color: var(--text-soft);
+    font-size: 13px;
+  }
+
+  .status-pill {
+    gap: 8px;
+    align-self: flex-start;
+    padding: 7px 11px;
+    border: 1px solid var(--card-border);
+    border-radius: 999px;
+    background: rgba(0, 0, 0, 0.18);
+    color: var(--text-soft);
+    font-size: 12px;
+    font-weight: 650;
+  }
+
+  #statusDot {
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    background: var(--red);
+  }
+
+  .hero-footer {
+    gap: 12px;
+    margin-top: 24px;
+    padding-top: 18px;
+    border-top: 1px solid rgba(255, 255, 255, 0.075);
+  }
+
+  .metric-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .metric-value {
+    display: block;
+    margin-top: 4px;
+    overflow: hidden;
+    color: var(--text-main);
+    font-size: 17px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .refresh-button {
+    min-height: 42px;
+    padding: 0 14px;
+    border: 1px solid var(--card-border);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.055);
+    color: var(--text-soft);
+    font-size: 12px;
+    font-weight: 700;
+    transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease, transform 0.18s ease;
+  }
+
+  .refresh-button:hover,
+  .control-row:hover,
+  .utility-button:hover {
+    border-color: rgba(255, 255, 255, 0.18);
+    background: rgba(255, 255, 255, 0.075);
+  }
+
+  .action-grid {
+    display: grid;
+    grid-template-columns: 1.2fr 0.8fr;
+    gap: 12px;
+    margin-top: 14px;
+  }
+
+  .action-button {
+    min-height: 76px;
+    padding: 16px;
+    border: 1px solid transparent;
+    border-radius: 20px;
+    text-align: left;
+    transition: transform 0.18s ease, opacity 0.18s ease, background 0.18s ease, border-color 0.18s ease;
+  }
+
+  .action-button span,
+  .control-title {
+    display: block;
+    color: var(--text-main);
+    font-size: 16px;
+    font-weight: 750;
+    letter-spacing: -0.01em;
+  }
+
+  .action-button small,
+  .control-meta {
+    display: block;
+    margin-top: 5px;
+    font-size: 12px;
+    line-height: 1.35;
+  }
+
+  .action-primary {
+    background: linear-gradient(135deg, rgba(103, 232, 249, 0.96), rgba(116, 230, 178, 0.84));
+    color: #052127;
+    box-shadow: 0 16px 46px rgba(34, 211, 238, 0.18);
+  }
+
+  .action-primary span,
+  .action-primary small {
+    color: #052127;
+  }
+
+  .action-quiet,
+  .control-row,
+  .utility-button,
+  .footer-link {
+    border: 1px solid var(--card-border);
+    background: var(--card-bg);
+  }
+
+  .action-quiet {
+    color: var(--text-soft);
+  }
+
+  .action-quiet span {
+    color: var(--text-soft);
+  }
+
+  .action-button:active:not(:disabled),
+  .control-row:active:not(:disabled),
+  .refresh-button:active,
+  .utility-button:active {
+    transform: scale(0.985);
+  }
+
+  .action-button:disabled,
+  .control-row:disabled,
+  .dashboard-button:disabled {
+    opacity: 0.42;
+    cursor: not-allowed;
+    transform: none;
+    filter: grayscale(0.2);
+  }
+
+  .section-label {
+    margin: 18px 2px 9px;
+  }
+
+  .control-list {
+    display: grid;
+    gap: 9px;
+  }
+
+  .control-row {
+    width: 100%;
+    min-height: 66px;
+    gap: 14px;
+    padding: 14px 16px;
+    border-radius: 18px;
+    color: inherit;
+    text-align: left;
+    cursor: pointer;
+    transition: transform 0.18s ease, opacity 0.18s ease, background 0.18s ease, border-color 0.18s ease;
+  }
+
+  .control-copy {
+    min-width: 0;
+  }
+
+  .control-value {
+    flex: 0 0 auto;
+    color: var(--text-soft);
+    font-size: 14px;
+    font-weight: 750;
+  }
+
+  .control-value.cool {
+    color: var(--cyan);
+  }
+
+  .control-value.warm {
+    color: var(--amber);
+  }
+
+  .switch {
+    position: relative;
+    flex: 0 0 auto;
+    width: 42px;
+    height: 24px;
+  }
+
+  .switch-input {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .switch-slider {
+    position: absolute;
+    inset: 0;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.12);
+    transition: background 0.18s ease, border-color 0.18s ease;
+  }
+
+  .switch-slider::after {
+    content: '';
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 16px;
+    height: 16px;
+    border-radius: 999px;
+    background: #fff;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.28);
+    transition: transform 0.18s ease;
+  }
+
+  .switch-input:checked + .switch-slider {
+    border-color: rgba(103, 232, 249, 0.4);
+    background: linear-gradient(135deg, rgba(34, 211, 238, 0.95), rgba(116, 230, 178, 0.84));
+  }
+
+  .switch-input:checked + .switch-slider::after {
+    transform: translateX(18px);
+  }
+
+  .power-on {
+    border-color: rgba(251, 113, 133, 0.2);
+    background: rgba(251, 113, 133, 0.07);
+  }
+
+  .power-on .control-value {
+    color: var(--red);
+  }
+
+  .power-off {
+    border-color: rgba(103, 232, 249, 0.16);
+    background: rgba(103, 232, 249, 0.055);
+  }
+
+  .power-off .control-value {
+    color: var(--cyan);
+  }
+
+  .footer-row {
+    gap: 10px;
+    margin-top: 14px;
+  }
+
+  .utility-button,
+  .footer-link {
+    min-height: 42px;
+    border-radius: 15px;
+  }
+
+  .utility-button {
+    flex: 0 0 auto;
+    padding: 0 14px;
+    color: var(--red);
+    font-size: 12px;
+    font-weight: 700;
+    transition: transform 0.18s ease, background 0.18s ease, border-color 0.18s ease;
+  }
+
+  .footer-link {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 12px;
+    overflow: hidden;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 11px;
+    text-decoration: none;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .shutdown-card {
+    width: min(100%, 360px);
+    padding: 24px;
+    border: 1px solid var(--panel-border);
+    border-radius: 24px;
+    background: rgba(18, 20, 24, 0.94);
+    box-shadow: 0 24px 70px rgba(0, 0, 0, 0.58);
+    text-align: center;
+  }
+
+  .confirm-card {
+    width: min(100%, 380px);
+    padding: 22px;
+    border: 1px solid var(--panel-border);
+    border-radius: 26px;
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.06), transparent 28%),
+      rgba(18, 20, 24, 0.96);
+    box-shadow: 0 26px 80px rgba(0, 0, 0, 0.62), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  }
+
+  .confirm-title {
+    margin: 0;
+    color: var(--text-main);
+    font-size: 20px;
+    font-weight: 780;
+    letter-spacing: -0.02em;
+  }
+
+  .confirm-detail {
+    margin: 8px 0 0;
+    color: var(--text-soft);
+    font-size: 13px;
+    line-height: 1.55;
+  }
+
+  .confirm-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 20px;
+  }
+
+  .confirm-button {
+    min-height: 44px;
+    border: 1px solid var(--card-border);
+    border-radius: 15px;
+    font-size: 13px;
+    font-weight: 750;
+    transition: transform 0.18s ease, background 0.18s ease, border-color 0.18s ease;
+  }
+
+  .confirm-button:active {
+    transform: scale(0.985);
+  }
+
+  .confirm-cancel {
+    background: var(--card-bg);
+    color: var(--text-soft);
+  }
+
+  .confirm-cancel:hover {
+    border-color: rgba(255, 255, 255, 0.18);
+    background: rgba(255, 255, 255, 0.075);
+  }
+
+  .confirm-danger {
+    border-color: rgba(251, 113, 133, 0.26);
+    background: rgba(251, 113, 133, 0.12);
+    color: #fecdd3;
+  }
+
+  .confirm-danger:hover {
+    border-color: rgba(251, 113, 133, 0.42);
+    background: rgba(251, 113, 133, 0.18);
+  }
+
+  @media (max-width: 560px) {
     body {
-      margin: 0;
-      min-height: 100vh;
-      display: grid;
-      place-items: center;
-      padding: 18px 0;
-      font-family: Inter, "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-      background:
-        radial-gradient(circle at 18% 0%, rgba(98, 168, 255, 0.18), transparent 34%),
-        linear-gradient(180deg, #0b1018, var(--bg));
-      color: var(--text);
+      align-items: start;
+      place-items: start center;
+      padding: 12px;
     }
-    main {
-      width: min(560px, calc(100% - 24px));
-      margin: 0 auto;
-      padding: 0;
+
+    .app-shell {
+      padding: 12px;
+      border-radius: 24px;
     }
-    header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      margin-bottom: 10px;
+
+    .hero-card {
+      padding: 18px;
+      border-radius: 20px;
     }
-    h1 { margin: 0; font-size: 21px; letter-spacing: -0.03em; }
-    .sub { margin-top: 3px; color: var(--muted); font-size: 12px; }
-    .phone-url { margin-top: 4px; max-width: 330px; overflow: hidden; color: var(--blue); font-size: 12px; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
-    .pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 7px;
-      min-width: 132px;
-      justify-content: center;
-      padding: 8px 11px;
-      border: 1px solid var(--line);
-      border-radius: 999px;
-      background: rgba(255, 255, 255, 0.045);
-      color: var(--muted);
-      font-size: 12px;
-      font-weight: 700;
-      white-space: nowrap;
+
+    .hero-footer {
+      align-items: stretch;
+      flex-direction: column;
+      margin-top: 20px;
+      padding-top: 16px;
     }
-    .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--red); }
-    .running .dot { background: var(--green); box-shadow: 0 0 14px rgba(56, 212, 122, 0.72); }
-    .panel, details {
-      border: 1px solid var(--line);
-      border-radius: 18px;
-      background: var(--card);
-      box-shadow: 0 18px 55px rgba(0, 0, 0, 0.28);
-      backdrop-filter: blur(18px);
+
+    .refresh-button {
+      width: 100%;
     }
-    .panel { padding: 16px; }
-    .topline {
-      display: grid;
+
+    .action-grid {
       grid-template-columns: 1fr;
-      gap: 10px;
+      gap: 9px;
+    }
+
+    .action-button {
+      min-height: 64px;
+    }
+
+    .control-row {
+      min-height: 62px;
+      padding: 13px 14px;
+    }
+
+    .footer-row {
+      flex-direction: column-reverse;
       align-items: stretch;
     }
-    .phase-card, .stat {
-      border: 1px solid var(--line);
-      border-radius: 15px;
-      background: var(--card-2);
+
+    .utility-button,
+    .footer-link {
+      width: 100%;
     }
-    .phase-card {
-      min-height: 124px;
-      padding: 16px;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
+
+    .confirm-actions {
+      grid-template-columns: 1fr;
     }
-    .label {
-      color: var(--muted);
-      font-size: 11px;
-      font-weight: 800;
-      letter-spacing: 0.16em;
-      text-transform: uppercase;
-    }
-    .phase { margin-top: 8px; font-size: clamp(34px, 9vw, 50px); line-height: 0.94; letter-spacing: -0.07em; }
-    .remaining { color: var(--blue); font-size: 22px; font-weight: 800; }
-    .last { margin-top: 10px; color: var(--muted); font-size: 12px; line-height: 1.45; }
-    .stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
-    .stat { padding: 12px; }
-    .stat b { display: block; margin-bottom: 3px; font-size: 22px; line-height: 1; }
-    .stat span { color: var(--muted); font-size: 11px; }
-    .temp-stat { grid-column: 1 / -1; }
-    .temp-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 5px; }
-    .temp-row b { margin: 0; font-size: 32px; color: var(--blue); }
-    .temp-row button { min-height: 32px; padding: 6px 10px; font-size: 12px; }
-    .temp-meta { margin-top: 5px; color: var(--muted); font-size: 11px; line-height: 1.35; }
-    .actions {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 9px;
-      margin-top: 12px;
-    }
-    button {
-      appearance: none;
-      border: 1px solid var(--line);
-      border-radius: 13px;
-      background: rgba(255, 255, 255, 0.065);
-      color: var(--text);
-      min-height: 40px;
-      padding: 9px 11px;
-      font: inherit;
-      font-size: 13px;
-      font-weight: 800;
-      cursor: pointer;
-      transition: transform 0.12s ease, border-color 0.12s ease, background 0.12s ease;
-    }
-    button:hover:not(:disabled) { transform: translateY(-1px); border-color: rgba(98, 168, 255, 0.65); }
-    button:disabled { opacity: 0.42; cursor: not-allowed; }
-    .primary { background: rgba(56, 212, 122, 0.18); border-color: rgba(56, 212, 122, 0.38); }
-    .danger { background: rgba(255, 93, 93, 0.15); border-color: rgba(255, 93, 93, 0.35); }
-    .cool { background: rgba(98, 168, 255, 0.18); border-color: rgba(98, 168, 255, 0.38); }
-    .warm { background: rgba(255, 195, 90, 0.18); border-color: rgba(255, 195, 90, 0.38); }
-    .wide { grid-column: span 2; }
-    .message { min-height: 18px; margin-top: 10px; color: var(--muted); font-size: 12px; }
-    .message.error { color: var(--red); }
-    .message.ok { color: var(--green); }
-    .details-grid { margin-top: 10px; }
-    details { overflow: hidden; }
-    summary {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
-      padding: 11px 14px;
-      cursor: pointer;
-      color: var(--text);
-      font-size: 13px;
-      font-weight: 800;
-      list-style: none;
-    }
-    summary::-webkit-details-marker { display: none; }
-    .summary-note { color: var(--muted); font-size: 11px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .debug-body { border-top: 1px solid var(--line); }
-    .debug-section + .debug-section { border-top: 1px solid var(--line); }
-    .debug-title { padding: 10px 14px 0; color: var(--muted); font-size: 11px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; }
-    pre {
-      max-height: 210px;
-      margin: 0;
-      padding: 10px 14px 14px;
-      overflow: auto;
-      white-space: pre-wrap;
-      background: rgba(0, 0, 0, 0.18);
-      color: #cfd8e3;
-      font-size: 12px;
-      line-height: 1.42;
-    }
-    @media (max-width: 760px) {
-      body { align-items: start; padding: 10px 0; }
-      main { width: min(100% - 16px, 560px); }
-      header { align-items: flex-start; }
-      .phone-url { max-width: calc(100vw - 170px); }
-      .panel { padding: 14px; }
-      button { min-height: 48px; font-size: 14px; }
-      .temp-row button { min-height: 38px; }
-    }
-    @media (max-width: 480px) {
-      body { padding: 8px 0; place-items: start center; }
-      main { width: min(100% - 12px, 560px); }
-      header { display: grid; grid-template-columns: 1fr; gap: 8px; }
-      .pill { width: 100%; min-width: 0; }
-      .phone-url { max-width: 100%; }
-      .phase-card { min-height: 112px; }
-      .phase { font-size: clamp(34px, 14vw, 48px); }
-      .stats { gap: 8px; }
-      .stat { padding: 11px; }
-      .actions { gap: 8px; }
-      .wide { grid-column: 1 / -1; }
-    }
-  </style>
+  }
+</style>
 </head>
 <body>
-  <main>
-    <header>
-      <div>
-        <h1>TCL AC</h1>
-        <div class="sub">Local panel | 70F / 80F cycle</div>
-        <div id="phoneUrl" class="phone-url">Phone URL loading...</div>
+<main class="app-shell">
+  <section class="hero-card" aria-label="AC status">
+    <div class="hero-top">
+      <div class="min-w-0">
+        <p class="eyebrow">TCL AC Control</p>
+        <div class="temperature" id="activeTempF">--</div>
+        <span id="activeTempMeta">Not read yet</span>
       </div>
-      <div id="runPill" class="pill"><span class="dot"></span><span id="runText">Loading</span></div>
-    </header>
-
-    <section class="panel">
-      <div class="topline">
-        <div class="phase-card">
-          <div>
-            <div class="label">Active phase</div>
-            <div id="phase" class="phase">-</div>
-          </div>
-          <div>
-            <div id="remaining" class="remaining">--:--</div>
-            <div id="lastAction" class="last">Waiting for activity.</div>
-          </div>
+      <div id="runPill" class="status-pill">
+        <span id="statusDot"></span>
+        <span id="runText">Loading</span>
+      </div>
+    </div>
+    <div class="hero-footer">
+      <div class="metric-grid">
+        <div>
+          <p class="metric-label">Phase</p>
+          <span class="metric-value" id="phase">stopped</span>
         </div>
-
-        <div class="stats">
-          <div class="stat temp-stat">
-            <span>AC setting</span>
-            <div class="temp-row">
-              <b id="activeTempF">--</b>
-              <button onclick="readDeviceStatus()">Refresh</button>
-            </div>
-            <div id="activeTempMeta" class="temp-meta">Not read yet.</div>
-          </div>
-          <div class="stat"><b id="coolingSetpoint">70F</b><span>Cooling target</span></div>
-          <div class="stat"><b id="restingSetpoint">80F</b><span>Rest target</span></div>
-          <div class="stat"><b id="coolingMinutes">20</b><span>Cooling min</span></div>
-          <div class="stat"><b id="restingMinutes">20</b><span>Rest min</span></div>
+        <div>
+          <p class="metric-label">Remaining</p>
+          <span class="metric-value" id="remaining">--:--</span>
         </div>
       </div>
+      <button onclick="readDeviceStatus()" class="refresh-button" aria-label="Refresh AC setting">Refresh</button>
+    </div>
+  </section>
 
-      <div class="actions">
-        <button id="startBtn" class="primary" onclick="postAction('/api/start')">Start</button>
-        <button id="stopBtn" class="danger" onclick="postAction('/api/stop')">Stop</button>
-        <button id="coolBtn" class="cool" onclick="sendPhase('cooling')">70F</button>
-        <button id="restBtn" class="warm" onclick="sendPhase('resting')">80F</button>
-        <button id="startupBtn" onclick="postAction('/api/startup')">Swing</button>
-        <button class="wide" onclick="shutdownServer()">Close Server</button>
-      </div>
-      <div id="message" class="message"></div>
-    </section>
+  <div class="action-grid" aria-label="Cycle controls">
+    <button id="startBtn" onclick="postAction('/api/start')" class="dashboard-button action-button action-primary" aria-label="Start cycle">
+      <span>Start Cycle</span>
+      <small>Run the 70F / 80F loop</small>
+    </button>
+    <button id="stopBtn" onclick="postAction('/api/stop')" class="dashboard-button action-button action-quiet" aria-label="Stop cycle">
+      <span>Stop</span>
+      <small>Pause the loop</small>
+    </button>
+  </div>
 
-    <section class="details-grid">
-      <details>
-        <summary><span>Details</span><span id="configPath" class="summary-note"></span></summary>
-        <div class="debug-body">
-          <div class="debug-section">
-            <div class="debug-title">Live Log</div>
-            <pre id="logs">Loading logs...</pre>
-          </div>
-          <div class="debug-section">
-            <div class="debug-title">Device Status</div>
-            <pre id="deviceStatus">Not read yet.</pre>
-          </div>
-        </div>
-      </details>
-    </section>
-  </main>
+  <p class="section-label">Manual Control</p>
+  <div class="control-list">
+    <button onclick="sendPhase('cooling')" class="dashboard-button control-row" aria-label="Start compressor">
+      <span class="control-copy">
+        <span class="control-title">Start Compressor</span>
+        <span class="control-meta">Set target to cooling</span>
+      </span>
+      <span class="control-value cool">70F</span>
+    </button>
+    <button id="stopCompressorBtn" onclick="sendPhase('resting')" class="dashboard-button control-row" aria-label="Stop compressor">
+      <span class="control-copy">
+        <span class="control-title">Stop Compressor</span>
+        <span class="control-meta">Raise target to resting</span>
+      </span>
+      <span class="control-value warm">80F</span>
+    </button>
+    <div onclick="toggleSwing()" class="control-row swing-control" role="button" aria-label="Toggle swing">
+      <span class="control-copy">
+        <span class="control-title">Swing</span>
+        <span class="control-meta" id="swingState">Off</span>
+      </span>
+      <span class="switch" aria-hidden="true">
+        <input class="switch-input" id="swingToggle" name="toggle" type="checkbox" tabindex="-1">
+        <span class="switch-slider"></span>
+      </span>
+    </div>
+    <button id="powerBtn" onclick="togglePower()" class="dashboard-button control-row power-off" aria-label="Toggle AC power">
+      <span class="control-copy">
+        <span class="control-title" id="powerLabel">Turn AC On</span>
+        <span class="control-meta">Device power</span>
+      </span>
+      <span class="control-value" id="powerMeta">AC is off</span>
+    </button>
+  </div>
 
-  <script>
-    const message = document.getElementById('message');
+  <div class="footer-row">
+    <button onclick="openCloseConfirm()" class="utility-button" aria-label="Close server">Close Server</button>
+    <a id="phoneUrl" class="footer-link" href="#">loading...</a>
+  </div>
+</main>
 
-    function fmtSeconds(value) {
-      if (value === null || value === undefined) return '--:--';
-      const seconds = Math.max(0, Math.floor(value));
-      const minutes = Math.floor(seconds / 60);
-      const rest = seconds % 60;
-      return String(minutes).padStart(2, '0') + ':' + String(rest).padStart(2, '0');
-    }
+<div id="closeConfirmOverlay" class="fixed inset-0 z-40 hidden items-center justify-center bg-black/65 backdrop-blur-md p-4" role="dialog" aria-modal="true" aria-labelledby="closeConfirmTitle">
+  <div class="confirm-card">
+    <h2 id="closeConfirmTitle" class="confirm-title">Close Server?</h2>
+    <p class="confirm-detail">The cycle will stop and the local panel server will shut down. You can reopen it from the server shortcut later.</p>
+    <div class="confirm-actions">
+      <button id="closeConfirmCancel" onclick="closeCloseConfirm()" class="confirm-button confirm-cancel" type="button">Cancel</button>
+      <button id="closeConfirmAccept" onclick="shutdownServer()" class="confirm-button confirm-danger" type="button">Close Server</button>
+    </div>
+  </div>
+</div>
 
-    function fmtTemperature(value, unit) {
-      if (value === null || value === undefined) return '--';
-      const rounded = Math.abs(value - Math.round(value)) < 0.05 ? String(Math.round(value)) : value.toFixed(1);
-      return rounded + unit;
-    }
+<div id="shutdownOverlay" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/75 backdrop-blur-md p-4">
+  <div class="shutdown-card">
+    <span id="shutdownIcon" class="material-symbols-outlined text-[30px]">hourglass_top</span>
+    <div id="shutdownTitle" class="mt-3 text-lg font-semibold text-white">Closing server</div>
+    <div id="shutdownDetail" class="mt-1 text-xs leading-5 text-slate-300">Stopping the cycle and shutting down the local panel.</div>
+  </div>
+</div>
 
-    function fmtAge(timestamp) {
-      if (!timestamp) return 'Not read yet';
-      const seconds = Math.max(0, Math.floor(Date.now() / 1000 - timestamp));
-      if (seconds < 60) return seconds + ' sec ago';
-      const minutes = Math.floor(seconds / 60);
-      if (minutes < 60) return minutes + ' min ago';
-      return Math.floor(minutes / 60) + ' hr ago';
-    }
+<script>
+  const closeConfirmOverlay = document.getElementById('closeConfirmOverlay');
+  const closeConfirmAccept = document.getElementById('closeConfirmAccept');
+  let refreshTimer = null;
 
-    function setMessage(text, kind) {
-      message.textContent = text || '';
-      message.className = 'message ' + (kind || '');
-    }
+  function setMessage(text, kind) {
+    return;
+  }
 
-    function renderTemperature(temperature) {
-      const value = document.getElementById('activeTempF');
-      const meta = document.getElementById('activeTempMeta');
-      if (!temperature) {
-        value.textContent = '--';
-        meta.textContent = 'Not read yet.';
-        meta.title = '';
-        return;
-      }
-      if (temperature.error) {
-        value.textContent = '--';
-        meta.textContent = 'Error: ' + temperature.error;
-        meta.title = '';
-        return;
-      }
-      if (temperature.fahrenheit === null || temperature.fahrenheit === undefined) {
-        value.textContent = '--';
-        meta.textContent = temperature.updated_at ? 'Status read, target temperature not found.' : 'Not read yet.';
-        meta.title = '';
-        return;
-      }
-      value.textContent = fmtTemperature(temperature.fahrenheit, 'F');
-      meta.textContent = fmtTemperature(temperature.celsius, 'C') + ' | Last read ' + fmtAge(temperature.updated_at);
-      meta.title = temperature.source ? 'Source: ' + temperature.source : '';
-    }
+  function openCloseConfirm() {
+    closeConfirmAccept.disabled = false;
+    closeConfirmOverlay.classList.remove('hidden');
+    closeConfirmOverlay.classList.add('flex');
+    setTimeout(() => closeConfirmAccept.focus(), 0);
+  }
 
-    async function requestJson(path, options) {
-      const response = await fetch(path, options || {});
-      const data = await response.json();
-      if (!response.ok || data.ok === false) {
-        throw new Error(data.error || response.statusText);
-      }
-      return data;
-    }
+  function closeCloseConfirm() {
+    closeConfirmOverlay.classList.add('hidden');
+    closeConfirmOverlay.classList.remove('flex');
+  }
 
-    async function refreshState() {
+  function showShutdownOverlay(title, detail, icon, color) {
+    const overlay = document.getElementById('shutdownOverlay');
+    document.getElementById('shutdownTitle').textContent = title;
+    document.getElementById('shutdownDetail').textContent = detail;
+    const shutdownIcon = document.getElementById('shutdownIcon');
+    shutdownIcon.textContent = icon;
+    shutdownIcon.style.color = color;
+    overlay.classList.remove('hidden');
+    overlay.classList.add('flex');
+  }
+
+  function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  async function waitForServerClose() {
+    for (let attempt = 0; attempt < 12; attempt += 1) {
+      await sleep(250);
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 500);
       try {
-        const data = await requestJson('/api/state');
-        renderState(data.state);
+        await fetch('/api/state?shutdown_check=' + Date.now(), { cache: 'no-store', signal: controller.signal });
       } catch (error) {
-        setMessage(error.message, 'error');
+        return true;
+      } finally {
+        clearTimeout(timeout);
       }
     }
+    return false;
+  }
 
-    function renderState(state) {
-      const pill = document.getElementById('runPill');
-      pill.classList.toggle('running', state.running);
-      document.getElementById('runText').textContent = state.running ? 'Cycle running' : 'Cycle stopped';
-      document.getElementById('phase').textContent = state.phase || 'stopped';
-      document.getElementById('remaining').textContent = fmtSeconds(state.remaining_seconds);
-      document.getElementById('lastAction').textContent = state.last_action || 'No recent activity.';
-      document.getElementById('coolingSetpoint').textContent = state.cycle.cooling_setpoint_f + 'F';
-      document.getElementById('restingSetpoint').textContent = state.cycle.resting_setpoint_f + 'F';
-      document.getElementById('coolingMinutes').textContent = state.cycle.cooling_minutes;
-      document.getElementById('restingMinutes').textContent = state.cycle.resting_minutes;
-      document.getElementById('configPath').textContent = state.config_path;
-      document.getElementById('logs').textContent = state.logs.length ? state.logs.join('\n') : 'No logs.';
-      const phoneUrl = document.getElementById('phoneUrl');
-      const urls = state.network_urls || [];
-      if (urls.length) {
-        phoneUrl.textContent = 'Phone: ' + urls[0];
-        phoneUrl.title = urls.join('\n');
-      } else {
-        phoneUrl.textContent = 'Use the same Wi-Fi for phone access';
-        phoneUrl.title = state.local_url || '';
-      }
-      renderTemperature(state.active_temperature);
-      document.getElementById('startBtn').disabled = state.running;
-      document.getElementById('stopBtn').disabled = !state.running;
-      document.getElementById('startupBtn').disabled = state.running;
-      document.getElementById('coolBtn').disabled = state.running;
-      document.getElementById('restBtn').disabled = state.running;
-      if (state.last_error) setMessage(state.last_error, 'error');
+  function fmtSeconds(value) {
+    if (value === null || value === undefined) return '--:--';
+    const seconds = Math.max(0, Math.floor(value));
+    const minutes = Math.floor(seconds / 60);
+    const rest = seconds % 60;
+    return String(minutes).padStart(2, '0') + ':' + String(rest).padStart(2, '0');
+  }
+
+  function fmtTemperature(value, unit) {
+    if (value === null || value === undefined) return '--';
+    const rounded = Math.abs(value - Math.round(value)) < 0.05 ? String(Math.round(value)) : value.toFixed(1);
+    return rounded + unit;
+  }
+
+  function fmtAge(timestamp) {
+    if (!timestamp) return 'Not read yet';
+    const seconds = Math.max(0, Math.floor(Date.now() / 1000 - timestamp));
+    if (seconds < 60) return seconds + ' sec ago';
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return minutes + ' min ago';
+    return Math.floor(minutes / 60) + ' hr ago';
+  }
+
+  function renderTemperature(temperature) {
+    const value = document.getElementById('activeTempF');
+    const meta = document.getElementById('activeTempMeta');
+    if (!temperature) {
+      value.textContent = '--';
+      meta.textContent = 'Not read yet';
+      return;
+    }
+    if (temperature.error) {
+      value.textContent = '--';
+      meta.textContent = 'Error: ' + temperature.error;
+      return;
+    }
+    if (temperature.fahrenheit === null || temperature.fahrenheit === undefined) {
+      value.textContent = '--';
+      meta.textContent = temperature.updated_at ? 'Target not found' : 'Not read yet';
+      return;
+    }
+    value.textContent = fmtTemperature(temperature.fahrenheit, 'F');
+    meta.textContent = fmtTemperature(temperature.celsius, 'C') + ' - ' + fmtAge(temperature.updated_at);
+  }
+
+  async function requestJson(path, options) {
+    const response = await fetch(path, options || {});
+    const data = await response.json();
+    if (!response.ok || data.ok === false) {
+      throw new Error(data.error || response.statusText);
+    }
+    return data;
+  }
+
+  async function refreshState() {
+    try {
+      const data = await requestJson('/api/state');
+      renderState(data.state);
+    } catch (error) {
+      setMessage(error.message, 'error');
+    }
+  }
+
+  let latestState = null;
+
+  function renderState(state) {
+    latestState = state;
+    const dot = document.getElementById('statusDot');
+    const glowRose = document.getElementById('glowRose');
+    const glowBlue = document.getElementById('glowBlue');
+
+    document.getElementById('phase').textContent = state.phase || 'stopped';
+    document.getElementById('remaining').textContent = fmtSeconds(state.remaining_seconds);
+
+    if (state.running) {
+      document.getElementById('runText').textContent = 'Running';
+      dot.classList.add('animate-breathe');
+      dot.style.backgroundColor = '#4ad9d9';
+    } else {
+      document.getElementById('runText').textContent = 'Stopped';
+      dot.classList.remove('animate-breathe');
+      dot.style.backgroundColor = '#ff6b6b';
     }
 
-    async function postAction(path) {
-      try {
-        const data = await requestJson(path, { method: 'POST' });
-        setMessage(data.message || 'Done.', 'ok');
-        renderState(data.state);
-      } catch (error) {
-        setMessage(error.message, 'error');
-        refreshState();
-      }
+    const swingToggle = document.getElementById('swingToggle');
+    const swingState = document.getElementById('swingState');
+    if (state.swing_wind) {
+      swingToggle.checked = true;
+      swingState.textContent = 'On';
+    } else {
+      swingToggle.checked = false;
+      swingState.textContent = 'Off';
     }
 
-    async function sendPhase(phase) {
-      try {
-        const data = await requestJson('/api/phase', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ phase })
-        });
-        setMessage(data.message || 'Command sent.', 'ok');
-        renderState(data.state);
-      } catch (error) {
-        setMessage(error.message, 'error');
-        refreshState();
-      }
+    const phoneUrl = document.getElementById('phoneUrl');
+    const urls = state.network_urls || [];
+    if (urls.length) {
+      phoneUrl.textContent = urls[0];
+      phoneUrl.href = urls[0];
+    } else {
+      phoneUrl.textContent = 'No phone URL';
+      phoneUrl.href = '#';
     }
 
-    async function readDeviceStatus() {
-      try {
-        setMessage('Reading device status...', '');
-        const data = await requestJson('/api/device-status');
-        document.getElementById('deviceStatus').textContent = JSON.stringify(data.device_status, null, 2);
-        if (data.state) renderState(data.state);
-        const temperature = data.active_temperature || (data.state && data.state.active_temperature);
-        renderTemperature(temperature);
+    renderTemperature(state.active_temperature);
+
+    document.getElementById('startBtn').disabled = state.running;
+    document.getElementById('stopBtn').disabled = !state.running;
+    const stopCompressorBtn = document.getElementById('stopCompressorBtn');
+    const activeTempF = Number(state.active_temperature && state.active_temperature.fahrenheit);
+    const restingSetpointF = Number(state.cycle && state.cycle.resting_setpoint_f);
+    const alreadyResting = Number.isFinite(activeTempF)
+      && Number.isFinite(restingSetpointF)
+      && Math.abs(activeTempF - restingSetpointF) < 0.5;
+    stopCompressorBtn.disabled = alreadyResting;
+    stopCompressorBtn.title = alreadyResting ? 'AC is already at ' + restingSetpointF + 'F.' : '';
+
+    const powerBtn = document.getElementById('powerBtn');
+    const powerLabel = document.getElementById('powerLabel');
+    const powerMeta = document.getElementById('powerMeta');
+    if (state.power_switch) {
+      powerBtn.classList.remove('power-off');
+      powerBtn.classList.add('power-on');
+      powerLabel.textContent = 'Turn AC Off';
+      powerMeta.textContent = 'AC is on';
+    } else {
+      powerBtn.classList.remove('power-on');
+      powerBtn.classList.add('power-off');
+      powerLabel.textContent = 'Turn AC On';
+      powerMeta.textContent = 'AC is off';
+    }
+
+    if (state.last_error) setMessage(state.last_error, 'error');
+  }
+
+  async function postAction(path) {
+    try {
+      const data = await requestJson(path, { method: 'POST' });
+      setMessage(data.message || 'Done.', 'ok');
+      renderState(data.state);
+    } catch (error) {
+      setMessage(error.message, 'error');
+      refreshState();
+    }
+  }
+
+  async function sendPhase(phase) {
+    try {
+      const data = await requestJson('/api/phase', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phase })
+      });
+      setMessage(data.message || 'Command sent.', 'ok');
+      renderState(data.state);
+    } catch (error) {
+      setMessage(error.message, 'error');
+      refreshState();
+    }
+  }
+
+  async function readDeviceStatus(silent) {
+    try {
+      if (!silent) setMessage('Reading...', '');
+      const data = await requestJson('/api/device-status');
+      if (data.state) renderState(data.state);
+      const temperature = data.active_temperature || (data.state && data.state.active_temperature);
+      renderTemperature(temperature);
+      if (!silent) {
         if (temperature && temperature.fahrenheit !== null && temperature.fahrenheit !== undefined) {
-          setMessage('AC setting refreshed: ' + fmtTemperature(temperature.fahrenheit, 'F'), 'ok');
+          setMessage('AC: ' + fmtTemperature(temperature.fahrenheit, 'F'), 'ok');
         } else {
-          setMessage('Status read, target temperature not found.', 'ok');
+          setMessage('Target not found.', 'ok');
         }
-      } catch (error) {
+      }
+    } catch (error) {
+      setMessage(error.message, 'error');
+      if (silent) await refreshState();
+    }
+  }
+
+  async function shutdownServer() {
+    closeConfirmAccept.disabled = true;
+    closeCloseConfirm();
+    if (refreshTimer) {
+      clearInterval(refreshTimer);
+      refreshTimer = null;
+    }
+    showShutdownOverlay(
+      'Closing server',
+      'Stopping the cycle and shutting down the local panel.',
+      'hourglass_top',
+      '#bec6e0'
+    );
+    try {
+      await requestJson('/api/shutdown', { method: 'POST' });
+      const closed = await waitForServerClose();
+      if (closed) {
+        showShutdownOverlay(
+          'Server closed',
+          'The local panel server has stopped. You can close this tab.',
+          'check_circle',
+          '#6ee7b7'
+        );
+        setMessage('Server closed. You can close this tab.', 'ok');
+      } else {
+        showShutdownOverlay(
+          'Shutdown requested',
+          'The close command was sent, but the page could not verify that the server stopped yet.',
+          'info',
+          '#fcd34d'
+        );
+        setMessage('Shutdown requested, but not verified yet.', 'ok');
+      }
+    } catch (error) {
+      const closed = await waitForServerClose();
+      if (closed) {
+        showShutdownOverlay(
+          'Server closed',
+          'The local panel server stopped after the close request. You can close this tab.',
+          'check_circle',
+          '#6ee7b7'
+        );
+        setMessage('Server closed. You can close this tab.', 'ok');
+      } else {
+        showShutdownOverlay(
+          'Close failed',
+          error.message,
+          'error',
+          '#fda4af'
+        );
         setMessage(error.message, 'error');
+        refreshTimer = setInterval(refreshState, 2000);
       }
     }
+  }
 
-    async function shutdownServer() {
-      if (!confirm('Close the panel server? The cycle will stop too.')) return;
-      try {
-        await requestJson('/api/shutdown', { method: 'POST' });
-        setMessage('Panel server is closing. You can close this tab.', 'ok');
-      } catch (error) {
-        setMessage(error.message, 'error');
-      }
+  async function togglePower() {
+    try {
+      const current = latestState ? latestState.power_switch : false;
+      const next = !current;
+      await requestJson('/api/power', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ enabled: next })
+      });
+      refreshState();
+    } catch (error) {
+      setMessage(error.message, 'error');
     }
+  }
 
-    refreshState();
-    setInterval(refreshState, 2000);
-  </script>
+  async function toggleSwing() {
+    try {
+      const current = latestState ? latestState.swing_wind : false;
+      const next = !current;
+      await requestJson('/api/swing', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ enabled: next })
+      });
+      refreshState();
+    } catch (error) {
+      setMessage(error.message, 'error');
+    }
+  }
+
+  async function loadInitialState() {
+    await readDeviceStatus(true);
+    if (!refreshTimer) refreshTimer = setInterval(refreshState, 2000);
+  }
+
+  closeConfirmOverlay.addEventListener('click', (event) => {
+    if (event.target === closeConfirmOverlay) closeCloseConfirm();
+  });
+
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && !closeConfirmOverlay.classList.contains('hidden')) {
+      closeCloseConfirm();
+    }
+  });
+
+  loadInitialState();
+</script>
 </body>
 </html>
 """
@@ -562,6 +1211,38 @@ def numeric_value(value: Any) -> float | None:
     return None
 
 
+def boolean_value(value: Any) -> bool | None:
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, str):
+        normalized = value.strip().lower()
+        if normalized in {"1", "true", "on", "yes"}:
+            return True
+        if normalized in {"0", "false", "off", "no"}:
+            return False
+        try:
+            value = float(normalized)
+        except ValueError:
+            return None
+    if isinstance(value, (int, float)):
+        return value != 0
+    return None
+
+
+def extract_bool_property(status: Any, property_name: str) -> bool | None:
+    target_paths = [
+        ("state", "reported", property_name),
+        ("state", "desired", property_name),
+        ("reported", property_name),
+        ("desired", property_name),
+    ]
+    for path in target_paths:
+        value = boolean_value(value_at_path(status, path))
+        if value is not None:
+            return value
+    return None
+
+
 def extract_active_temperature(status: Any) -> dict[str, Any]:
     target_paths = [
         (("state", "reported", "targetFahrenheitDegree"), "F"),
@@ -602,6 +1283,10 @@ class WebController:
 
         self.state_lock = threading.RLock()
         self.command_lock = threading.RLock()
+        self.command_queue: queue.Queue[Any] = queue.Queue()
+        self._worker_active = True
+        self._worker_thread = threading.Thread(target=self._command_worker, name="tcl-cmd-worker", daemon=True)
+        self._worker_thread.start()
         self.thread: threading.Thread | None = None
         self.stop_event = threading.Event()
         self.last_command_at = 0.0
@@ -615,6 +1300,8 @@ class WebController:
         self.last_action = "Panel ready."
         self.last_error: str | None = None
         self.active_temperature = empty_temperature()
+        self.power_switch = False
+        self.swing_wind = False
 
     def snapshot(self) -> dict[str, Any]:
         with self.state_lock:
@@ -625,6 +1312,8 @@ class WebController:
             return {
                 "running": self.running,
                 "phase": self.phase,
+                "power_switch": self.power_switch,
+                "swing_wind": self.swing_wind,
                 "cycle_number": self.cycle_number,
                 "phase_started_at": self.phase_started_at,
                 "phase_end_at": self.phase_end_at,
@@ -679,13 +1368,55 @@ class WebController:
 
     def send_startup(self) -> str:
         self._ensure_stopped_for_manual_command()
-        with self.command_lock:
-            logging.info("Web: startup command requested")
-            self.backend.startup()
-        with self.state_lock:
-            self.last_action = "Swing startup command sent."
-            self.last_error = None
-        return "Swing startup command sent."
+        def updater(done: bool, error: str | None) -> None:
+            if done:
+                self.last_action = "Swing startup done."
+            elif error:
+                self.last_action = f"Swing startup failed: {error}"
+                self.last_error = error
+            else:
+                self.last_action = "Swing startup queued."
+                self.last_error = None
+        self._enqueue_command(lambda: self.backend.startup(), "Swing startup", updater)
+        return "Swing startup queued."
+
+    def set_power_switch(self, enabled: bool) -> str:
+        status = "on" if enabled else "off"
+        prev = self.power_switch
+        def updater(done: bool, error: str | None) -> None:
+            if done:
+                pass
+            elif error:
+                self.power_switch = prev
+                self.last_action = f"AC power failed: {error}"
+                self.last_error = error
+            else:
+                self.power_switch = enabled
+                self.last_action = f"AC power turned {status}."
+                self.last_error = None
+        self._enqueue_command(
+            lambda ev=enabled: self.backend.set_power_switch(ev), f"AC power {status}", updater
+        )
+        return f"AC power turned {status}."
+
+    def set_swing_wind(self, enabled: bool) -> str:
+        status = "on" if enabled else "off"
+        prev = self.swing_wind
+        def updater(done: bool, error: str | None) -> None:
+            if done:
+                pass
+            elif error:
+                self.swing_wind = prev
+                self.last_action = f"Swing failed: {error}"
+                self.last_error = error
+            else:
+                self.swing_wind = enabled
+                self.last_action = f"Swing turned {status}."
+                self.last_error = None
+        self._enqueue_command(
+            lambda ev=enabled: self.backend.set_swing_wind(ev), f"Swing {status}", updater
+        )
+        return f"Swing turned {status}."
 
     def send_phase(self, phase: str) -> str:
         self._ensure_stopped_for_manual_command()
@@ -697,26 +1428,90 @@ class WebController:
             label = "resting"
         else:
             raise ConfigError("phase must be cooling or resting")
-        if not self._safe_apply(setpoint, label, threading.Event()):
-            raise BackendError("Manual command cancelled")
-        with self.state_lock:
-            self.last_action = f"{setpoint:g}F {label} command sent."
-            self.last_error = None
-        return f"{setpoint:g}F command sent."
+        def updater(done: bool, error: str | None) -> None:
+            if done:
+                normalized = normalize_temperature(setpoint, "F")
+                self.active_temperature = {
+                    "fahrenheit": normalized["fahrenheit"],
+                    "celsius": normalized["celsius"],
+                    "source": f"manual.{label}",
+                    "updated_at": time.time(),
+                    "error": None,
+                }
+                self.last_action = f"{setpoint:g}F {label} done."
+            elif error:
+                self.last_action = f"{label} command failed: {error}"
+                self.last_error = error
+            else:
+                self.last_action = f"{setpoint:g}F {label} queued."
+                self.last_error = None
+        self._enqueue_command(
+            lambda sp=setpoint, lb=label: self._safe_apply_sync(sp, lb),
+            f"{setpoint:g}F {label}", updater,
+        )
+        return f"{setpoint:g}F command queued."
 
     def read_device_status(self) -> Any:
         with self.command_lock:
             logging.info("Web: device status requested")
             status = self.backend.status()
         temperature = extract_active_temperature(status)
+        swing_wind = extract_bool_property(status, "swingWind")
+        power_switch = extract_bool_property(status, "powerSwitch")
         with self.state_lock:
             self.active_temperature = temperature
+            if swing_wind is not None:
+                self.swing_wind = swing_wind
+            if power_switch is not None:
+                self.power_switch = power_switch
         return status
+
+    def _safe_apply_sync(self, setpoint_f: float, phase: str) -> None:
+        if not self._safe_apply(setpoint_f, phase, threading.Event()):
+            raise BackendError("Manual command cancelled")
 
     def _ensure_stopped_for_manual_command(self) -> None:
         with self.state_lock:
             if self.running:
                 raise BackendError("Manual commands are disabled while the cycle is running. Stop the cycle first.")
+
+    def _enqueue_command(
+        self,
+        fn: Any,
+        description: str,
+        state_updater: Any,
+    ) -> None:
+        with self.state_lock:
+            state_updater(False, None)
+        self.command_queue.put((fn, description, state_updater))
+
+    def _command_worker(self) -> None:
+        while self._worker_active:
+            try:
+                item = self.command_queue.get(timeout=0.5)
+            except queue.Empty:
+                continue
+            if item is None:
+                self.command_queue.task_done()
+                break
+            fn, description, state_updater = item
+            try:
+                with self.command_lock:
+                    logging.info("Web: running queued command: %s", description)
+                    fn()
+                with self.state_lock:
+                    state_updater(True, None)
+            except Exception as exc:
+                error_msg = str(exc)
+                logging.error("Web: command %s failed: %s", description, error_msg)
+                with self.state_lock:
+                    state_updater(False, error_msg)
+            finally:
+                self.command_queue.task_done()
+
+    def _shutdown_worker(self) -> None:
+        self._worker_active = False
+        self.command_queue.put(None)
 
     def _run_cycle(self) -> None:
         try:
@@ -801,9 +1596,8 @@ class RequestHandler(BaseHTTPRequestHandler):
         if parsed.path == "/":
             self._send_html(PAGE_HTML)
             return
-        if parsed.path == "/favicon.ico":
-            self.send_response(HTTPStatus.NO_CONTENT)
-            self.end_headers()
+        if parsed.path in {"/favicon.ico", "/favicon.png"}:
+            self._send_favicon()
             return
         if parsed.path == "/api/state":
             self._send_json({"ok": True, "state": self.server.controller.snapshot()})
@@ -828,6 +1622,18 @@ class RequestHandler(BaseHTTPRequestHandler):
                 message = self.server.controller.send_startup()
                 self._send_json({"ok": True, "message": message, "state": self.server.controller.snapshot()})
                 return
+            if parsed.path == "/api/power":
+                body = self._read_json_body()
+                enabled = bool(body.get("enabled", False))
+                message = self.server.controller.set_power_switch(enabled)
+                self._send_json({"ok": True, "message": message, "state": self.server.controller.snapshot()})
+                return
+            if parsed.path == "/api/swing":
+                body = self._read_json_body()
+                enabled = bool(body.get("enabled", False))
+                message = self.server.controller.set_swing_wind(enabled)
+                self._send_json({"ok": True, "message": message, "state": self.server.controller.snapshot()})
+                return
             if parsed.path == "/api/phase":
                 body = self._read_json_body()
                 phase = str(body.get("phase", ""))
@@ -837,6 +1643,7 @@ class RequestHandler(BaseHTTPRequestHandler):
             if parsed.path == "/api/shutdown":
                 message = self.server.controller.stop_cycle()
                 self._send_json({"ok": True, "message": message})
+                self.server.controller._shutdown_worker()
                 threading.Thread(target=self.server.shutdown, name="tcl-web-shutdown", daemon=True).start()
                 return
             self._send_json({"ok": False, "error": "Not found"}, HTTPStatus.NOT_FOUND)
@@ -886,6 +1693,20 @@ class RequestHandler(BaseHTTPRequestHandler):
         raw = html.encode("utf-8")
         self.send_response(status)
         self.send_header("Content-Type", "text/html; charset=utf-8")
+        self.send_header("Content-Length", str(len(raw)))
+        self.end_headers()
+        self.wfile.write(raw)
+
+    def _send_favicon(self) -> None:
+        try:
+            raw = FAVICON_PATH.read_bytes()
+        except OSError:
+            self.send_response(HTTPStatus.NO_CONTENT)
+            self.end_headers()
+            return
+        self.send_response(HTTPStatus.OK)
+        self.send_header("Content-Type", "image/png")
+        self.send_header("Cache-Control", "public, max-age=86400")
         self.send_header("Content-Length", str(len(raw)))
         self.end_headers()
         self.wfile.write(raw)

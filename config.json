@@ -14,13 +14,6 @@
     "status_log_seconds": 60
   },
   "backends": {
-    "home_assistant": {
-      "base_url": "http://homeassistant.local:8123",
-      "token": "${HA_TOKEN}",
-      "entity_id": "climate.tcl_portatif_klima",
-      "temperature_unit": "F",
-      "timeout_seconds": 20
-    },
     "tcl_home_aws": {
       "api_base_url": "https://eu-iot-api-prod.tcljd.com",
       "iot_data_endpoint": "https://data.iot.eu-central-1.amazonaws.com",
@@ -43,29 +36,6 @@
         "windSpeed": 2
       },
       "timeout_seconds": 20
-    },
-    "tuya_cloud": {
-      "endpoint": "https://openapi.tuyaeu.com",
-      "access_id": "${TUYA_ACCESS_ID}",
-      "access_secret": "${TUYA_ACCESS_SECRET}",
-      "device_id": "${TUYA_DEVICE_ID}",
-      "timeout_seconds": 20,
-      "commands": {
-        "mode": {
-          "code": "mode",
-          "cool_value": "cold"
-        },
-        "temperature": {
-          "code": "temp_set",
-          "unit": "C",
-          "scale": 1,
-          "value_type": "integer"
-        },
-        "fan": {
-          "code": "fan_speed_enum",
-          "value": "auto"
-        }
-      }
     }
   }
 }

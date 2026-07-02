@@ -149,11 +149,17 @@ PAGE_HTML = r"""<!doctype html>
     margin: 0;
   }
 
+  button:not(:disabled),
+  [role="button"],
+  .footer-link {
+    cursor: pointer;
+  }
+
   .app-shell {
     width: min(100%, 520px);
     padding: 18px;
     border: 1px solid var(--panel-border);
-    border-radius: 30px;
+    border-radius: 24px;
     background:
       linear-gradient(180deg, rgba(255, 255, 255, 0.055), transparent 24%),
       var(--panel-bg);
@@ -166,7 +172,7 @@ PAGE_HTML = r"""<!doctype html>
     width: 100%;
     padding: 22px;
     border: 1px solid var(--card-border);
-    border-radius: 24px;
+    border-radius: 20px;
     background:
       radial-gradient(circle at 82% 12%, rgba(103, 232, 249, 0.14), transparent 30%),
       linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.035));
@@ -303,7 +309,7 @@ PAGE_HTML = r"""<!doctype html>
     min-height: 76px;
     padding: 16px;
     border: 1px solid transparent;
-    border-radius: 20px;
+    border-radius: 16px;
     text-align: left;
     transition: transform 0.18s ease, opacity 0.18s ease, background 0.18s ease, border-color 0.18s ease;
   }
@@ -377,12 +383,18 @@ PAGE_HTML = r"""<!doctype html>
     gap: 9px;
   }
 
+  .control-pair {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 9px;
+  }
+
   .control-row {
     width: 100%;
     min-height: 66px;
     gap: 14px;
     padding: 14px 16px;
-    border-radius: 18px;
+    border-radius: 14px;
     color: inherit;
     text-align: left;
     cursor: pointer;
@@ -391,6 +403,20 @@ PAGE_HTML = r"""<!doctype html>
 
   .control-copy {
     min-width: 0;
+  }
+
+  .control-pair .control-row {
+    min-width: 0;
+    gap: 10px;
+    padding-inline: 14px;
+  }
+
+  .control-pair .control-title,
+  .control-pair .control-meta,
+  .control-pair .control-value {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .control-value {
@@ -511,7 +537,7 @@ PAGE_HTML = r"""<!doctype html>
     width: min(100%, 360px);
     padding: 24px;
     border: 1px solid var(--panel-border);
-    border-radius: 24px;
+    border-radius: 20px;
     background: rgba(18, 20, 24, 0.94);
     box-shadow: 0 24px 70px rgba(0, 0, 0, 0.58);
     text-align: center;
@@ -521,7 +547,7 @@ PAGE_HTML = r"""<!doctype html>
     width: min(100%, 380px);
     padding: 22px;
     border: 1px solid var(--panel-border);
-    border-radius: 26px;
+    border-radius: 22px;
     background:
       linear-gradient(180deg, rgba(255, 255, 255, 0.06), transparent 28%),
       rgba(18, 20, 24, 0.96);
@@ -554,7 +580,7 @@ PAGE_HTML = r"""<!doctype html>
     width: 100%;
     min-height: 44px;
     border: 1px solid var(--card-border);
-    border-radius: 15px;
+    border-radius: 12px;
     font-size: 13px;
     font-weight: 750;
     transition: transform 0.18s ease, background 0.18s ease, border-color 0.18s ease;
@@ -647,12 +673,12 @@ PAGE_HTML = r"""<!doctype html>
 
     .app-shell {
       padding: 12px;
-      border-radius: 24px;
+      border-radius: 20px;
     }
 
     .hero-card {
       padding: 18px;
-      border-radius: 20px;
+      border-radius: 17px;
     }
 
     .hero-footer {
@@ -678,6 +704,24 @@ PAGE_HTML = r"""<!doctype html>
     .control-row {
       min-height: 62px;
       padding: 13px 14px;
+    }
+
+    .control-pair {
+      gap: 8px;
+    }
+
+    .control-pair .control-row {
+      padding: 12px;
+      gap: 8px;
+    }
+
+    .control-pair .control-title {
+      font-size: 14px;
+    }
+
+    .control-pair .control-meta,
+    .control-pair .control-value {
+      font-size: 11px;
     }
 
     .footer-row {
@@ -738,35 +782,39 @@ PAGE_HTML = r"""<!doctype html>
 
   <p class="section-label">Manual Control</p>
   <div class="control-list">
-    <button onclick="sendPhase('cooling')" class="dashboard-button control-row" aria-label="Start compressor">
-      <span class="control-copy">
-        <span class="control-title">Start Compressor</span>
-        <span class="control-meta">Set target to cooling</span>
-      </span>
-    </button>
-    <button id="stopCompressorBtn" onclick="sendPhase('resting')" class="dashboard-button control-row" aria-label="Stop compressor">
-      <span class="control-copy">
-        <span class="control-title">Stop Compressor</span>
-        <span class="control-meta">Raise target to resting</span>
-      </span>
-    </button>
-    <div onclick="toggleSwing()" class="control-row swing-control" role="button" aria-label="Toggle swing">
-      <span class="control-copy">
-        <span class="control-title">Swing</span>
-        <span class="control-meta" id="swingState">Off</span>
-      </span>
-      <span class="switch" aria-hidden="true">
-        <input class="switch-input" id="swingToggle" name="toggle" type="checkbox" tabindex="-1">
-        <span class="switch-slider"></span>
-      </span>
+    <div class="control-pair">
+      <button id="startCompressorBtn" onclick="sendPhase('cooling')" class="dashboard-button control-row" aria-label="Start compressor">
+        <span class="control-copy">
+          <span class="control-title">Start Compressor</span>
+          <span class="control-meta">Set target to cooling</span>
+        </span>
+      </button>
+      <button id="stopCompressorBtn" onclick="sendPhase('resting')" class="dashboard-button control-row" aria-label="Stop compressor">
+        <span class="control-copy">
+          <span class="control-title">Stop Compressor</span>
+          <span class="control-meta">Raise target to resting</span>
+        </span>
+      </button>
     </div>
-    <button id="powerBtn" onclick="togglePower()" class="dashboard-button control-row power-off" aria-label="Toggle AC power">
-      <span class="control-copy">
-        <span class="control-title" id="powerLabel">Turn AC On</span>
-        <span class="control-meta">Device power</span>
-      </span>
-      <span class="control-value" id="powerMeta">AC is off</span>
-    </button>
+    <div class="control-pair">
+      <div onclick="toggleSwing()" class="control-row swing-control" role="button" aria-label="Toggle swing">
+        <span class="control-copy">
+          <span class="control-title">Swing</span>
+          <span class="control-meta" id="swingState">Off</span>
+        </span>
+        <span class="switch" aria-hidden="true">
+          <input class="switch-input" id="swingToggle" name="toggle" type="checkbox" tabindex="-1">
+          <span class="switch-slider"></span>
+        </span>
+      </div>
+      <button id="powerBtn" onclick="togglePower()" class="dashboard-button control-row power-off" aria-label="Toggle AC power">
+        <span class="control-copy">
+          <span class="control-title" id="powerLabel">Turn AC On</span>
+          <span class="control-meta">Device power</span>
+        </span>
+        <span class="control-value" id="powerMeta">AC is off</span>
+      </button>
+    </div>
   </div>
 
   <div class="footer-row">
@@ -948,12 +996,19 @@ PAGE_HTML = r"""<!doctype html>
 
     document.getElementById('startBtn').disabled = state.running;
     document.getElementById('stopBtn').disabled = !state.running;
+    const startCompressorBtn = document.getElementById('startCompressorBtn');
     const stopCompressorBtn = document.getElementById('stopCompressorBtn');
     const activeTempF = Number(state.active_temperature && state.active_temperature.fahrenheit);
+    const coolingSetpointF = Number(state.cycle && state.cycle.cooling_setpoint_f);
     const restingSetpointF = Number(state.cycle && state.cycle.resting_setpoint_f);
+    const alreadyCooling = Number.isFinite(activeTempF)
+      && Number.isFinite(coolingSetpointF)
+      && Math.abs(activeTempF - coolingSetpointF) < 0.5;
     const alreadyResting = Number.isFinite(activeTempF)
       && Number.isFinite(restingSetpointF)
       && Math.abs(activeTempF - restingSetpointF) < 0.5;
+    startCompressorBtn.disabled = alreadyCooling;
+    startCompressorBtn.title = alreadyCooling ? 'AC is already at ' + coolingSetpointF + 'F.' : '';
     stopCompressorBtn.disabled = alreadyResting;
     stopCompressorBtn.title = alreadyResting ? 'AC is already at ' + restingSetpointF + 'F.' : '';
 
@@ -1441,6 +1496,15 @@ class WebController:
             self.phase_end_at = now + (minutes * 60.0)
         if not self._safe_apply(setpoint_f, phase, self.stop_event):
             return False
+        normalized = normalize_temperature(setpoint_f, "F")
+        with self.state_lock:
+            self.active_temperature = {
+                "fahrenheit": normalized["fahrenheit"],
+                "celsius": normalized["celsius"],
+                "source": f"cycle.{phase}",
+                "updated_at": time.time(),
+                "error": None,
+            }
         return self._wait_minutes(minutes, phase)
 
     def _safe_apply(self, setpoint_f: float, phase: str, stop_event: threading.Event) -> bool:

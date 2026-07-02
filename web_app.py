@@ -68,11 +68,11 @@ def network_urls(host: str, port: int) -> list[str]:
 
 
 PAGE_HTML = r"""<!doctype html>
-<html lang="tr">
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>TCL Klima Paneli</title>
+  <title>TCL AC Panel</title>
   <style>
     :root {
       color-scheme: dark;
@@ -91,6 +91,9 @@ PAGE_HTML = r"""<!doctype html>
     body {
       margin: 0;
       min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 18px 0;
       font-family: Inter, "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
       background:
         radial-gradient(circle at 18% 0%, rgba(98, 168, 255, 0.18), transparent 34%),
@@ -98,20 +101,20 @@ PAGE_HTML = r"""<!doctype html>
       color: var(--text);
     }
     main {
-      width: min(920px, calc(100% - 28px));
+      width: min(560px, calc(100% - 24px));
       margin: 0 auto;
-      padding: 22px 0;
+      padding: 0;
     }
     header {
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 12px;
-      margin-bottom: 12px;
+      margin-bottom: 10px;
     }
-    h1 { margin: 0; font-size: 22px; letter-spacing: -0.03em; }
+    h1 { margin: 0; font-size: 21px; letter-spacing: -0.03em; }
     .sub { margin-top: 3px; color: var(--muted); font-size: 12px; }
-    .phone-url { margin-top: 4px; color: var(--blue); font-size: 12px; font-weight: 700; }
+    .phone-url { margin-top: 4px; max-width: 330px; overflow: hidden; color: var(--blue); font-size: 12px; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
     .pill {
       display: inline-flex;
       align-items: center;
@@ -139,8 +142,8 @@ PAGE_HTML = r"""<!doctype html>
     .panel { padding: 16px; }
     .topline {
       display: grid;
-      grid-template-columns: 1.05fr 1fr;
-      gap: 12px;
+      grid-template-columns: 1fr;
+      gap: 10px;
       align-items: stretch;
     }
     .phase-card, .stat {
@@ -149,8 +152,8 @@ PAGE_HTML = r"""<!doctype html>
       background: var(--card-2);
     }
     .phase-card {
-      min-height: 150px;
-      padding: 18px;
+      min-height: 124px;
+      padding: 16px;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
@@ -162,7 +165,7 @@ PAGE_HTML = r"""<!doctype html>
       letter-spacing: 0.16em;
       text-transform: uppercase;
     }
-    .phase { margin-top: 8px; font-size: clamp(34px, 8vw, 58px); line-height: 0.94; letter-spacing: -0.07em; }
+    .phase { margin-top: 8px; font-size: clamp(34px, 9vw, 50px); line-height: 0.94; letter-spacing: -0.07em; }
     .remaining { color: var(--blue); font-size: 22px; font-weight: 800; }
     .last { margin-top: 10px; color: var(--muted); font-size: 12px; line-height: 1.45; }
     .stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
@@ -176,7 +179,7 @@ PAGE_HTML = r"""<!doctype html>
     .temp-meta { margin-top: 5px; color: var(--muted); font-size: 11px; line-height: 1.35; }
     .actions {
       display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
+      grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 9px;
       margin-top: 12px;
     }
@@ -204,14 +207,14 @@ PAGE_HTML = r"""<!doctype html>
     .message { min-height: 18px; margin-top: 10px; color: var(--muted); font-size: 12px; }
     .message.error { color: var(--red); }
     .message.ok { color: var(--green); }
-    .details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
+    .details-grid { margin-top: 10px; }
     details { overflow: hidden; }
     summary {
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 10px;
-      padding: 12px 14px;
+      padding: 11px 14px;
       cursor: pointer;
       color: var(--text);
       font-size: 13px;
@@ -220,11 +223,13 @@ PAGE_HTML = r"""<!doctype html>
     }
     summary::-webkit-details-marker { display: none; }
     .summary-note { color: var(--muted); font-size: 11px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .debug-body { border-top: 1px solid var(--line); }
+    .debug-section + .debug-section { border-top: 1px solid var(--line); }
+    .debug-title { padding: 10px 14px 0; color: var(--muted); font-size: 11px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; }
     pre {
-      max-height: 260px;
+      max-height: 210px;
       margin: 0;
-      padding: 12px 14px 14px;
-      border-top: 1px solid var(--line);
+      padding: 10px 14px 14px;
       overflow: auto;
       white-space: pre-wrap;
       background: rgba(0, 0, 0, 0.18);
@@ -233,10 +238,26 @@ PAGE_HTML = r"""<!doctype html>
       line-height: 1.42;
     }
     @media (max-width: 760px) {
-      main { width: min(100% - 18px, 920px); padding: 12px 0; }
+      body { align-items: start; padding: 10px 0; }
+      main { width: min(100% - 16px, 560px); }
       header { align-items: flex-start; }
-      .topline, .details-grid { grid-template-columns: 1fr; }
-      .actions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .phone-url { max-width: calc(100vw - 170px); }
+      .panel { padding: 14px; }
+      button { min-height: 48px; font-size: 14px; }
+      .temp-row button { min-height: 38px; }
+    }
+    @media (max-width: 480px) {
+      body { padding: 8px 0; place-items: start center; }
+      main { width: min(100% - 12px, 560px); }
+      header { display: grid; grid-template-columns: 1fr; gap: 8px; }
+      .pill { width: 100%; min-width: 0; }
+      .phone-url { max-width: 100%; }
+      .phase-card { min-height: 112px; }
+      .phase { font-size: clamp(34px, 14vw, 48px); }
+      .stats { gap: 8px; }
+      .stat { padding: 11px; }
+      .actions { gap: 8px; }
+      .wide { grid-column: 1 / -1; }
     }
   </style>
 </head>
@@ -244,63 +265,66 @@ PAGE_HTML = r"""<!doctype html>
   <main>
     <header>
       <div>
-        <h1>TCL Klima</h1>
+        <h1>TCL AC</h1>
         <div class="sub">Local panel | 70F / 80F cycle</div>
-        <div id="phoneUrl" class="phone-url">Telefon URL yukleniyor...</div>
+        <div id="phoneUrl" class="phone-url">Phone URL loading...</div>
       </div>
-      <div id="runPill" class="pill"><span class="dot"></span><span id="runText">Yukleniyor</span></div>
+      <div id="runPill" class="pill"><span class="dot"></span><span id="runText">Loading</span></div>
     </header>
 
     <section class="panel">
       <div class="topline">
         <div class="phase-card">
           <div>
-            <div class="label">Aktif faz</div>
+            <div class="label">Active phase</div>
             <div id="phase" class="phase">-</div>
           </div>
           <div>
             <div id="remaining" class="remaining">--:--</div>
-            <div id="lastAction" class="last">Son islem bekleniyor.</div>
+            <div id="lastAction" class="last">Waiting for activity.</div>
           </div>
         </div>
 
         <div class="stats">
           <div class="stat temp-stat">
-            <span>Klima ayari</span>
+            <span>AC setting</span>
             <div class="temp-row">
               <b id="activeTempF">--</b>
-              <button onclick="readDeviceStatus()">Yenile</button>
+              <button onclick="readDeviceStatus()">Refresh</button>
             </div>
-            <div id="activeTempMeta" class="temp-meta">Henuz okunmadi.</div>
+            <div id="activeTempMeta" class="temp-meta">Not read yet.</div>
           </div>
-          <div class="stat"><b id="coolingSetpoint">70F</b><span>Sogutma hedefi</span></div>
-          <div class="stat"><b id="restingSetpoint">80F</b><span>Dinlenme hedefi</span></div>
-          <div class="stat"><b id="coolingMinutes">20</b><span>Sogutma dakika</span></div>
-          <div class="stat"><b id="restingMinutes">20</b><span>Dinlenme dakika</span></div>
+          <div class="stat"><b id="coolingSetpoint">70F</b><span>Cooling target</span></div>
+          <div class="stat"><b id="restingSetpoint">80F</b><span>Rest target</span></div>
+          <div class="stat"><b id="coolingMinutes">20</b><span>Cooling min</span></div>
+          <div class="stat"><b id="restingMinutes">20</b><span>Rest min</span></div>
         </div>
       </div>
 
       <div class="actions">
-        <button id="startBtn" class="primary" onclick="postAction('/api/start')">Baslat</button>
-        <button id="stopBtn" class="danger" onclick="postAction('/api/stop')">Durdur</button>
+        <button id="startBtn" class="primary" onclick="postAction('/api/start')">Start</button>
+        <button id="stopBtn" class="danger" onclick="postAction('/api/stop')">Stop</button>
         <button id="coolBtn" class="cool" onclick="sendPhase('cooling')">70F</button>
         <button id="restBtn" class="warm" onclick="sendPhase('resting')">80F</button>
         <button id="startupBtn" onclick="postAction('/api/startup')">Swing</button>
-        <button onclick="readDeviceStatus()">Yenile</button>
-        <button class="wide" onclick="shutdownServer()">Serveri Kapat</button>
+        <button class="wide" onclick="shutdownServer()">Close Server</button>
       </div>
       <div id="message" class="message"></div>
     </section>
 
     <section class="details-grid">
       <details>
-        <summary><span>Canli Log</span><span id="configPath" class="summary-note"></span></summary>
-        <pre id="logs">Loglar yukleniyor...</pre>
-      </details>
-
-      <details>
-        <summary><span>Cihaz Status</span><span class="summary-note">Yenile butonu okur</span></summary>
-        <pre id="deviceStatus">Henuz okunmadi.</pre>
+        <summary><span>Details</span><span id="configPath" class="summary-note"></span></summary>
+        <div class="debug-body">
+          <div class="debug-section">
+            <div class="debug-title">Live Log</div>
+            <pre id="logs">Loading logs...</pre>
+          </div>
+          <div class="debug-section">
+            <div class="debug-title">Device Status</div>
+            <pre id="deviceStatus">Not read yet.</pre>
+          </div>
+        </div>
       </details>
     </section>
   </main>
@@ -323,12 +347,12 @@ PAGE_HTML = r"""<!doctype html>
     }
 
     function fmtAge(timestamp) {
-      if (!timestamp) return 'Henuz okunmadi';
+      if (!timestamp) return 'Not read yet';
       const seconds = Math.max(0, Math.floor(Date.now() / 1000 - timestamp));
-      if (seconds < 60) return seconds + ' sn once';
+      if (seconds < 60) return seconds + ' sec ago';
       const minutes = Math.floor(seconds / 60);
-      if (minutes < 60) return minutes + ' dk once';
-      return Math.floor(minutes / 60) + ' sa once';
+      if (minutes < 60) return minutes + ' min ago';
+      return Math.floor(minutes / 60) + ' hr ago';
     }
 
     function setMessage(text, kind) {
@@ -341,25 +365,25 @@ PAGE_HTML = r"""<!doctype html>
       const meta = document.getElementById('activeTempMeta');
       if (!temperature) {
         value.textContent = '--';
-        meta.textContent = 'Henuz okunmadi.';
+        meta.textContent = 'Not read yet.';
         meta.title = '';
         return;
       }
       if (temperature.error) {
         value.textContent = '--';
-        meta.textContent = 'Hata: ' + temperature.error;
+        meta.textContent = 'Error: ' + temperature.error;
         meta.title = '';
         return;
       }
       if (temperature.fahrenheit === null || temperature.fahrenheit === undefined) {
         value.textContent = '--';
-        meta.textContent = temperature.updated_at ? 'Status okundu, hedef derece alani bulunamadi.' : 'Henuz okunmadi.';
+        meta.textContent = temperature.updated_at ? 'Status read, target temperature not found.' : 'Not read yet.';
         meta.title = '';
         return;
       }
       value.textContent = fmtTemperature(temperature.fahrenheit, 'F');
-      meta.textContent = fmtTemperature(temperature.celsius, 'C') + ' | Son okuma ' + fmtAge(temperature.updated_at);
-      meta.title = temperature.source ? 'Kaynak: ' + temperature.source : '';
+      meta.textContent = fmtTemperature(temperature.celsius, 'C') + ' | Last read ' + fmtAge(temperature.updated_at);
+      meta.title = temperature.source ? 'Source: ' + temperature.source : '';
     }
 
     async function requestJson(path, options) {
@@ -383,23 +407,23 @@ PAGE_HTML = r"""<!doctype html>
     function renderState(state) {
       const pill = document.getElementById('runPill');
       pill.classList.toggle('running', state.running);
-      document.getElementById('runText').textContent = state.running ? 'Dongu calisiyor' : 'Dongu durdu';
+      document.getElementById('runText').textContent = state.running ? 'Cycle running' : 'Cycle stopped';
       document.getElementById('phase').textContent = state.phase || 'stopped';
       document.getElementById('remaining').textContent = fmtSeconds(state.remaining_seconds);
-      document.getElementById('lastAction').textContent = state.last_action || 'Son islem yok.';
+      document.getElementById('lastAction').textContent = state.last_action || 'No recent activity.';
       document.getElementById('coolingSetpoint').textContent = state.cycle.cooling_setpoint_f + 'F';
       document.getElementById('restingSetpoint').textContent = state.cycle.resting_setpoint_f + 'F';
       document.getElementById('coolingMinutes').textContent = state.cycle.cooling_minutes;
       document.getElementById('restingMinutes').textContent = state.cycle.resting_minutes;
       document.getElementById('configPath').textContent = state.config_path;
-      document.getElementById('logs').textContent = state.logs.length ? state.logs.join('\n') : 'Log yok.';
+      document.getElementById('logs').textContent = state.logs.length ? state.logs.join('\n') : 'No logs.';
       const phoneUrl = document.getElementById('phoneUrl');
       const urls = state.network_urls || [];
       if (urls.length) {
-        phoneUrl.textContent = 'Telefon: ' + urls[0];
+        phoneUrl.textContent = 'Phone: ' + urls[0];
         phoneUrl.title = urls.join('\n');
       } else {
-        phoneUrl.textContent = 'Telefon erisimi icin ayni Wi-Fi gerekli';
+        phoneUrl.textContent = 'Use the same Wi-Fi for phone access';
         phoneUrl.title = state.local_url || '';
       }
       renderTemperature(state.active_temperature);
@@ -414,7 +438,7 @@ PAGE_HTML = r"""<!doctype html>
     async function postAction(path) {
       try {
         const data = await requestJson(path, { method: 'POST' });
-        setMessage(data.message || 'Tamam.', 'ok');
+        setMessage(data.message || 'Done.', 'ok');
         renderState(data.state);
       } catch (error) {
         setMessage(error.message, 'error');
@@ -429,7 +453,7 @@ PAGE_HTML = r"""<!doctype html>
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ phase })
         });
-        setMessage(data.message || 'Komut gonderildi.', 'ok');
+        setMessage(data.message || 'Command sent.', 'ok');
         renderState(data.state);
       } catch (error) {
         setMessage(error.message, 'error');
@@ -439,16 +463,16 @@ PAGE_HTML = r"""<!doctype html>
 
     async function readDeviceStatus() {
       try {
-        setMessage('Cihaz durumu okunuyor...', '');
+        setMessage('Reading device status...', '');
         const data = await requestJson('/api/device-status');
         document.getElementById('deviceStatus').textContent = JSON.stringify(data.device_status, null, 2);
         if (data.state) renderState(data.state);
         const temperature = data.active_temperature || (data.state && data.state.active_temperature);
         renderTemperature(temperature);
         if (temperature && temperature.fahrenheit !== null && temperature.fahrenheit !== undefined) {
-          setMessage('Klima ayari yenilendi: ' + fmtTemperature(temperature.fahrenheit, 'F'), 'ok');
+          setMessage('AC setting refreshed: ' + fmtTemperature(temperature.fahrenheit, 'F'), 'ok');
         } else {
-          setMessage('Status okundu, hedef derece alani bulunamadi.', 'ok');
+          setMessage('Status read, target temperature not found.', 'ok');
         }
       } catch (error) {
         setMessage(error.message, 'error');
@@ -456,10 +480,10 @@ PAGE_HTML = r"""<!doctype html>
     }
 
     async function shutdownServer() {
-      if (!confirm('Panel serveri kapatilsin mi? Dongu de durdurulur.')) return;
+      if (!confirm('Close the panel server? The cycle will stop too.')) return;
       try {
         await requestJson('/api/shutdown', { method: 'POST' });
-        setMessage('Panel serveri kapatiliyor. Bu sekmeyi kapatabilirsin.', 'ok');
+        setMessage('Panel server is closing. You can close this tab.', 'ok');
       } catch (error) {
         setMessage(error.message, 'error');
       }
@@ -626,7 +650,7 @@ class WebController:
     def start_cycle(self) -> str:
         with self.state_lock:
             if self.running:
-                return "Dongu zaten calisiyor."
+                return "Cycle is already running."
             self.stop_event = threading.Event()
             self.running = True
             self.phase = "starting"
@@ -635,23 +659,23 @@ class WebController:
             self.started_at = time.time()
             self.stopped_at = None
             self.last_error = None
-            self.last_action = "Dongu baslatildi."
+            self.last_action = "Cycle started."
             self.thread = threading.Thread(target=self._run_cycle, name="tcl-web-cycle", daemon=True)
             self.thread.start()
         logging.info("Web: cycle start requested")
-        return "Dongu baslatildi."
+        return "Cycle started."
 
     def stop_cycle(self) -> str:
         with self.state_lock:
             if not self.running:
-                return "Dongu zaten durmus."
+                return "Cycle is already stopped."
             self.stop_event.set()
-            self.last_action = "Dongu durduruluyor."
+            self.last_action = "Stopping cycle."
         thread = self.thread
         if thread and thread.is_alive():
             thread.join(timeout=2.0)
         logging.info("Web: cycle stop requested")
-        return "Dongu durduruluyor."
+        return "Stopping cycle."
 
     def send_startup(self) -> str:
         self._ensure_stopped_for_manual_command()
@@ -659,9 +683,9 @@ class WebController:
             logging.info("Web: startup command requested")
             self.backend.startup()
         with self.state_lock:
-            self.last_action = "Swing baslangic komutu gonderildi."
+            self.last_action = "Swing startup command sent."
             self.last_error = None
-        return "Swing baslangic komutu gonderildi."
+        return "Swing startup command sent."
 
     def send_phase(self, phase: str) -> str:
         self._ensure_stopped_for_manual_command()
@@ -676,9 +700,9 @@ class WebController:
         if not self._safe_apply(setpoint, label, threading.Event()):
             raise BackendError("Manual command cancelled")
         with self.state_lock:
-            self.last_action = f"{setpoint:g}F {label} komutu gonderildi."
+            self.last_action = f"{setpoint:g}F {label} command sent."
             self.last_error = None
-        return f"{setpoint:g}F komutu gonderildi."
+        return f"{setpoint:g}F command sent."
 
     def read_device_status(self) -> Any:
         with self.command_lock:
@@ -692,7 +716,7 @@ class WebController:
     def _ensure_stopped_for_manual_command(self) -> None:
         with self.state_lock:
             if self.running:
-                raise BackendError("Dongu calisirken manuel komut gonderme kapali. Once donguyu durdur.")
+                raise BackendError("Manual commands are disabled while the cycle is running. Stop the cycle first.")
 
     def _run_cycle(self) -> None:
         try:
@@ -703,7 +727,7 @@ class WebController:
                 with self.state_lock:
                     self.cycle_number += 1
                     cycle_number = self.cycle_number
-                    self.last_action = f"Cycle {cycle_number} basladi."
+                    self.last_action = f"Cycle {cycle_number} started."
                 logging.info("Web cycle %d started", cycle_number)
 
                 if not self._run_phase("cooling", float(self.cycle["cooling_setpoint_f"]), float(self.cycle["cooling_minutes"])):
@@ -715,7 +739,7 @@ class WebController:
             logging.exception("Web cycle failed")
             with self.state_lock:
                 self.last_error = str(exc)
-                self.last_action = "Dongu hata ile durdu."
+                self.last_action = "Cycle stopped with an error."
         finally:
             with self.state_lock:
                 self.running = False
@@ -724,7 +748,7 @@ class WebController:
                 self.phase_end_at = None
                 self.stopped_at = time.time()
                 if self.last_error is None:
-                    self.last_action = "Dongu durdu."
+                    self.last_action = "Cycle stopped."
             logging.info("Web cycle stopped")
 
     def _run_phase(self, phase: str, setpoint_f: float, minutes: float) -> bool:
@@ -733,7 +757,7 @@ class WebController:
             self.phase = phase
             self.phase_started_at = now
             self.phase_end_at = now + (minutes * 60.0)
-            self.last_action = f"{phase} fazi: {setpoint_f:g}F hedef gonderiliyor."
+            self.last_action = f"{phase} phase: sending {setpoint_f:g}F target."
         if not self._safe_apply(setpoint_f, phase, self.stop_event):
             return False
         return self._wait_minutes(minutes, phase)

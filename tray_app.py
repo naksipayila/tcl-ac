@@ -25,7 +25,7 @@ else:
     MISSING_IMPORT = None
 
 
-APP_NAME = "TCL Klima Paneli"
+APP_NAME = "TCL AC Panel"
 ICON_PATH = pathlib.Path("assets") / "fan.png"
 
 
@@ -104,16 +104,16 @@ class TrayApp:
 
     def _menu(self) -> Any:
         return pystray.Menu(
-            pystray.MenuItem("Paneli Ac", self.open_panel, default=True),
+            pystray.MenuItem("Open Panel", self.open_panel, default=True),
             pystray.Menu.SEPARATOR,
-            pystray.MenuItem("Donguyu Baslat", self.start_cycle),
-            pystray.MenuItem("Donguyu Durdur", self.stop_cycle),
+            pystray.MenuItem("Start Cycle", self.start_cycle),
+            pystray.MenuItem("Stop Cycle", self.stop_cycle),
             pystray.Menu.SEPARATOR,
-            pystray.MenuItem("Swing Baslangic", self.send_startup),
-            pystray.MenuItem("Simdi 70F", self.send_cooling),
-            pystray.MenuItem("Simdi 80F", self.send_resting),
+            pystray.MenuItem("Swing Startup", self.send_startup),
+            pystray.MenuItem("Send 70F", self.send_cooling),
+            pystray.MenuItem("Send 80F", self.send_resting),
             pystray.Menu.SEPARATOR,
-            pystray.MenuItem("Cikis", self.quit),
+            pystray.MenuItem("Exit", self.quit),
         )
 
     def run(self) -> None:
@@ -130,19 +130,19 @@ class TrayApp:
         webbrowser.open(self.url)
 
     def start_cycle(self, *args: Any) -> None:
-        self._run_action("Dongu baslatildi.", self.controller.start_cycle)
+        self._run_action("Cycle started.", self.controller.start_cycle)
 
     def stop_cycle(self, *args: Any) -> None:
-        self._run_action("Dongu durduruluyor.", self.controller.stop_cycle)
+        self._run_action("Stopping cycle.", self.controller.stop_cycle)
 
     def send_startup(self, *args: Any) -> None:
-        self._run_action("Swing baslangic komutu gonderildi.", self.controller.send_startup)
+        self._run_action("Swing startup command sent.", self.controller.send_startup)
 
     def send_cooling(self, *args: Any) -> None:
-        self._run_action("70F komutu gonderildi.", lambda: self.controller.send_phase("cooling"))
+        self._run_action("70F command sent.", lambda: self.controller.send_phase("cooling"))
 
     def send_resting(self, *args: Any) -> None:
-        self._run_action("80F komutu gonderildi.", lambda: self.controller.send_phase("resting"))
+        self._run_action("80F command sent.", lambda: self.controller.send_phase("resting"))
 
     def quit(self, *args: Any) -> None:
         logging.info("Tray exit requested")

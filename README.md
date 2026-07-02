@@ -1,111 +1,125 @@
 # TCL Portable AC Cycle Controller
 
-Local web panel and command-line helper for the TCL `TAC-12CHPB/DM4` portable AC.
+A local web panel and CLI tool for the **`TAC-12CHPB/DM4`** TCL portable air conditioner.
 
-The cycle changes the target temperature instead of repeatedly power-cycling the unit:
+The cycle adjusts the thermostat target rather than repeatedly switching the compressor on and off:
 
-```text
-20 min at 70°F
-20 min at 80°F
-repeat
+```
+20 min at 70°F  →  20 min at 80°F  →  repeat
 ```
 
-## Setup
+---
+
+## Quick Start
+
+### 1. Install
 
 ```powershell
 py -m pip install -r requirements.txt
 ```
 
-Set the TCL Home `ssotoken` as a Windows user environment variable:
+### 2. Authenticate
+
+Capture your `ssotoken` from the **TCL Home** mobile app via [HTTP Toolkit](https://httptoolkit.com). Set it once as a Windows user environment variable:
 
 ```powershell
 setx TCL_SSO_TOKEN "YOUR_SSOTOKEN_HERE"
 ```
 
-Open a new terminal after setting the variable.
+*Open a new terminal after running `setx`.*
 
-## Web Panel
+### 3. Launch the Panel
 
-Start hidden:
+Double-click `start_server_hidden.cmd` — the server runs silently in the background.
 
-```text
-Double-click start_server_hidden.cmd
+Open your browser:
+
 ```
-
-Start with a visible console:
-
-```powershell
-py web_app.py --config config.json
-```
-
-Open:
-
-```text
 http://127.0.0.1:8787/
 ```
 
-Phones on the same Wi-Fi can use the LAN URL shown in the panel footer. Allow Windows Firewall access if prompted.
+Phones on the same Wi‑Fi can use the LAN address shown in the panel footer.
 
-The panel supports:
+---
 
-- Start and stop the 70°F / 80°F cycle.
-- Manually set compressor target to 70°F or 80°F.
-- Toggle AC power with `powerSwitch`.
-- Toggle swing with `swingWind`.
-- Read the current target temperature on page load and with `Refresh`.
-- Close the local server from the panel.
+## Web Panel
+
+![UI](./favicon.png) *Modern dark-themed responsive panel.*
+
+| Control | Action |
+|---------|--------|
+| **Start Cycle / Stop** | Begin or pause the 70°F ↔ 80°F loop |
+| **Start Compressor / Stop Compressor** | Manually set target to 70°F or 80°F *(disabled when the AC is already at that temperature)* |
+| **Power** | Toggle `powerSwitch` — physically turn the AC on or off |
+| **Swing** | Toggle `swingWind` — control the louver oscillation |
+| **Refresh** | Read the current target temperature directly from the device shadow |
+| **Close Server** | Stop the cycle and shut down the local web server |
+
+> **Tip:** Use `"backend": "mock"` in `config.json` for dry‑run testing — nothing is sent to the device.
+
+---
 
 ## CLI
 
-Validate config without sending device commands:
+All commands run against the same `config.json`:
 
 ```powershell
+# Validate config (no device commands)
 py tcl_cycle.py validate --config config.json
-```
 
-Read device shadow/status:
-
-```powershell
+# Read device shadow
 py tcl_cycle.py status --config config.json
-```
 
-Send one temperature command:
+# Send one command
+py tcl_cycle.py once cooling --config config.json    # 70°F
+py tcl_cycle.py once resting --config config.json    # 80°F
 
-```powershell
-py tcl_cycle.py once cooling --config config.json
-py tcl_cycle.py once resting --config config.json
-```
-
-Run the cycle:
-
-```powershell
+# Run the continuous 20/20 cycle
 py tcl_cycle.py run --config config.json
+
+# Send startup (swing on)
+py tcl_cycle.py startup --config config.json
 ```
 
-Use `"backend": "mock"` in `config.json` for dry-run testing without touching the device.
+---
 
-## TCL Home AWS Notes
+## How It Works
 
-Commands are sent to AWS IoT Shadow through MQTT-over-WebSocket.
+Commands reach the device through **AWS IoT Shadow** (MQTT‑over‑WebSocket).
 
-Main payloads:
+The flow:
 
-```json
-{"targetCelsiusDegree": 21, "targetFahrenheitDegree": 70}
+```
+TCL Home API  →  AWS Cognito  →  SigV4‑signed MQTT/WS  →  Device Shadow
 ```
 
-```json
-{"targetCelsiusDegree": 26, "targetFahrenheitDegree": 80}
-```
+### Shadow Payloads
 
-```json
-{"powerSwitch": 1}
-```
+| Purpose | JSON |
+|---------|------|
+| **Set temperature** | `{"targetCelsiusDegree":21, "targetFahrenheitDegree":70}` |
+| **Power toggle** | `{"powerSwitch":1}` or `{"powerSwitch":0}` |
+| **Swing toggle** | `{"swingWind":1}` or `{"swingWind":0}` |
 
-```json
-{"swingWind": 1}
-```
+---
 
-The `ssotoken` expires periodically. Recapture it from TCL Home through HTTP Toolkit when needed.
+## Files
 
-Logs are written to `logs/tcl_cycle.log`.
+| File | Role |
+|------|------|
+| `web_app.py` | Local HTTP server + responsive HTML panel |
+| `tcl_cycle.py` | CLI runner + AWS IoT Shadow backend |
+| `config.json` | Device ID, cycle timings, API keys |
+| `start_server_hidden.cmd` | Double‑click launcher (hidden console) |
+| `requirements.txt` | `websocket-client>=1.8.0` — the only runtime dependency |
+| `favicon.png` | Panel favicon |
+
+---
+
+## Notes
+
+- The `ssotoken` **expires periodically**. Recapture it from TCL Home through HTTP Toolkit when commands start failing.
+- If the room temperature exceeds **80°F**, the compressor may stay on even during the resting phase — this is normal thermostat behaviour.
+- The server binds to `0.0.0.0:8787` for LAN access. Allow Windows Firewall if prompted.
+- Logs are written to `logs/tcl_cycle.log`.
+- Stop a visible‑console server with `Ctrl+C`; stop a hidden server with the **Close Server** button in the panel.

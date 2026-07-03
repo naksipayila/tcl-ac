@@ -360,6 +360,7 @@ PAGE_HTML = r"""<!doctype html>
 
   .action-button:active:not(:disabled),
   .control-row:active:not(:disabled),
+  .power-slider:active:not(.is-busy),
   .refresh-button:active,
   .utility-button:active {
     transform: scale(0.985);
@@ -479,22 +480,150 @@ PAGE_HTML = r"""<!doctype html>
     transform: translateX(18px);
   }
 
-  .power-on {
-    border-color: rgba(251, 113, 133, 0.2);
-    background: rgba(251, 113, 133, 0.07);
+  .power-slider {
+    --power-knob-inset: 6px;
+    --power-knob-size: 44px;
+    --power-progress: 0;
+    position: relative;
+    width: 100%;
+    min-width: 0;
+    min-height: 66px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    padding: 0 16px 0 58px;
+    border: 1px solid var(--card-border);
+    border-radius: 14px;
+    background: var(--card-bg);
+    color: var(--text-main);
+    cursor: default;
+    isolation: isolate;
+    touch-action: pan-y;
+    user-select: none;
+    transition: transform 0.18s ease, opacity 0.18s ease, background 0.18s ease, border-color 0.18s ease;
   }
 
-  .power-on .control-value {
-    color: var(--red);
+  .power-slider::before {
+    content: '';
+    position: absolute;
+    inset: 6px;
+    z-index: 0;
+    border-radius: 10px;
+    background: linear-gradient(135deg, rgba(103, 232, 249, 0.32), rgba(116, 230, 178, 0.26));
+    opacity: 0.75;
+    transform: scaleX(var(--power-progress));
+    transform-origin: left center;
+    transition: transform 0.2s ease;
   }
 
-  .power-off {
-    border-color: rgba(103, 232, 249, 0.16);
-    background: rgba(103, 232, 249, 0.055);
+  .power-slider::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    right: 10px;
+    z-index: 1;
+    width: 2px;
+    height: 24px;
+    border-radius: 999px;
+    background: rgba(103, 232, 249, 0.34);
+    transform: translateY(-50%);
+    opacity: 0.78;
   }
 
-  .power-off .control-value {
-    color: var(--cyan);
+  .power-slider.power-on {
+    border-color: rgba(251, 113, 133, 0.22);
+    background: rgba(251, 113, 133, 0.065);
+  }
+
+  .power-slider.power-on::before {
+    background: linear-gradient(135deg, rgba(251, 113, 133, 0.34), rgba(251, 191, 36, 0.18));
+  }
+
+  .power-slider.power-on::after {
+    background: rgba(251, 113, 133, 0.38);
+  }
+
+  .power-slider.power-off {
+    border-color: rgba(103, 232, 249, 0.17);
+    background: rgba(103, 232, 249, 0.05);
+  }
+
+  .power-slider.is-dragging {
+    cursor: grabbing;
+  }
+
+  .power-slider.is-confirm-ready {
+    border-color: rgba(103, 232, 249, 0.34);
+  }
+
+  .power-slider.power-on.is-confirm-ready {
+    border-color: rgba(251, 113, 133, 0.36);
+  }
+
+  .power-slider.is-busy {
+    cursor: wait;
+    opacity: 0.72;
+    pointer-events: none;
+  }
+
+  .power-slider:focus-visible {
+    outline: 2px solid rgba(103, 232, 249, 0.55);
+    outline-offset: 3px;
+  }
+
+  .power-slider.is-dragging::before,
+  .power-slider.is-dragging .power-slider-knob {
+    transition: none;
+  }
+
+  .power-slider-label {
+    position: relative;
+    z-index: 1;
+    min-width: 0;
+    overflow: hidden;
+    color: var(--text-soft);
+    font-size: 12px;
+    font-weight: 750;
+    letter-spacing: -0.01em;
+    text-align: center;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .power-slider.is-confirm-ready .power-slider-label {
+    color: var(--text-main);
+  }
+
+  .power-slider-knob {
+    position: absolute;
+    top: 50%;
+    display: grid;
+    place-items: center;
+    border-radius: 12px;
+    transform: translateY(-50%);
+  }
+
+  .power-slider-knob {
+    left: var(--power-knob-inset);
+    z-index: 3;
+    width: var(--power-knob-size);
+    height: var(--power-knob-size);
+    color: #052127;
+    cursor: grab;
+    background: linear-gradient(135deg, rgba(103, 232, 249, 0.98), rgba(116, 230, 178, 0.88));
+    box-shadow: 0 12px 30px rgba(34, 211, 238, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.38);
+    transition: transform 0.2s ease, background 0.18s ease, box-shadow 0.18s ease;
+  }
+
+  .power-slider.power-on .power-slider-knob {
+    color: #2a070d;
+    background: linear-gradient(135deg, rgba(253, 164, 175, 0.98), rgba(251, 113, 133, 0.86));
+    box-shadow: 0 12px 30px rgba(251, 113, 133, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.36);
+  }
+
+  .power-slider.is-dragging .power-slider-knob {
+    cursor: grabbing;
   }
 
   .footer-row {
@@ -724,6 +853,16 @@ PAGE_HTML = r"""<!doctype html>
       font-size: 11px;
     }
 
+    .power-slider {
+      --power-knob-size: 38px;
+      min-height: 62px;
+      padding: 0 12px 0 48px;
+    }
+
+    .power-slider-label {
+      font-size: 11px;
+    }
+
     .footer-row {
       flex-direction: column-reverse;
       align-items: stretch;
@@ -807,13 +946,12 @@ PAGE_HTML = r"""<!doctype html>
           <span class="switch-slider"></span>
         </span>
       </div>
-      <button id="powerBtn" onclick="togglePower()" class="dashboard-button control-row power-off" aria-label="Toggle AC power">
-        <span class="control-copy">
-          <span class="control-title" id="powerLabel">Turn AC On</span>
-          <span class="control-meta">Device power</span>
+      <div id="powerSlider" class="power-slider power-off" role="button" tabindex="0" aria-label="Slide to turn AC on" aria-pressed="false">
+        <span class="power-slider-knob" id="powerKnob" aria-hidden="true">
+          <span class="material-symbols-outlined">power_settings_new</span>
         </span>
-        <span class="control-value" id="powerMeta">AC is off</span>
-      </button>
+        <span class="power-slider-label" id="powerLabel">Slide to turn on</span>
+      </div>
     </div>
   </div>
 
@@ -954,6 +1092,79 @@ PAGE_HTML = r"""<!doctype html>
   }
 
   let latestState = null;
+  const POWER_SLIDE_THRESHOLD = 0.95;
+  const powerSliderState = {
+    busy: false,
+    dragging: false,
+    pointerId: null,
+    startX: 0,
+    progress: 0,
+  };
+
+  function powerSliderElements() {
+    return {
+      slider: document.getElementById('powerSlider'),
+      knob: document.getElementById('powerKnob'),
+      label: document.getElementById('powerLabel'),
+    };
+  }
+
+  function powerSliderInset(slider) {
+    const value = parseFloat(getComputedStyle(slider).getPropertyValue('--power-knob-inset'));
+    return Number.isFinite(value) ? value : 6;
+  }
+
+  function powerSliderMaxTravel(slider, knob) {
+    return Math.max(0, slider.clientWidth - knob.offsetWidth - powerSliderInset(slider) * 2);
+  }
+
+  function powerSliderActionText(isOn) {
+    return isOn ? 'Slide to turn off' : 'Slide to turn on';
+  }
+
+  function updatePowerSliderLabel() {
+    const { label } = powerSliderElements();
+    if (!label) return;
+    if (powerSliderState.busy) {
+      label.textContent = 'Sending...';
+      return;
+    }
+    if (powerSliderState.dragging) {
+      label.textContent = powerSliderState.progress >= POWER_SLIDE_THRESHOLD ? 'Release to confirm' : 'Keep sliding';
+      return;
+    }
+    label.textContent = powerSliderActionText(Boolean(latestState && latestState.power_switch));
+  }
+
+  function setPowerSliderProgress(progress) {
+    const { slider, knob } = powerSliderElements();
+    if (!slider || !knob) return;
+    const clamped = Math.max(0, Math.min(1, progress));
+    const travel = powerSliderMaxTravel(slider, knob) * clamped;
+    powerSliderState.progress = clamped;
+    slider.style.setProperty('--power-progress', clamped.toFixed(3));
+    slider.classList.toggle('is-confirm-ready', !powerSliderState.busy && clamped >= POWER_SLIDE_THRESHOLD);
+    knob.style.transform = 'translate(' + travel.toFixed(1) + 'px, -50%)';
+    updatePowerSliderLabel();
+  }
+
+  function resetPowerSlider() {
+    setPowerSliderProgress(0);
+  }
+
+  function renderPowerSlider() {
+    const { slider, label } = powerSliderElements();
+    if (!slider || !label) return;
+    const isOn = Boolean(latestState && latestState.power_switch);
+    slider.classList.toggle('power-on', isOn);
+    slider.classList.toggle('power-off', !isOn);
+    slider.classList.toggle('is-busy', powerSliderState.busy);
+    slider.classList.toggle('is-confirm-ready', !powerSliderState.busy && powerSliderState.progress >= POWER_SLIDE_THRESHOLD);
+    slider.setAttribute('aria-disabled', String(powerSliderState.busy));
+    slider.setAttribute('aria-pressed', String(isOn));
+    slider.setAttribute('aria-label', isOn ? 'Slide to turn AC off' : 'Slide to turn AC on');
+    updatePowerSliderLabel();
+  }
 
   function renderState(state) {
     latestState = state;
@@ -1001,31 +1212,24 @@ PAGE_HTML = r"""<!doctype html>
     const activeTempF = Number(state.active_temperature && state.active_temperature.fahrenheit);
     const coolingSetpointF = Number(state.cycle && state.cycle.cooling_setpoint_f);
     const restingSetpointF = Number(state.cycle && state.cycle.resting_setpoint_f);
+    const isPoweredOn = Boolean(state.power_switch);
     const alreadyCooling = Number.isFinite(activeTempF)
       && Number.isFinite(coolingSetpointF)
       && Math.abs(activeTempF - coolingSetpointF) < 0.5;
     const alreadyResting = Number.isFinite(activeTempF)
       && Number.isFinite(restingSetpointF)
       && Math.abs(activeTempF - restingSetpointF) < 0.5;
-    startCompressorBtn.disabled = alreadyCooling;
-    startCompressorBtn.title = alreadyCooling ? 'AC is already at ' + coolingSetpointF + 'F.' : '';
-    stopCompressorBtn.disabled = alreadyResting;
-    stopCompressorBtn.title = alreadyResting ? 'AC is already at ' + restingSetpointF + 'F.' : '';
+    startCompressorBtn.disabled = !isPoweredOn || alreadyCooling;
+    startCompressorBtn.title = !isPoweredOn
+      ? 'Turn AC on first.'
+      : (alreadyCooling ? 'AC is already at ' + coolingSetpointF + 'F.' : '');
+    stopCompressorBtn.disabled = !isPoweredOn || alreadyResting;
+    stopCompressorBtn.title = !isPoweredOn
+      ? 'Turn AC on first.'
+      : (alreadyResting ? 'AC is already at ' + restingSetpointF + 'F.' : '');
 
-    const powerBtn = document.getElementById('powerBtn');
-    const powerLabel = document.getElementById('powerLabel');
-    const powerMeta = document.getElementById('powerMeta');
-    if (state.power_switch) {
-      powerBtn.classList.remove('power-off');
-      powerBtn.classList.add('power-on');
-      powerLabel.textContent = 'Turn AC Off';
-      powerMeta.textContent = 'AC is on';
-    } else {
-      powerBtn.classList.remove('power-on');
-      powerBtn.classList.add('power-off');
-      powerLabel.textContent = 'Turn AC On';
-      powerMeta.textContent = 'AC is off';
-    }
+    renderPowerSlider();
+    if (!powerSliderState.dragging && !powerSliderState.busy) resetPowerSlider();
 
   }
 
@@ -1118,18 +1322,87 @@ PAGE_HTML = r"""<!doctype html>
   }
 
   async function togglePower() {
+    if (powerSliderState.busy) return;
+    powerSliderState.busy = true;
+    renderPowerSlider();
     try {
       const current = latestState ? latestState.power_switch : false;
       const next = !current;
-      await requestJson('/api/power', {
+      const data = await requestJson('/api/power', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ enabled: next })
       });
-      refreshState();
+      if (data.state) renderState(data.state);
+      else await refreshState();
     } catch (error) {
       console.error(error);
+      refreshState();
+    } finally {
+      powerSliderState.busy = false;
+      renderPowerSlider();
+      resetPowerSlider();
     }
+  }
+
+  function beginPowerDrag(event) {
+    if (powerSliderState.busy || (event.button !== undefined && event.button !== 0)) return;
+    const { slider } = powerSliderElements();
+    if (!slider) return;
+    const dragHandle = event.target instanceof Element ? event.target.closest('.power-slider-knob') : null;
+    if (!dragHandle) return;
+    powerSliderState.dragging = true;
+    powerSliderState.pointerId = event.pointerId;
+    powerSliderState.startX = event.clientX;
+    slider.classList.add('is-dragging');
+    slider.setPointerCapture(event.pointerId);
+    setPowerSliderProgress(0);
+    updatePowerSliderLabel();
+    event.preventDefault();
+  }
+
+  function movePowerDrag(event) {
+    if (!powerSliderState.dragging || event.pointerId !== powerSliderState.pointerId) return;
+    const { slider, knob } = powerSliderElements();
+    if (!slider || !knob) return;
+    const maxTravel = powerSliderMaxTravel(slider, knob);
+    const distance = Math.max(0, event.clientX - powerSliderState.startX);
+    setPowerSliderProgress(maxTravel ? distance / maxTravel : 0);
+  }
+
+  function finishPowerDrag(event, cancelled) {
+    if (!powerSliderState.dragging || event.pointerId !== powerSliderState.pointerId) return;
+    const { slider } = powerSliderElements();
+    powerSliderState.dragging = false;
+    powerSliderState.pointerId = null;
+    if (slider) {
+      slider.classList.remove('is-dragging');
+      if (slider.hasPointerCapture(event.pointerId)) slider.releasePointerCapture(event.pointerId);
+    }
+    if (!cancelled && powerSliderState.progress >= POWER_SLIDE_THRESHOLD) {
+      setPowerSliderProgress(1);
+      togglePower();
+      return;
+    }
+    resetPowerSlider();
+  }
+
+  function handlePowerSliderKeydown(event) {
+    if (event.key !== 'Enter' && event.key !== ' ') return;
+    event.preventDefault();
+    if (powerSliderState.busy) return;
+    setPowerSliderProgress(1);
+    togglePower();
+  }
+
+  function initPowerSlider() {
+    const { slider } = powerSliderElements();
+    if (!slider) return;
+    slider.addEventListener('pointerdown', beginPowerDrag);
+    slider.addEventListener('pointermove', movePowerDrag);
+    slider.addEventListener('pointerup', (event) => finishPowerDrag(event, false));
+    slider.addEventListener('pointercancel', (event) => finishPowerDrag(event, true));
+    slider.addEventListener('keydown', handlePowerSliderKeydown);
   }
 
   async function toggleSwing() {
@@ -1162,6 +1435,7 @@ PAGE_HTML = r"""<!doctype html>
     }
   });
 
+  initPowerSlider();
   loadInitialState();
 </script>
 </body>

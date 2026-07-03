@@ -30,7 +30,7 @@ setx TCL_SSO_TOKEN "YOUR_SSOTOKEN_HERE"
 
 ### 3. Launch the Panel
 
-Double-click `start_server_hidden.cmd` — the server runs silently in the background.
+Double-click `start-server.cmd` — the server runs silently in the background.
 
 Open your browser:
 
@@ -110,7 +110,7 @@ TCL Home API  →  AWS Cognito  →  SigV4‑signed MQTT/WS  →  Device Shadow
 | `web_app.py` | Local HTTP server + responsive HTML panel |
 | `tcl_cycle.py` | CLI runner + AWS IoT Shadow backend |
 | `config.json` | Device ID, cycle timings, API keys |
-| `start_server_hidden.cmd` | Double‑click launcher (hidden console) |
+| `start-server.cmd` | Double‑click launcher (hidden console) |
 | `requirements.txt` | `websocket-client>=1.8.0` — the only runtime dependency |
 ---
 

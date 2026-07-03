@@ -182,7 +182,6 @@ PAGE_HTML = r"""<!doctype html>
       rgba(0, 0, 0, 0.12);
   }
 
-  .hero-top,
   .hero-footer,
   .footer-row,
   .control-row {
@@ -190,25 +189,20 @@ PAGE_HTML = r"""<!doctype html>
     align-items: center;
   }
 
-  .hero-top,
   .hero-footer,
   .footer-row,
   .control-row {
     justify-content: space-between;
   }
 
-.metric-label,
+  .metric-label,
   .section-label,
   .control-meta,
   .footer-link {
     color: var(--text-muted);
   }
 
-  .min-w-0 {
-    min-width: 0;
-  }
-
-.metric-label,
+  .metric-label,
   .section-label {
     margin: 0;
     font-size: 10px;
@@ -217,7 +211,8 @@ PAGE_HTML = r"""<!doctype html>
     text-transform: uppercase;
   }
 
-.temperature {
+  .temperature {
+    flex: 0 0 auto;
     margin: 0;
     font-size: clamp(44px, 13vw, 68px);
     font-weight: 780;
@@ -226,16 +221,13 @@ PAGE_HTML = r"""<!doctype html>
   }
 
   .hero-footer {
-    gap: 12px;
-    margin-top: 24px;
-    padding-top: 18px;
-    border-top: 1px solid rgba(255, 255, 255, 0.075);
+    gap: 18px;
   }
 
   .metric-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 12px;
+    gap: 16px;
     flex: 1;
     min-width: 0;
   }
@@ -250,6 +242,10 @@ PAGE_HTML = r"""<!doctype html>
     letter-spacing: -0.02em;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+
+  .metric-item {
+    min-width: 0;
   }
 
   .refresh-button {
@@ -279,19 +275,24 @@ PAGE_HTML = r"""<!doctype html>
     gap: 12px;
   }
 
+  .hero-card .action-grid {
+    margin-top: 14px;
+  }
+
   .action-button {
     width: 100%;
     min-height: 76px;
     display: flex;
     align-items: center;
+    justify-content: center;
     padding: 16px;
     border: 1px solid transparent;
     border-radius: 12px;
-    text-align: left;
+    text-align: center;
     transition: transform 0.18s ease, opacity 0.18s ease, background 0.18s ease, border-color 0.18s ease;
   }
 
-  .action-button span,
+  .action-label,
   .control-title {
     display: block;
     color: var(--text-main);
@@ -314,7 +315,7 @@ PAGE_HTML = r"""<!doctype html>
     box-shadow: 0 16px 46px rgba(34, 211, 238, 0.18);
   }
 
-  .action-primary span {
+  .action-primary .action-label {
     color: #052127;
   }
 
@@ -330,7 +331,7 @@ PAGE_HTML = r"""<!doctype html>
     color: var(--text-soft);
   }
 
-  .action-quiet span {
+  .action-quiet .action-label {
     color: var(--text-soft);
   }
 
@@ -345,6 +346,7 @@ PAGE_HTML = r"""<!doctype html>
 
   .action-button:disabled,
   .control-row:disabled,
+  .control-row.is-disabled,
   .dashboard-button:disabled {
     opacity: 0.42;
     cursor: not-allowed;
@@ -352,18 +354,26 @@ PAGE_HTML = r"""<!doctype html>
     filter: grayscale(0.2);
   }
 
+  .control-row.is-disabled {
+    pointer-events: none;
+  }
+
+  .control-row.is-sending {
+    cursor: wait;
+    opacity: 0.72;
+    pointer-events: none;
+  }
+
   .section-label {
     margin: 18px 2px 9px;
   }
 
-  .control-list {
-    display: grid;
-    gap: 9px;
+  .controls-card > .section-label:first-child {
+    margin-top: 0;
   }
 
-  .control-pair {
+  .control-list {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 9px;
   }
 
@@ -383,18 +393,8 @@ PAGE_HTML = r"""<!doctype html>
     min-width: 0;
   }
 
-  .control-pair .control-row {
+  .control-text {
     min-width: 0;
-    gap: 10px;
-    padding-inline: 14px;
-  }
-
-  .control-pair .control-title,
-  .control-pair .control-meta,
-  .control-pair .control-value {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
   }
 
   .control-value {
@@ -772,39 +772,65 @@ PAGE_HTML = r"""<!doctype html>
 
   @media (max-width: 560px) {
     body {
-      align-items: start;
-      place-items: start center;
+      place-items: center;
       padding: 12px;
     }
 
     .app-shell {
+      width: min(100%, 420px);
       padding: 12px;
       border-radius: 18px;
     }
 
     .hero-card {
-      padding: 18px;
+      padding: 14px;
       border-radius: 14px;
     }
 
     .temperature {
-      font-size: clamp(38px, 12vw, 54px);
+      font-size: clamp(32px, 10vw, 44px);
     }
 
     .controls-card {
+      margin-top: 12px;
       padding: 12px;
       border-radius: 13px;
     }
 
     .hero-footer {
-      align-items: stretch;
-      flex-direction: column;
-      margin-top: 20px;
-      padding-top: 16px;
+      align-items: center;
+      flex-direction: row;
+      gap: 8px;
+    }
+
+    .metric-grid {
+      gap: 7px;
+    }
+
+    .metric-item {
+      display: flex;
+      min-width: 0;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .metric-label {
+      flex: 0 0 auto;
+      font-size: 9px;
+      letter-spacing: 0.1em;
+    }
+
+    .metric-value {
+      min-width: 0;
+      margin-top: 0;
+      font-size: 14px;
     }
 
     .refresh-button {
-      width: 100%;
+      width: auto;
+      min-height: 36px;
+      padding: 0 10px;
+      font-size: 11px;
     }
 
     .action-grid {
@@ -817,26 +843,8 @@ PAGE_HTML = r"""<!doctype html>
     }
 
     .control-row {
-      min-height: 62px;
-      padding: 13px 14px;
-    }
-
-    .control-pair {
-      gap: 8px;
-    }
-
-    .control-pair .control-row {
-      padding: 12px;
-      gap: 8px;
-    }
-
-    .control-pair .control-title {
-      font-size: 14px;
-    }
-
-    .control-pair .control-meta,
-    .control-pair .control-value {
-      font-size: 11px;
+      min-height: 60px;
+      padding: 12px 14px;
     }
 
     .power-slider {
@@ -880,16 +888,45 @@ PAGE_HTML = r"""<!doctype html>
     }
 
     .app-shell {
+      width: min(100%, 390px);
       padding: 10px;
       border-radius: 16px;
     }
 
     .hero-card {
-      padding: 16px;
+      padding: 12px;
     }
 
     .temperature {
-      font-size: clamp(34px, 11vw, 44px);
+      font-size: clamp(28px, 9vw, 34px);
+    }
+
+    .hero-footer {
+      gap: 7px;
+    }
+
+    .metric-grid {
+      gap: 5px;
+    }
+
+    .metric-item {
+      display: block;
+    }
+
+    .metric-label {
+      font-size: 8px;
+      letter-spacing: 0.08em;
+    }
+
+    .metric-value {
+      margin-top: 2px;
+      font-size: 12px;
+    }
+
+    .refresh-button {
+      min-height: 32px;
+      padding: 0 8px;
+      font-size: 10px;
     }
 
     .controls-card {
@@ -899,8 +936,7 @@ PAGE_HTML = r"""<!doctype html>
     }
 
     .action-grid,
-    .control-list,
-    .control-pair {
+    .control-list {
       gap: 7px;
     }
 
@@ -911,12 +947,12 @@ PAGE_HTML = r"""<!doctype html>
     }
 
     .control-row {
-      min-height: 56px;
+      min-height: 54px;
       padding: 10px;
       border-radius: 10px;
     }
 
-    .action-button span,
+    .action-label,
     .control-title {
       font-size: 13px;
     }
@@ -942,7 +978,7 @@ PAGE_HTML = r"""<!doctype html>
     .power-slider {
       --power-knob-size: 36px;
       --power-knob-inset: 5px;
-      min-height: 56px;
+      min-height: 54px;
       padding: 0 10px 0 44px;
       border-radius: 10px;
     }
@@ -962,52 +998,48 @@ PAGE_HTML = r"""<!doctype html>
 <body>
 <main class="app-shell">
   <section class="hero-card" aria-label="AC status">
-    <div class="hero-top">
-      <div class="temperature" id="activeTempF">--</div>
-    </div>
     <div class="hero-footer">
+      <div class="temperature" id="activeTempF">--</div>
       <div class="metric-grid">
-        <div>
+        <div class="metric-item">
           <p class="metric-label">Phase</p>
           <span class="metric-value" id="phase">stopped</span>
         </div>
-        <div>
+        <div class="metric-item">
           <p class="metric-label">Remaining</p>
           <span class="metric-value" id="remaining">--:--</span>
         </div>
       </div>
       <button onclick="readDeviceStatus()" class="refresh-button" aria-label="Refresh AC setting">Refresh</button>
     </div>
+    <div class="action-grid" aria-label="Cycle controls">
+      <button id="startBtn" onclick="postAction('/api/start')" class="dashboard-button action-button action-primary" aria-label="Start cycle">
+        <span class="action-label">Start Cycle</span>
+      </button>
+      <button id="stopBtn" onclick="postAction('/api/stop')" class="dashboard-button action-button action-quiet" aria-label="Stop cycle">
+        <span class="action-label">Stop Cycle</span>
+      </button>
+    </div>
   </section>
 
   <section class="controls-card" aria-label="AC controls">
-    <div class="action-grid" aria-label="Cycle controls">
-      <button id="startBtn" onclick="postAction('/api/start')" class="dashboard-button action-button action-primary" aria-label="Start cycle">
-        <span>Start Cycle</span>
-      </button>
-      <button id="stopBtn" onclick="postAction('/api/stop')" class="dashboard-button action-button action-quiet" aria-label="Stop cycle">
-        <span>Stop</span>
-      </button>
-    </div>
-
     <p class="section-label">Manual Control</p>
     <div class="control-list">
-      <div class="control-pair">
-        <button id="startCompressorBtn" onclick="sendPhase('cooling')" class="dashboard-button control-row" aria-label="Start compressor">
-          <span class="control-copy">
-            <span class="control-title">Start Compressor</span>
-          </span>
-        </button>
-        <button id="stopCompressorBtn" onclick="sendPhase('resting')" class="dashboard-button control-row" aria-label="Stop compressor">
-          <span class="control-copy">
-            <span class="control-title">Stop Compressor</span>
-          </span>
-        </button>
+      <div id="compressorControl" onclick="toggleCompressor()" class="control-row compressor-control" role="button" aria-label="Toggle compressor" aria-pressed="false">
+        <span class="control-copy">
+          <span class="control-title">Compressor</span>
+        </span>
+        <span class="switch" aria-hidden="true">
+          <input class="switch-input" id="compressorToggle" name="compressor-toggle" type="checkbox" tabindex="-1">
+          <span class="switch-slider"></span>
+        </span>
       </div>
       <div onclick="toggleSwing()" class="control-row swing-control" role="button" aria-label="Toggle swing">
         <span class="control-copy">
-          <span class="control-title">Swing</span>
-          <span class="control-meta" id="swingState">Off</span>
+          <span class="control-text">
+            <span class="control-title">Swing</span>
+            <span class="control-meta" id="swingState">Off</span>
+          </span>
         </span>
         <span class="switch" aria-hidden="true">
           <input class="switch-input" id="swingToggle" name="toggle" type="checkbox" tabindex="-1">
@@ -1271,27 +1303,30 @@ PAGE_HTML = r"""<!doctype html>
     const isPoweredOn = Boolean(state.power_switch);
     renderTemperature(state.active_temperature, isPoweredOn);
 
-    document.getElementById('startBtn').disabled = state.running;
-    document.getElementById('stopBtn').disabled = !state.running;
-    const startCompressorBtn = document.getElementById('startCompressorBtn');
-    const stopCompressorBtn = document.getElementById('stopCompressorBtn');
+    const startBtn = document.getElementById('startBtn');
+    const stopBtn = document.getElementById('stopBtn');
+    startBtn.disabled = state.running || !isPoweredOn;
+    startBtn.title = !isPoweredOn
+      ? 'Turn AC on first.'
+      : (state.running ? 'Cycle is already running.' : '');
+    stopBtn.disabled = !state.running;
+    const compressorControl = document.getElementById('compressorControl');
+    const compressorToggle = document.getElementById('compressorToggle');
     const activeTempF = Number(state.active_temperature && state.active_temperature.fahrenheit);
     const coolingSetpointF = Number(state.cycle && state.cycle.cooling_setpoint_f);
     const restingSetpointF = Number(state.cycle && state.cycle.resting_setpoint_f);
-    const alreadyCooling = Number.isFinite(activeTempF)
+    const compressorOn = Number.isFinite(activeTempF)
       && Number.isFinite(coolingSetpointF)
       && Math.abs(activeTempF - coolingSetpointF) < 0.5;
-    const alreadyResting = Number.isFinite(activeTempF)
-      && Number.isFinite(restingSetpointF)
-      && Math.abs(activeTempF - restingSetpointF) < 0.5;
-    startCompressorBtn.disabled = !isPoweredOn || alreadyCooling;
-    startCompressorBtn.title = !isPoweredOn
-      ? 'Turn AC on first.'
-      : (alreadyCooling ? 'AC is already at ' + coolingSetpointF + 'F.' : '');
-    stopCompressorBtn.disabled = !isPoweredOn || alreadyResting;
-    stopCompressorBtn.title = !isPoweredOn
-      ? 'Turn AC on first.'
-      : (alreadyResting ? 'AC is already at ' + restingSetpointF + 'F.' : '');
+    if (compressorToggle) compressorToggle.checked = isPoweredOn && compressorOn;
+    if (compressorControl) {
+      compressorControl.classList.toggle('is-disabled', !isPoweredOn);
+      compressorControl.setAttribute('aria-disabled', String(!isPoweredOn));
+      compressorControl.setAttribute('aria-pressed', String(isPoweredOn && compressorOn));
+      compressorControl.title = !isPoweredOn
+        ? 'Turn AC on first.'
+        : (compressorOn ? 'Set to ' + restingSetpointF + 'F.' : 'Set to ' + coolingSetpointF + 'F.');
+    }
 
     renderPowerSlider();
     if (!powerSliderState.dragging && !powerSliderState.busy) resetPowerSlider();
@@ -1309,11 +1344,13 @@ PAGE_HTML = r"""<!doctype html>
   }
 
   async function sendPhase(phase) {
-    const button = phase === 'cooling'
-      ? document.getElementById('startCompressorBtn')
-      : document.getElementById('stopCompressorBtn');
+    const button = document.getElementById('compressorControl');
     const title = button ? button.querySelector('.control-title') : null;
     const originalTitle = title ? title.textContent : '';
+    if (button) {
+      button.classList.add('is-sending');
+      button.setAttribute('aria-busy', 'true');
+    }
     if (title) title.textContent = 'Sending...';
     try {
       const data = await requestJson('/api/phase', {
@@ -1328,7 +1365,18 @@ PAGE_HTML = r"""<!doctype html>
       await refreshState();
     } finally {
       if (title) title.textContent = originalTitle;
+      if (button) {
+        button.classList.remove('is-sending');
+        button.removeAttribute('aria-busy');
+      }
     }
+  }
+
+  async function toggleCompressor() {
+    if (!latestState || !latestState.power_switch) return;
+    const toggle = document.getElementById('compressorToggle');
+    const isCooling = Boolean(toggle && toggle.checked);
+    await sendPhase(isCooling ? 'resting' : 'cooling');
   }
 
   async function readDeviceStatus(silent) {

@@ -3,9 +3,11 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import os
 import pathlib
 import queue
 import socket
+import sys
 import threading
 import time
 import traceback
@@ -90,14 +92,6 @@ PAGE_HTML = r"""<!doctype html>
   ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb { background: #2a2a2b; border-radius: 2px; }
 
-  @keyframes breathe {
-    0%, 100% { opacity: 0.4; box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
-    50% { opacity: 1; box-shadow: 0 0 6px 2px rgba(16, 185, 129, 0.3); }
-  }
-  .animate-breathe {
-    animation: breathe 3s ease-in-out infinite;
-  }
-
   *,
   *::before,
   *::after {
@@ -178,11 +172,21 @@ PAGE_HTML = r"""<!doctype html>
       linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.035));
   }
 
+  .controls-card {
+    width: 100%;
+    margin-top: 14px;
+    padding: 16px;
+    border: 1px solid var(--card-border);
+    border-radius: 18px;
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.022)),
+      rgba(0, 0, 0, 0.12);
+  }
+
   .hero-top,
   .hero-footer,
   .footer-row,
-  .control-row,
-  .status-pill {
+  .control-row {
     display: flex;
     align-items: center;
   }
@@ -231,25 +235,6 @@ PAGE_HTML = r"""<!doctype html>
     font-size: 13px;
   }
 
-  .status-pill {
-    gap: 8px;
-    align-self: flex-start;
-    padding: 7px 11px;
-    border: 1px solid var(--card-border);
-    border-radius: 999px;
-    background: rgba(0, 0, 0, 0.18);
-    color: var(--text-soft);
-    font-size: 12px;
-    font-weight: 650;
-  }
-
-  #statusDot {
-    width: 8px;
-    height: 8px;
-    border-radius: 999px;
-    background: var(--red);
-  }
-
   .hero-footer {
     gap: 12px;
     margin-top: 24px;
@@ -292,6 +277,7 @@ PAGE_HTML = r"""<!doctype html>
 
   .refresh-button:hover,
   .control-row:hover,
+  .restart-button:hover,
   .utility-button:hover {
     border-color: rgba(255, 255, 255, 0.18);
     background: rgba(255, 255, 255, 0.075);
@@ -299,14 +285,15 @@ PAGE_HTML = r"""<!doctype html>
 
   .action-grid {
     display: grid;
-    grid-template-columns: 1.2fr 0.8fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 12px;
-    margin-top: 14px;
   }
 
   .action-button {
     width: 100%;
     min-height: 76px;
+    display: flex;
+    align-items: center;
     padding: 16px;
     border: 1px solid transparent;
     border-radius: 16px;
@@ -337,8 +324,7 @@ PAGE_HTML = r"""<!doctype html>
     box-shadow: 0 16px 46px rgba(34, 211, 238, 0.18);
   }
 
-  .action-primary span,
-  .action-primary small {
+  .action-primary span {
     color: #052127;
   }
 
@@ -362,6 +348,7 @@ PAGE_HTML = r"""<!doctype html>
   .control-row:active:not(:disabled),
   .power-slider:active:not(.is-busy),
   .refresh-button:active,
+  .restart-button:active,
   .utility-button:active {
     transform: scale(0.985);
   }
@@ -632,19 +619,24 @@ PAGE_HTML = r"""<!doctype html>
   }
 
   .utility-button,
+  .restart-button,
   .footer-link {
     min-height: 42px;
     border-radius: 15px;
   }
 
-  .utility-button {
+  .utility-button,
+  .restart-button {
     flex: 0 0 auto;
-    min-width: 122px;
-    padding: 0 14px;
-    color: var(--red);
+    min-width: 112px;
+    padding: 0 12px;
     font-size: 12px;
-    font-weight: 700;
+    font-weight: 750;
     transition: transform 0.18s ease, background 0.18s ease, border-color 0.18s ease;
+  }
+
+  .utility-button {
+    color: var(--red);
   }
 
   .footer-link {
@@ -660,6 +652,19 @@ PAGE_HTML = r"""<!doctype html>
     text-decoration: none;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+
+  .restart-button {
+    border: 1px solid rgba(103, 232, 249, 0.16);
+    background: rgba(103, 232, 249, 0.055);
+    color: var(--cyan);
+    transition: transform 0.18s ease, background 0.18s ease, border-color 0.18s ease, opacity 0.18s ease;
+  }
+
+  .restart-button:disabled {
+    cursor: wait;
+    opacity: 0.58;
+    transform: none;
   }
 
   .shutdown-card {
@@ -810,6 +815,11 @@ PAGE_HTML = r"""<!doctype html>
       border-radius: 17px;
     }
 
+    .controls-card {
+      padding: 12px;
+      border-radius: 16px;
+    }
+
     .hero-footer {
       align-items: stretch;
       flex-direction: column;
@@ -822,8 +832,8 @@ PAGE_HTML = r"""<!doctype html>
     }
 
     .action-grid {
-      grid-template-columns: 1fr;
-      gap: 9px;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
     }
 
     .action-button {
@@ -864,13 +874,13 @@ PAGE_HTML = r"""<!doctype html>
     }
 
     .footer-row {
-      flex-direction: column-reverse;
-      align-items: stretch;
+      gap: 8px;
     }
 
     .utility-button,
-    .footer-link {
-      width: 100%;
+    .restart-button {
+      min-width: 96px;
+      padding: 0 10px;
     }
 
     .confirm-actions {
@@ -888,10 +898,6 @@ PAGE_HTML = r"""<!doctype html>
         <div class="temperature" id="activeTempF">--</div>
         <span id="activeTempMeta">Not read yet</span>
       </div>
-      <div id="runPill" class="status-pill">
-        <span id="statusDot"></span>
-        <span id="runText">Loading</span>
-      </div>
     </div>
     <div class="hero-footer">
       <div class="metric-grid">
@@ -908,57 +914,56 @@ PAGE_HTML = r"""<!doctype html>
     </div>
   </section>
 
-  <div class="action-grid" aria-label="Cycle controls">
-    <button id="startBtn" onclick="postAction('/api/start')" class="dashboard-button action-button action-primary" aria-label="Start cycle">
-      <span>Start Cycle</span>
-      <small>Run the 70F / 80F loop</small>
-    </button>
-    <button id="stopBtn" onclick="postAction('/api/stop')" class="dashboard-button action-button action-quiet" aria-label="Stop cycle">
-      <span>Stop</span>
-      <small>Pause the loop</small>
-    </button>
-  </div>
-
-  <p class="section-label">Manual Control</p>
-  <div class="control-list">
-    <div class="control-pair">
-      <button id="startCompressorBtn" onclick="sendPhase('cooling')" class="dashboard-button control-row" aria-label="Start compressor">
-        <span class="control-copy">
-          <span class="control-title">Start Compressor</span>
-          <span class="control-meta">Set target to cooling</span>
-        </span>
+  <section class="controls-card" aria-label="AC controls">
+    <div class="action-grid" aria-label="Cycle controls">
+      <button id="startBtn" onclick="postAction('/api/start')" class="dashboard-button action-button action-primary" aria-label="Start cycle">
+        <span>Start Cycle</span>
       </button>
-      <button id="stopCompressorBtn" onclick="sendPhase('resting')" class="dashboard-button control-row" aria-label="Stop compressor">
-        <span class="control-copy">
-          <span class="control-title">Stop Compressor</span>
-          <span class="control-meta">Raise target to resting</span>
-        </span>
+      <button id="stopBtn" onclick="postAction('/api/stop')" class="dashboard-button action-button action-quiet" aria-label="Stop cycle">
+        <span>Stop</span>
       </button>
     </div>
-    <div class="control-pair">
-      <div onclick="toggleSwing()" class="control-row swing-control" role="button" aria-label="Toggle swing">
-        <span class="control-copy">
-          <span class="control-title">Swing</span>
-          <span class="control-meta" id="swingState">Off</span>
-        </span>
-        <span class="switch" aria-hidden="true">
-          <input class="switch-input" id="swingToggle" name="toggle" type="checkbox" tabindex="-1">
-          <span class="switch-slider"></span>
-        </span>
+
+    <p class="section-label">Manual Control</p>
+    <div class="control-list">
+      <div class="control-pair">
+        <button id="startCompressorBtn" onclick="sendPhase('cooling')" class="dashboard-button control-row" aria-label="Start compressor">
+          <span class="control-copy">
+            <span class="control-title">Start Compressor</span>
+          </span>
+        </button>
+        <button id="stopCompressorBtn" onclick="sendPhase('resting')" class="dashboard-button control-row" aria-label="Stop compressor">
+          <span class="control-copy">
+            <span class="control-title">Stop Compressor</span>
+          </span>
+        </button>
       </div>
-      <div id="powerSlider" class="power-slider power-off" role="button" tabindex="0" aria-label="Slide to turn AC on" aria-pressed="false">
-        <span class="power-slider-knob" id="powerKnob" aria-hidden="true">
-          <span class="material-symbols-outlined">power_settings_new</span>
-        </span>
-        <span class="power-slider-label" id="powerLabel">Slide to turn on</span>
+      <div class="control-pair">
+        <div onclick="toggleSwing()" class="control-row swing-control" role="button" aria-label="Toggle swing">
+          <span class="control-copy">
+            <span class="control-title">Swing</span>
+            <span class="control-meta" id="swingState">Off</span>
+          </span>
+          <span class="switch" aria-hidden="true">
+            <input class="switch-input" id="swingToggle" name="toggle" type="checkbox" tabindex="-1">
+            <span class="switch-slider"></span>
+          </span>
+        </div>
+        <div id="powerSlider" class="power-slider power-off" role="button" tabindex="0" aria-label="Slide to turn AC on" aria-pressed="false">
+          <span class="power-slider-knob" id="powerKnob" aria-hidden="true">
+            <span class="material-symbols-outlined">power_settings_new</span>
+          </span>
+          <span class="power-slider-label" id="powerLabel">Slide to turn on</span>
+        </div>
       </div>
     </div>
-  </div>
 
-  <div class="footer-row">
-    <button onclick="openCloseConfirm()" class="utility-button" aria-label="Close server">Close Server</button>
-    <a id="phoneUrl" class="footer-link" href="#">loading...</a>
-  </div>
+    <div class="footer-row">
+      <button onclick="openCloseConfirm()" class="utility-button" aria-label="Close server">Close Server</button>
+      <button id="restartServerBtn" onclick="restartServer()" class="restart-button" type="button" aria-label="Restart server">Restart Server</button>
+      <a id="phoneUrl" class="footer-link" href="#">loading...</a>
+    </div>
+  </section>
 </main>
 
 <div id="closeConfirmOverlay" class="modal-overlay close-confirm-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="closeConfirmTitle">
@@ -1021,6 +1026,23 @@ PAGE_HTML = r"""<!doctype html>
         await fetch('/api/state?shutdown_check=' + Date.now(), { cache: 'no-store', signal: controller.signal });
       } catch (error) {
         return true;
+      } finally {
+        clearTimeout(timeout);
+      }
+    }
+    return false;
+  }
+
+  async function waitForServerReady() {
+    for (let attempt = 0; attempt < 40; attempt += 1) {
+      await sleep(500);
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 500);
+      try {
+        const response = await fetch('/api/state?restart_check=' + Date.now(), { cache: 'no-store', signal: controller.signal });
+        if (response.ok) return true;
+      } catch (error) {
+        // The server is expected to be temporarily unavailable while restarting.
       } finally {
         clearTimeout(timeout);
       }
@@ -1168,20 +1190,9 @@ PAGE_HTML = r"""<!doctype html>
 
   function renderState(state) {
     latestState = state;
-    const dot = document.getElementById('statusDot');
 
     document.getElementById('phase').textContent = state.phase || 'stopped';
     document.getElementById('remaining').textContent = fmtSeconds(state.remaining_seconds);
-
-    if (state.running) {
-      document.getElementById('runText').textContent = 'Running';
-      dot.classList.add('animate-breathe');
-      dot.style.backgroundColor = '#4ad9d9';
-    } else {
-      document.getElementById('runText').textContent = 'Stopped';
-      dot.classList.remove('animate-breathe');
-      dot.style.backgroundColor = '#ff6b6b';
-    }
 
     const swingToggle = document.getElementById('swingToggle');
     const swingState = document.getElementById('swingState');
@@ -1319,6 +1330,38 @@ PAGE_HTML = r"""<!doctype html>
         refreshTimer = setInterval(refreshState, 2000);
       }
     }
+  }
+
+  async function restartServer() {
+    const button = document.getElementById('restartServerBtn');
+    if (button) button.disabled = true;
+    if (refreshTimer) {
+      clearInterval(refreshTimer);
+      refreshTimer = null;
+    }
+    showShutdownOverlay(
+      'Restarting server',
+      'Restarting the local panel. This page will reload automatically.',
+      'restart_alt',
+      '#67e8f9'
+    );
+    try {
+      await requestJson('/api/restart', { method: 'POST' });
+    } catch (error) {
+      console.error(error);
+    }
+    await waitForServerClose();
+    const ready = await waitForServerReady();
+    if (ready) {
+      window.location.reload();
+      return;
+    }
+    showShutdownOverlay(
+      'Restart requested',
+      'The local panel is restarting. Reload this page in a moment.',
+      'info',
+      '#fcd34d'
+    );
   }
 
   async function togglePower() {
@@ -1807,9 +1850,12 @@ class WebController:
 
 
 class WebServer(ThreadingHTTPServer):
+    allow_reuse_address = True
+
     def __init__(self, server_address: tuple[str, int], controller: WebController):
         super().__init__(server_address, RequestHandler)
         self.controller = controller
+        self.restart_requested = False
 
 
 class RequestHandler(BaseHTTPRequestHandler):
@@ -1865,6 +1911,13 @@ class RequestHandler(BaseHTTPRequestHandler):
                 self._send_json({"ok": True, "message": message})
                 self.server.controller._shutdown_worker()
                 threading.Thread(target=self.server.shutdown, name="tcl-web-shutdown", daemon=True).start()
+                return
+            if parsed.path == "/api/restart":
+                message = self.server.controller.stop_cycle()
+                self.server.restart_requested = True
+                self._send_json({"ok": True, "message": message})
+                self.server.controller._shutdown_worker()
+                threading.Thread(target=self.server.shutdown, name="tcl-web-restart", daemon=True).start()
                 return
             self._send_json({"ok": False, "error": "Not found"}, HTTPStatus.NOT_FOUND)
         except (BackendError, ConfigError, ValueError) as exc:
@@ -1974,8 +2027,17 @@ def main(argv: list[str] | None = None) -> int:
     except KeyboardInterrupt:
         logging.info("Web panel stopped by keyboard")
     finally:
+        restart_requested = server.restart_requested
         controller.stop_cycle()
         server.server_close()
+    if restart_requested:
+        command = [sys.executable, *sys.argv]
+        logging.info("Restarting web panel: %s", command)
+        try:
+            os.execv(sys.executable, command)
+        except OSError as exc:
+            logging.error("Could not restart web panel: %s", exc)
+            return 1
     return 0
 
 

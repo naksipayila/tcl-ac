@@ -153,7 +153,7 @@ PAGE_HTML = r"""<!doctype html>
     width: min(100%, 520px);
     padding: 18px;
     border: 1px solid var(--panel-border);
-    border-radius: 24px;
+    border-radius: 20px;
     background:
       linear-gradient(180deg, rgba(255, 255, 255, 0.055), transparent 24%),
       var(--panel-bg);
@@ -166,9 +166,8 @@ PAGE_HTML = r"""<!doctype html>
     width: 100%;
     padding: 22px;
     border: 1px solid var(--card-border);
-    border-radius: 20px;
+    border-radius: 16px;
     background:
-      radial-gradient(circle at 82% 12%, rgba(103, 232, 249, 0.14), transparent 30%),
       linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.035));
   }
 
@@ -177,7 +176,7 @@ PAGE_HTML = r"""<!doctype html>
     margin-top: 14px;
     padding: 16px;
     border: 1px solid var(--card-border);
-    border-radius: 18px;
+    border-radius: 14px;
     background:
       linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.022)),
       rgba(0, 0, 0, 0.12);
@@ -198,8 +197,7 @@ PAGE_HTML = r"""<!doctype html>
     justify-content: space-between;
   }
 
-  .eyebrow,
-  .metric-label,
+.metric-label,
   .section-label,
   .control-meta,
   .footer-link {
@@ -210,8 +208,7 @@ PAGE_HTML = r"""<!doctype html>
     min-width: 0;
   }
 
-  .eyebrow,
-  .metric-label,
+.metric-label,
   .section-label {
     margin: 0;
     font-size: 10px;
@@ -220,19 +217,12 @@ PAGE_HTML = r"""<!doctype html>
     text-transform: uppercase;
   }
 
-  .temperature {
-    margin: 8px 0 2px;
-    font-size: clamp(54px, 17vw, 92px);
-    font-weight: 800;
-    letter-spacing: -0.08em;
-    line-height: 0.88;
-  }
-
-  #activeTempMeta {
-    display: block;
-    min-height: 19px;
-    color: var(--text-soft);
-    font-size: 13px;
+.temperature {
+    margin: 0;
+    font-size: clamp(44px, 13vw, 68px);
+    font-weight: 780;
+    letter-spacing: -0.06em;
+    line-height: 0.92;
   }
 
   .hero-footer {
@@ -267,7 +257,7 @@ PAGE_HTML = r"""<!doctype html>
     min-height: 42px;
     padding: 0 14px;
     border: 1px solid var(--card-border);
-    border-radius: 999px;
+    border-radius: 12px;
     background: rgba(255, 255, 255, 0.055);
     color: var(--text-soft);
     font-size: 12px;
@@ -296,7 +286,7 @@ PAGE_HTML = r"""<!doctype html>
     align-items: center;
     padding: 16px;
     border: 1px solid transparent;
-    border-radius: 16px;
+    border-radius: 12px;
     text-align: left;
     transition: transform 0.18s ease, opacity 0.18s ease, background 0.18s ease, border-color 0.18s ease;
   }
@@ -382,7 +372,7 @@ PAGE_HTML = r"""<!doctype html>
     min-height: 66px;
     gap: 14px;
     padding: 14px 16px;
-    border-radius: 14px;
+    border-radius: 11px;
     color: inherit;
     text-align: left;
     cursor: pointer;
@@ -481,7 +471,7 @@ PAGE_HTML = r"""<!doctype html>
     overflow: hidden;
     padding: 0 16px 0 58px;
     border: 1px solid var(--card-border);
-    border-radius: 14px;
+    border-radius: 11px;
     background: var(--card-bg);
     color: var(--text-main);
     cursor: default;
@@ -494,28 +484,14 @@ PAGE_HTML = r"""<!doctype html>
   .power-slider::before {
     content: '';
     position: absolute;
-    inset: 6px;
+    inset: 0;
     z-index: 0;
-    border-radius: 10px;
+    border-radius: inherit;
     background: linear-gradient(135deg, rgba(103, 232, 249, 0.32), rgba(116, 230, 178, 0.26));
     opacity: 0.75;
     transform: scaleX(var(--power-progress));
     transform-origin: left center;
     transition: transform 0.2s ease;
-  }
-
-  .power-slider::after {
-    content: '';
-    position: absolute;
-    top: 50%;
-    right: 10px;
-    z-index: 1;
-    width: 2px;
-    height: 24px;
-    border-radius: 999px;
-    background: rgba(103, 232, 249, 0.34);
-    transform: translateY(-50%);
-    opacity: 0.78;
   }
 
   .power-slider.power-on {
@@ -525,10 +501,6 @@ PAGE_HTML = r"""<!doctype html>
 
   .power-slider.power-on::before {
     background: linear-gradient(135deg, rgba(251, 113, 133, 0.34), rgba(251, 191, 36, 0.18));
-  }
-
-  .power-slider.power-on::after {
-    background: rgba(251, 113, 133, 0.38);
   }
 
   .power-slider.power-off {
@@ -587,7 +559,7 @@ PAGE_HTML = r"""<!doctype html>
     top: 50%;
     display: grid;
     place-items: center;
-    border-radius: 12px;
+    border-radius: 10px;
     transform: translateY(-50%);
   }
 
@@ -622,7 +594,7 @@ PAGE_HTML = r"""<!doctype html>
   .restart-button,
   .footer-link {
     min-height: 42px;
-    border-radius: 15px;
+    border-radius: 12px;
   }
 
   .utility-button,
@@ -671,7 +643,7 @@ PAGE_HTML = r"""<!doctype html>
     width: min(100%, 360px);
     padding: 24px;
     border: 1px solid var(--panel-border);
-    border-radius: 20px;
+    border-radius: 16px;
     background: rgba(18, 20, 24, 0.94);
     box-shadow: 0 24px 70px rgba(0, 0, 0, 0.58);
     text-align: center;
@@ -681,7 +653,7 @@ PAGE_HTML = r"""<!doctype html>
     width: min(100%, 380px);
     padding: 22px;
     border: 1px solid var(--panel-border);
-    border-radius: 22px;
+    border-radius: 18px;
     background:
       linear-gradient(180deg, rgba(255, 255, 255, 0.06), transparent 28%),
       rgba(18, 20, 24, 0.96);
@@ -714,7 +686,7 @@ PAGE_HTML = r"""<!doctype html>
     width: 100%;
     min-height: 44px;
     border: 1px solid var(--card-border);
-    border-radius: 12px;
+    border-radius: 10px;
     font-size: 13px;
     font-weight: 750;
     transition: transform 0.18s ease, background 0.18s ease, border-color 0.18s ease;
@@ -807,17 +779,21 @@ PAGE_HTML = r"""<!doctype html>
 
     .app-shell {
       padding: 12px;
-      border-radius: 20px;
+      border-radius: 18px;
     }
 
     .hero-card {
       padding: 18px;
-      border-radius: 17px;
+      border-radius: 14px;
+    }
+
+    .temperature {
+      font-size: clamp(38px, 12vw, 54px);
     }
 
     .controls-card {
       padding: 12px;
-      border-radius: 16px;
+      border-radius: 13px;
     }
 
     .hero-footer {
@@ -874,17 +850,111 @@ PAGE_HTML = r"""<!doctype html>
     }
 
     .footer-row {
+      flex-wrap: wrap;
       gap: 8px;
     }
 
     .utility-button,
     .restart-button {
-      min-width: 96px;
+      flex: 1 1 calc(50% - 4px);
+      min-width: 0;
       padding: 0 10px;
+    }
+
+    .footer-link {
+      flex: 1 0 100%;
+      width: 100%;
+      min-height: 38px;
+      padding: 0 10px;
+      font-size: 10px;
     }
 
     .confirm-actions {
       grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 420px) {
+    body {
+      padding: 10px;
+    }
+
+    .app-shell {
+      padding: 10px;
+      border-radius: 16px;
+    }
+
+    .hero-card {
+      padding: 16px;
+    }
+
+    .temperature {
+      font-size: clamp(34px, 11vw, 44px);
+    }
+
+    .controls-card {
+      margin-top: 10px;
+      padding: 10px;
+      border-radius: 12px;
+    }
+
+    .action-grid,
+    .control-list,
+    .control-pair {
+      gap: 7px;
+    }
+
+    .action-button {
+      min-height: 58px;
+      padding: 12px;
+      border-radius: 12px;
+    }
+
+    .control-row {
+      min-height: 56px;
+      padding: 10px;
+      border-radius: 10px;
+    }
+
+    .action-button span,
+    .control-title {
+      font-size: 13px;
+    }
+
+    .control-meta {
+      font-size: 10px;
+    }
+
+    .switch {
+      width: 38px;
+      height: 22px;
+    }
+
+    .switch-slider::after {
+      width: 14px;
+      height: 14px;
+    }
+
+    .switch-input:checked + .switch-slider::after {
+      transform: translateX(16px);
+    }
+
+    .power-slider {
+      --power-knob-size: 36px;
+      --power-knob-inset: 5px;
+      min-height: 56px;
+      padding: 0 10px 0 44px;
+      border-radius: 10px;
+    }
+
+    .power-slider-label {
+      font-size: 10px;
+    }
+
+    .utility-button,
+    .restart-button {
+      min-height: 38px;
+      font-size: 11px;
     }
   }
 </style>
@@ -893,11 +963,7 @@ PAGE_HTML = r"""<!doctype html>
 <main class="app-shell">
   <section class="hero-card" aria-label="AC status">
     <div class="hero-top">
-      <div class="min-w-0">
-        <p class="eyebrow">TCL AC Control</p>
-        <div class="temperature" id="activeTempF">--</div>
-        <span id="activeTempMeta">Not read yet</span>
-      </div>
+      <div class="temperature" id="activeTempF">--</div>
     </div>
     <div class="hero-footer">
       <div class="metric-grid">
@@ -938,23 +1004,21 @@ PAGE_HTML = r"""<!doctype html>
           </span>
         </button>
       </div>
-      <div class="control-pair">
-        <div onclick="toggleSwing()" class="control-row swing-control" role="button" aria-label="Toggle swing">
-          <span class="control-copy">
-            <span class="control-title">Swing</span>
-            <span class="control-meta" id="swingState">Off</span>
-          </span>
-          <span class="switch" aria-hidden="true">
-            <input class="switch-input" id="swingToggle" name="toggle" type="checkbox" tabindex="-1">
-            <span class="switch-slider"></span>
-          </span>
-        </div>
-        <div id="powerSlider" class="power-slider power-off" role="button" tabindex="0" aria-label="Slide to turn AC on" aria-pressed="false">
-          <span class="power-slider-knob" id="powerKnob" aria-hidden="true">
-            <span class="material-symbols-outlined">power_settings_new</span>
-          </span>
-          <span class="power-slider-label" id="powerLabel">Slide to turn on</span>
-        </div>
+      <div onclick="toggleSwing()" class="control-row swing-control" role="button" aria-label="Toggle swing">
+        <span class="control-copy">
+          <span class="control-title">Swing</span>
+          <span class="control-meta" id="swingState">Off</span>
+        </span>
+        <span class="switch" aria-hidden="true">
+          <input class="switch-input" id="swingToggle" name="toggle" type="checkbox" tabindex="-1">
+          <span class="switch-slider"></span>
+        </span>
+      </div>
+      <div id="powerSlider" class="power-slider power-off" role="button" tabindex="0" aria-label="Slide to turn AC on" aria-pressed="false">
+        <span class="power-slider-knob" id="powerKnob" aria-hidden="true">
+          <span class="material-symbols-outlined">power_settings_new</span>
+        </span>
+        <span class="power-slider-label" id="powerLabel"></span>
       </div>
     </div>
 
@@ -1064,35 +1128,25 @@ PAGE_HTML = r"""<!doctype html>
     return rounded + unit;
   }
 
-  function fmtAge(timestamp) {
-    if (!timestamp) return 'Not read yet';
-    const seconds = Math.max(0, Math.floor(Date.now() / 1000 - timestamp));
-    if (seconds < 60) return seconds + ' sec ago';
-    const minutes = Math.floor(seconds / 60);
-    if (minutes < 60) return minutes + ' min ago';
-    return Math.floor(minutes / 60) + ' hr ago';
-  }
-
-  function renderTemperature(temperature) {
+  function renderTemperature(temperature, isPoweredOn) {
     const value = document.getElementById('activeTempF');
-    const meta = document.getElementById('activeTempMeta');
+    if (!isPoweredOn) {
+      value.textContent = '--';
+      return;
+    }
     if (!temperature) {
       value.textContent = '--';
-      meta.textContent = 'Not read yet';
       return;
     }
     if (temperature.error) {
       value.textContent = '--';
-      meta.textContent = 'Error: ' + temperature.error;
       return;
     }
     if (temperature.fahrenheit === null || temperature.fahrenheit === undefined) {
       value.textContent = '--';
-      meta.textContent = temperature.updated_at ? 'Target not found' : 'Not read yet';
       return;
     }
     value.textContent = fmtTemperature(temperature.fahrenheit, 'F');
-    meta.textContent = fmtTemperature(temperature.celsius, 'C') + ' - ' + fmtAge(temperature.updated_at);
   }
 
   async function requestJson(path, options) {
@@ -1141,7 +1195,7 @@ PAGE_HTML = r"""<!doctype html>
   }
 
   function powerSliderActionText(isOn) {
-    return isOn ? 'Slide to turn off' : 'Slide to turn on';
+    return '';
   }
 
   function updatePowerSliderLabel() {
@@ -1214,7 +1268,8 @@ PAGE_HTML = r"""<!doctype html>
       phoneUrl.href = '#';
     }
 
-    renderTemperature(state.active_temperature);
+    const isPoweredOn = Boolean(state.power_switch);
+    renderTemperature(state.active_temperature, isPoweredOn);
 
     document.getElementById('startBtn').disabled = state.running;
     document.getElementById('stopBtn').disabled = !state.running;
@@ -1223,7 +1278,6 @@ PAGE_HTML = r"""<!doctype html>
     const activeTempF = Number(state.active_temperature && state.active_temperature.fahrenheit);
     const coolingSetpointF = Number(state.cycle && state.cycle.cooling_setpoint_f);
     const restingSetpointF = Number(state.cycle && state.cycle.resting_setpoint_f);
-    const isPoweredOn = Boolean(state.power_switch);
     const alreadyCooling = Number.isFinite(activeTempF)
       && Number.isFinite(coolingSetpointF)
       && Math.abs(activeTempF - coolingSetpointF) < 0.5;
@@ -1255,6 +1309,12 @@ PAGE_HTML = r"""<!doctype html>
   }
 
   async function sendPhase(phase) {
+    const button = phase === 'cooling'
+      ? document.getElementById('startCompressorBtn')
+      : document.getElementById('stopCompressorBtn');
+    const title = button ? button.querySelector('.control-title') : null;
+    const originalTitle = title ? title.textContent : '';
+    if (title) title.textContent = 'Sending...';
     try {
       const data = await requestJson('/api/phase', {
         method: 'POST',
@@ -1264,16 +1324,21 @@ PAGE_HTML = r"""<!doctype html>
       renderState(data.state);
     } catch (error) {
       console.error(error);
-      refreshState();
+      alert(error.message || 'Command failed.');
+      await refreshState();
+    } finally {
+      if (title) title.textContent = originalTitle;
     }
   }
 
   async function readDeviceStatus(silent) {
     try {
       const data = await requestJson('/api/device-status');
-      if (data.state) renderState(data.state);
-      const temperature = data.active_temperature || (data.state && data.state.active_temperature);
-      renderTemperature(temperature);
+      if (data.state) {
+        renderState(data.state);
+      } else {
+        renderTemperature(data.active_temperature, Boolean(latestState && latestState.power_switch));
+      }
     } catch (error) {
       console.error(error);
       if (silent) await refreshState();
@@ -1621,12 +1686,13 @@ class WebController:
     def snapshot(self) -> dict[str, Any]:
         with self.state_lock:
             now = time.time()
+            stopping = self.running and self.stop_event.is_set()
             remaining = None
-            if self.running and self.phase_end_at is not None:
+            if self.running and not stopping and self.phase_end_at is not None:
                 remaining = max(0.0, self.phase_end_at - now)
             return {
                 "running": self.running,
-                "phase": self.phase,
+                "phase": "stopped" if stopping else self.phase,
                 "power_switch": self.power_switch,
                 "swing_wind": self.swing_wind,
                 "remaining_seconds": remaining,
@@ -1658,16 +1724,26 @@ class WebController:
         with self.state_lock:
             if not self.running:
                 return "Cycle is already stopped."
-            self.stop_event.set()
+            self._request_cycle_stop_locked()
         thread = self.thread
         if thread and thread.is_alive():
             thread.join(timeout=2.0)
         logging.info("Web: cycle stop requested")
         return "Stopping cycle."
 
+    def _request_cycle_stop_locked(self) -> None:
+        self.stop_event.set()
+        self.phase = "stopped"
+        self.phase_started_at = None
+        self.phase_end_at = None
+
     def set_power_switch(self, enabled: bool) -> str:
         status = "on" if enabled else "off"
-        prev = self.power_switch
+        with self.state_lock:
+            prev = self.power_switch
+            if not enabled and self.running:
+                self._request_cycle_stop_locked()
+                logging.info("Web: cycle stop requested because AC power was turned off")
         def updater(done: bool, error: str | None) -> None:
             if error:
                 self.power_switch = prev
@@ -1692,7 +1768,6 @@ class WebController:
         return f"Swing turned {status}."
 
     def send_phase(self, phase: str) -> str:
-        self._ensure_stopped_for_manual_command()
         if phase == "cooling":
             setpoint = float(self.cycle["cooling_setpoint_f"])
             label = "cooling"
@@ -1701,45 +1776,60 @@ class WebController:
             label = "resting"
         else:
             raise ConfigError("phase must be cooling or resting")
+        thread = None
+        stopped_cycle = False
+        with self.state_lock:
+            previous_temperature = dict(self.active_temperature)
+            if self.running:
+                self._request_cycle_stop_locked()
+                thread = self.thread
+                stopped_cycle = True
+        if thread and thread.is_alive():
+            thread.join(timeout=2.0)
+        if stopped_cycle:
+            logging.info("Web: cycle stop requested for manual %s command", label)
+
         def updater(done: bool, error: str | None) -> None:
-            if done:
-                normalized = normalize_temperature(setpoint, "F")
-                self.active_temperature = {
-                    "fahrenheit": normalized["fahrenheit"],
-                    "celsius": normalized["celsius"],
-                    "source": f"manual.{label}",
-                    "updated_at": time.time(),
-                    "error": None,
-                }
+            if error:
+                self.active_temperature = previous_temperature
+                return
+            normalized = normalize_temperature(setpoint, "F")
+            self.active_temperature = {
+                "fahrenheit": normalized["fahrenheit"],
+                "celsius": normalized["celsius"],
+                "source": f"manual.{label}",
+                "updated_at": time.time(),
+                "error": None,
+            }
         self._enqueue_command(
             lambda sp=setpoint, lb=label: self._safe_apply_sync(sp, lb),
             f"{setpoint:g}F {label}", updater,
         )
+        if stopped_cycle:
+            return f"Cycle stopped. {setpoint:g}F command queued."
         return f"{setpoint:g}F command queued."
 
     def read_device_status(self) -> Any:
         with self.command_lock:
             logging.info("Web: device status requested")
             status = self.backend.status()
-        temperature = extract_active_temperature(status)
-        swing_wind = extract_bool_property(status, "swingWind")
-        power_switch = extract_bool_property(status, "powerSwitch")
-        with self.state_lock:
-            self.active_temperature = temperature
-            if swing_wind is not None:
-                self.swing_wind = swing_wind
-            if power_switch is not None:
-                self.power_switch = power_switch
+            temperature = extract_active_temperature(status)
+            swing_wind = extract_bool_property(status, "swingWind")
+            power_switch = extract_bool_property(status, "powerSwitch")
+            with self.state_lock:
+                self.active_temperature = temperature
+                if swing_wind is not None:
+                    self.swing_wind = swing_wind
+                if power_switch is not None:
+                    self.power_switch = power_switch
+                    if not power_switch and self.running:
+                        self._request_cycle_stop_locked()
+                        logging.info("Web: cycle stop requested because device reported AC power off")
         return status
 
     def _safe_apply_sync(self, setpoint_f: float, phase: str) -> None:
         if not self._safe_apply(setpoint_f, phase, threading.Event()):
             raise BackendError("Manual command cancelled")
-
-    def _ensure_stopped_for_manual_command(self) -> None:
-        with self.state_lock:
-            if self.running:
-                raise BackendError("Manual commands are disabled while the cycle is running. Stop the cycle first.")
 
     def _enqueue_command(
         self,
@@ -1806,6 +1896,8 @@ class WebController:
             logging.info("Web cycle stopped")
 
     def _run_phase(self, phase: str, setpoint_f: float, minutes: float) -> bool:
+        if self.stop_event.is_set():
+            return False
         now = time.time()
         with self.state_lock:
             self.phase = phase
@@ -1825,6 +1917,8 @@ class WebController:
         return self._wait_minutes(minutes, phase)
 
     def _safe_apply(self, setpoint_f: float, phase: str, stop_event: threading.Event) -> bool:
+        if stop_event.is_set():
+            return False
         with self.command_lock:
             elapsed = time.monotonic() - self.last_command_at
             if self.last_command_at and elapsed < self.min_seconds_between_commands:
@@ -1832,6 +1926,8 @@ class WebController:
                 logging.info("Safety wait: %.0f seconds", wait_seconds)
                 if stop_event.wait(wait_seconds):
                     return False
+            if stop_event.is_set():
+                return False
             self.backend.apply_setpoint_f(setpoint_f, phase)
             self.last_command_at = time.monotonic()
         return True

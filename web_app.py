@@ -90,7 +90,7 @@ PAGE_HTML = r"""<!doctype html>
 
   ::-webkit-scrollbar { width: 4px; }
   ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb { background: #2a2a2b; border-radius: 2px; }
+  ::-webkit-scrollbar-thumb { background: #2a2a2a; border-radius: 2px; }
 
   *,
   *::before,
@@ -99,20 +99,18 @@ PAGE_HTML = r"""<!doctype html>
   }
 
   :root {
-    --page-bg: #07080a;
-    --panel-bg: rgba(18, 20, 24, 0.92);
+    --page-bg: #080808;
+    --panel-bg: rgba(18, 18, 18, 0.92);
     --panel-border: rgba(255, 255, 255, 0.08);
     --card-bg: rgba(255, 255, 255, 0.045);
     --card-bg-strong: rgba(255, 255, 255, 0.075);
     --card-border: rgba(255, 255, 255, 0.085);
-    --text-main: #f8fafc;
-    --text-soft: #cbd5e1;
-    --text-muted: #7f8b9d;
-    --cyan: #67e8f9;
-    --cyan-strong: #22d3ee;
-    --green: #74e6b2;
-    --red: #fb7185;
-    --amber: #fbbf24;
+    --text-main: #f5f5f5;
+    --text-soft: #c9c9c9;
+    --text-muted: #8b8b8b;
+    --accent-main: #f4f4f4;
+    --accent-soft: #b7b7b7;
+    --accent-contrast: #090909;
   }
 
   body {
@@ -127,9 +125,9 @@ PAGE_HTML = r"""<!doctype html>
     overflow-x: hidden;
     overflow-y: auto;
     background:
-      radial-gradient(circle at 50% -20%, rgba(103, 232, 249, 0.16), transparent 34%),
-      radial-gradient(circle at 100% 10%, rgba(116, 230, 178, 0.08), transparent 28%),
-      linear-gradient(180deg, #0b0d11 0%, var(--page-bg) 58%, #050506 100%);
+      radial-gradient(circle at 50% -20%, rgba(255, 255, 255, 0.12), transparent 34%),
+      radial-gradient(circle at 100% 10%, rgba(255, 255, 255, 0.055), transparent 28%),
+      linear-gradient(180deg, #0d0d0d 0%, var(--page-bg) 58%, #050505 100%);
   }
 
   button,
@@ -164,7 +162,7 @@ PAGE_HTML = r"""<!doctype html>
 
   .hero-card {
     width: 100%;
-    padding: 22px;
+    padding: 18px;
     border: 1px solid var(--card-border);
     border-radius: 16px;
     background:
@@ -214,20 +212,20 @@ PAGE_HTML = r"""<!doctype html>
   .temperature {
     flex: 0 0 auto;
     margin: 0;
-    font-size: clamp(44px, 13vw, 68px);
+    font-size: clamp(38px, 11vw, 58px);
     font-weight: 780;
     letter-spacing: -0.06em;
     line-height: 0.92;
   }
 
   .hero-footer {
-    gap: 18px;
+    gap: 14px;
   }
 
   .metric-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 16px;
+    gap: 12px;
     flex: 1;
     min-width: 0;
   }
@@ -237,7 +235,7 @@ PAGE_HTML = r"""<!doctype html>
     margin-top: 4px;
     overflow: hidden;
     color: var(--text-main);
-    font-size: 17px;
+    font-size: 15px;
     font-weight: 700;
     letter-spacing: -0.02em;
     text-overflow: ellipsis;
@@ -250,19 +248,20 @@ PAGE_HTML = r"""<!doctype html>
 
   .refresh-button {
     flex: 0 0 auto;
-    min-height: 42px;
-    padding: 0 14px;
+    min-height: 38px;
+    padding: 0 12px;
     border: 1px solid var(--card-border);
     border-radius: 12px;
     background: rgba(255, 255, 255, 0.055);
     color: var(--text-soft);
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 700;
     transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease, transform 0.18s ease;
   }
 
   .refresh-button:hover,
   .control-row:hover,
+  .footer-toggle:hover,
   .restart-button:hover,
   .utility-button:hover {
     border-color: rgba(255, 255, 255, 0.18);
@@ -272,20 +271,20 @@ PAGE_HTML = r"""<!doctype html>
   .action-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 12px;
+    gap: 10px;
   }
 
   .hero-card .action-grid {
-    margin-top: 14px;
+    margin-top: 12px;
   }
 
   .action-button {
     width: 100%;
-    min-height: 76px;
+    min-height: 64px;
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 16px;
+    padding: 12px;
     border: 1px solid transparent;
     border-radius: 12px;
     text-align: center;
@@ -301,6 +300,10 @@ PAGE_HTML = r"""<!doctype html>
     letter-spacing: -0.01em;
   }
 
+  .action-label {
+    font-size: 14px;
+  }
+
   .action-button small,
   .control-meta {
     display: block;
@@ -310,13 +313,13 @@ PAGE_HTML = r"""<!doctype html>
   }
 
   .action-primary {
-    background: linear-gradient(135deg, rgba(103, 232, 249, 0.96), rgba(116, 230, 178, 0.84));
-    color: #052127;
-    box-shadow: 0 16px 46px rgba(34, 211, 238, 0.18);
+    background: linear-gradient(135deg, rgba(245, 245, 245, 0.96), rgba(178, 178, 178, 0.86));
+    color: var(--accent-contrast);
+    box-shadow: 0 16px 46px rgba(255, 255, 255, 0.12);
   }
 
   .action-primary .action-label {
-    color: #052127;
+    color: var(--accent-contrast);
   }
 
   .action-quiet,
@@ -339,6 +342,7 @@ PAGE_HTML = r"""<!doctype html>
   .control-row:active:not(:disabled),
   .power-slider:active:not(.is-busy),
   .refresh-button:active,
+  .footer-toggle:active,
   .restart-button:active,
   .utility-button:active {
     transform: scale(0.985);
@@ -405,11 +409,11 @@ PAGE_HTML = r"""<!doctype html>
   }
 
   .control-value.cool {
-    color: var(--cyan);
+    color: var(--accent-main);
   }
 
   .control-value.warm {
-    color: var(--amber);
+    color: var(--accent-soft);
   }
 
   .switch {
@@ -449,8 +453,8 @@ PAGE_HTML = r"""<!doctype html>
   }
 
   .switch-input:checked + .switch-slider {
-    border-color: rgba(103, 232, 249, 0.4);
-    background: linear-gradient(135deg, rgba(34, 211, 238, 0.95), rgba(116, 230, 178, 0.84));
+    border-color: rgba(255, 255, 255, 0.36);
+    background: linear-gradient(135deg, rgba(245, 245, 245, 0.92), rgba(168, 168, 168, 0.78));
   }
 
   .switch-input:checked + .switch-slider::after {
@@ -487,7 +491,7 @@ PAGE_HTML = r"""<!doctype html>
     inset: 0;
     z-index: 0;
     border-radius: inherit;
-    background: linear-gradient(135deg, rgba(103, 232, 249, 0.32), rgba(116, 230, 178, 0.26));
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.26), rgba(150, 150, 150, 0.2));
     opacity: 0.75;
     transform: scaleX(var(--power-progress));
     transform-origin: left center;
@@ -495,17 +499,17 @@ PAGE_HTML = r"""<!doctype html>
   }
 
   .power-slider.power-on {
-    border-color: rgba(251, 113, 133, 0.22);
-    background: rgba(251, 113, 133, 0.065);
+    border-color: rgba(255, 255, 255, 0.24);
+    background: rgba(255, 255, 255, 0.07);
   }
 
   .power-slider.power-on::before {
-    background: linear-gradient(135deg, rgba(251, 113, 133, 0.34), rgba(251, 191, 36, 0.18));
+    background: linear-gradient(135deg, rgba(210, 210, 210, 0.26), rgba(95, 95, 95, 0.22));
   }
 
   .power-slider.power-off {
-    border-color: rgba(103, 232, 249, 0.17);
-    background: rgba(103, 232, 249, 0.05);
+    border-color: rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.045);
   }
 
   .power-slider.is-dragging {
@@ -513,11 +517,11 @@ PAGE_HTML = r"""<!doctype html>
   }
 
   .power-slider.is-confirm-ready {
-    border-color: rgba(103, 232, 249, 0.34);
+    border-color: rgba(255, 255, 255, 0.34);
   }
 
   .power-slider.power-on.is-confirm-ready {
-    border-color: rgba(251, 113, 133, 0.36);
+    border-color: rgba(255, 255, 255, 0.42);
   }
 
   .power-slider.is-busy {
@@ -527,7 +531,7 @@ PAGE_HTML = r"""<!doctype html>
   }
 
   .power-slider:focus-visible {
-    outline: 2px solid rgba(103, 232, 249, 0.55);
+    outline: 2px solid rgba(255, 255, 255, 0.5);
     outline-offset: 3px;
   }
 
@@ -568,17 +572,17 @@ PAGE_HTML = r"""<!doctype html>
     z-index: 3;
     width: var(--power-knob-size);
     height: var(--power-knob-size);
-    color: #052127;
+    color: var(--accent-contrast);
     cursor: grab;
-    background: linear-gradient(135deg, rgba(103, 232, 249, 0.98), rgba(116, 230, 178, 0.88));
-    box-shadow: 0 12px 30px rgba(34, 211, 238, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.38);
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(178, 178, 178, 0.9));
+    box-shadow: 0 12px 30px rgba(255, 255, 255, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.38);
     transition: transform 0.2s ease, background 0.18s ease, box-shadow 0.18s ease;
   }
 
   .power-slider.power-on .power-slider-knob {
-    color: #2a070d;
-    background: linear-gradient(135deg, rgba(253, 164, 175, 0.98), rgba(251, 113, 133, 0.86));
-    box-shadow: 0 12px 30px rgba(251, 113, 133, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.36);
+    color: var(--text-main);
+    background: linear-gradient(135deg, rgba(82, 82, 82, 0.98), rgba(36, 36, 36, 0.92));
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.32), inset 0 1px 0 rgba(255, 255, 255, 0.18);
   }
 
   .power-slider.is-dragging .power-slider-knob {
@@ -588,6 +592,44 @@ PAGE_HTML = r"""<!doctype html>
   .footer-row {
     gap: 10px;
     margin-top: 14px;
+  }
+
+  .footer-row.is-hidden {
+    display: none;
+  }
+
+  .footer-toggle-wrap {
+    display: flex;
+    justify-content: center;
+    margin-top: 14px;
+  }
+
+  .footer-toggle {
+    width: 38px;
+    min-width: 0;
+    min-height: 32px;
+    display: grid;
+    place-items: center;
+    padding: 0;
+    border: 1px solid var(--card-border);
+    border-radius: 10px;
+    background: var(--card-bg);
+    color: var(--text-soft);
+    transition: transform 0.18s ease, background 0.18s ease, border-color 0.18s ease;
+  }
+
+  .footer-toggle::before {
+    content: '';
+    width: 8px;
+    height: 8px;
+    border-right: 2px solid currentColor;
+    border-bottom: 2px solid currentColor;
+    transform: translateY(-2px) rotate(45deg);
+    transition: transform 0.18s ease;
+  }
+
+  .footer-toggle[aria-expanded="true"]::before {
+    transform: translateY(2px) rotate(225deg);
   }
 
   .utility-button,
@@ -608,7 +650,7 @@ PAGE_HTML = r"""<!doctype html>
   }
 
   .utility-button {
-    color: var(--red);
+    color: var(--accent-soft);
   }
 
   .footer-link {
@@ -627,9 +669,9 @@ PAGE_HTML = r"""<!doctype html>
   }
 
   .restart-button {
-    border: 1px solid rgba(103, 232, 249, 0.16);
-    background: rgba(103, 232, 249, 0.055);
-    color: var(--cyan);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    background: rgba(255, 255, 255, 0.055);
+    color: var(--accent-main);
     transition: transform 0.18s ease, background 0.18s ease, border-color 0.18s ease, opacity 0.18s ease;
   }
 
@@ -644,7 +686,7 @@ PAGE_HTML = r"""<!doctype html>
     padding: 24px;
     border: 1px solid var(--panel-border);
     border-radius: 16px;
-    background: rgba(18, 20, 24, 0.94);
+    background: rgba(18, 18, 18, 0.94);
     box-shadow: 0 24px 70px rgba(0, 0, 0, 0.58);
     text-align: center;
   }
@@ -656,7 +698,7 @@ PAGE_HTML = r"""<!doctype html>
     border-radius: 18px;
     background:
       linear-gradient(180deg, rgba(255, 255, 255, 0.06), transparent 28%),
-      rgba(18, 20, 24, 0.96);
+      rgba(18, 18, 18, 0.96);
     box-shadow: 0 26px 80px rgba(0, 0, 0, 0.62), inset 0 1px 0 rgba(255, 255, 255, 0.06);
   }
 
@@ -712,14 +754,14 @@ PAGE_HTML = r"""<!doctype html>
   }
 
   .confirm-danger {
-    border-color: rgba(251, 113, 133, 0.26);
-    background: rgba(251, 113, 133, 0.12);
-    color: #fecdd3;
+    border-color: rgba(255, 255, 255, 0.24);
+    background: rgba(255, 255, 255, 0.11);
+    color: var(--text-main);
   }
 
   .confirm-danger:hover {
-    border-color: rgba(251, 113, 133, 0.42);
-    background: rgba(251, 113, 133, 0.18);
+    border-color: rgba(255, 255, 255, 0.38);
+    background: rgba(255, 255, 255, 0.16);
   }
 
   .hidden {
@@ -752,7 +794,7 @@ PAGE_HTML = r"""<!doctype html>
   }
 
   .shutdown-icon {
-    color: #bec6e0;
+    color: #d4d4d4;
     font-size: 30px;
   }
 
@@ -783,12 +825,12 @@ PAGE_HTML = r"""<!doctype html>
     }
 
     .hero-card {
-      padding: 14px;
+      padding: 12px;
       border-radius: 14px;
     }
 
     .temperature {
-      font-size: clamp(32px, 10vw, 44px);
+      font-size: clamp(30px, 9vw, 40px);
     }
 
     .controls-card {
@@ -804,7 +846,7 @@ PAGE_HTML = r"""<!doctype html>
     }
 
     .metric-grid {
-      gap: 7px;
+      gap: 6px;
     }
 
     .metric-item {
@@ -823,13 +865,13 @@ PAGE_HTML = r"""<!doctype html>
     .metric-value {
       min-width: 0;
       margin-top: 0;
-      font-size: 14px;
+      font-size: 13px;
     }
 
     .refresh-button {
       width: auto;
-      min-height: 36px;
-      padding: 0 10px;
+      min-height: 34px;
+      padding: 0 9px;
       font-size: 11px;
     }
 
@@ -839,7 +881,7 @@ PAGE_HTML = r"""<!doctype html>
     }
 
     .action-button {
-      min-height: 64px;
+      min-height: 56px;
     }
 
     .control-row {
@@ -894,11 +936,11 @@ PAGE_HTML = r"""<!doctype html>
     }
 
     .hero-card {
-      padding: 12px;
+      padding: 10px;
     }
 
     .temperature {
-      font-size: clamp(28px, 9vw, 34px);
+      font-size: clamp(26px, 8vw, 32px);
     }
 
     .hero-footer {
@@ -920,11 +962,11 @@ PAGE_HTML = r"""<!doctype html>
 
     .metric-value {
       margin-top: 2px;
-      font-size: 12px;
+      font-size: 11px;
     }
 
     .refresh-button {
-      min-height: 32px;
+      min-height: 30px;
       padding: 0 8px;
       font-size: 10px;
     }
@@ -941,8 +983,8 @@ PAGE_HTML = r"""<!doctype html>
     }
 
     .action-button {
-      min-height: 58px;
-      padding: 12px;
+      min-height: 50px;
+      padding: 10px;
       border-radius: 12px;
     }
 
@@ -1054,7 +1096,10 @@ PAGE_HTML = r"""<!doctype html>
       </div>
     </div>
 
-    <div class="footer-row">
+    <div class="footer-toggle-wrap">
+      <button id="footerToggleBtn" onclick="toggleFooterControls()" class="footer-toggle" type="button" aria-label="Show settings" aria-expanded="false" aria-controls="footerControls"></button>
+    </div>
+    <div id="footerControls" class="footer-row is-hidden" aria-hidden="true">
       <button onclick="openCloseConfirm()" class="utility-button" aria-label="Close server">Close Server</button>
       <button id="restartServerBtn" onclick="restartServer()" class="restart-button" type="button" aria-label="Restart server">Restart Server</button>
       <a id="phoneUrl" class="footer-link" href="#">loading...</a>
@@ -1085,6 +1130,17 @@ PAGE_HTML = r"""<!doctype html>
   const closeConfirmOverlay = document.getElementById('closeConfirmOverlay');
   const closeConfirmAccept = document.getElementById('closeConfirmAccept');
   let refreshTimer = null;
+
+  function toggleFooterControls() {
+    const controls = document.getElementById('footerControls');
+    const button = document.getElementById('footerToggleBtn');
+    if (!controls || !button) return;
+    const willShow = controls.classList.contains('is-hidden');
+    controls.classList.toggle('is-hidden', !willShow);
+    controls.setAttribute('aria-hidden', String(!willShow));
+    button.setAttribute('aria-expanded', String(willShow));
+    button.setAttribute('aria-label', willShow ? 'Hide settings' : 'Show settings');
+  }
 
   function openCloseConfirm() {
     closeConfirmAccept.disabled = false;
@@ -1280,14 +1336,23 @@ PAGE_HTML = r"""<!doctype html>
     document.getElementById('phase').textContent = state.phase || 'stopped';
     document.getElementById('remaining').textContent = fmtSeconds(state.remaining_seconds);
 
+    const isPoweredOn = Boolean(state.power_switch);
     const swingToggle = document.getElementById('swingToggle');
     const swingState = document.getElementById('swingState');
-    if (state.swing_wind) {
+    const swingControl = document.querySelector('.swing-control');
+    const swingOn = isPoweredOn && Boolean(state.swing_wind);
+    if (swingOn) {
       swingToggle.checked = true;
       swingState.textContent = 'On';
     } else {
       swingToggle.checked = false;
       swingState.textContent = 'Off';
+    }
+    if (swingControl) {
+      swingControl.classList.toggle('is-disabled', !isPoweredOn);
+      swingControl.setAttribute('aria-disabled', String(!isPoweredOn));
+      swingControl.setAttribute('aria-pressed', String(swingOn));
+      swingControl.title = !isPoweredOn ? 'Turn AC on first.' : '';
     }
 
     const phoneUrl = document.getElementById('phoneUrl');
@@ -1300,7 +1365,6 @@ PAGE_HTML = r"""<!doctype html>
       phoneUrl.href = '#';
     }
 
-    const isPoweredOn = Boolean(state.power_switch);
     renderTemperature(state.active_temperature, isPoweredOn);
 
     const startBtn = document.getElementById('startBtn');
@@ -1404,7 +1468,7 @@ PAGE_HTML = r"""<!doctype html>
       'Closing server',
       'Stopping the cycle and shutting down the local panel.',
       'hourglass_top',
-      '#bec6e0'
+      '#d4d4d4'
     );
     try {
       await requestJson('/api/shutdown', { method: 'POST' });
@@ -1414,14 +1478,14 @@ PAGE_HTML = r"""<!doctype html>
           'Server closed',
           'The local panel server has stopped. You can close this tab.',
           'check_circle',
-          '#6ee7b7'
+          '#f5f5f5'
         );
       } else {
         showShutdownOverlay(
           'Shutdown requested',
           'The close command was sent, but the page could not verify that the server stopped yet.',
           'info',
-          '#fcd34d'
+          '#c7c7c7'
         );
       }
     } catch (error) {
@@ -1431,14 +1495,14 @@ PAGE_HTML = r"""<!doctype html>
           'Server closed',
           'The local panel server stopped after the close request. You can close this tab.',
           'check_circle',
-          '#6ee7b7'
+          '#f5f5f5'
         );
       } else {
         showShutdownOverlay(
           'Close failed',
           error.message,
           'error',
-          '#fda4af'
+          '#e5e5e5'
         );
         refreshTimer = setInterval(refreshState, 2000);
       }
@@ -1456,7 +1520,7 @@ PAGE_HTML = r"""<!doctype html>
       'Restarting server',
       'Restarting the local panel. This page will reload automatically.',
       'restart_alt',
-      '#67e8f9'
+      '#f5f5f5'
     );
     try {
       await requestJson('/api/restart', { method: 'POST' });
@@ -1473,7 +1537,7 @@ PAGE_HTML = r"""<!doctype html>
       'Restart requested',
       'The local panel is restarting. Reload this page in a moment.',
       'info',
-      '#fcd34d'
+      '#c7c7c7'
     );
   }
 
@@ -1562,6 +1626,7 @@ PAGE_HTML = r"""<!doctype html>
   }
 
   async function toggleSwing() {
+    if (!latestState || !latestState.power_switch) return;
     try {
       const current = latestState ? latestState.swing_wind : false;
       const next = !current;

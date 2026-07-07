@@ -100,11 +100,11 @@ PAGE_HTML = r"""<!doctype html>
 
   :root {
     --page-bg: #080808;
-    --panel-bg: rgba(18, 18, 18, 0.92);
-    --panel-border: rgba(255, 255, 255, 0.08);
-    --card-bg: rgba(255, 255, 255, 0.045);
-    --card-bg-strong: rgba(255, 255, 255, 0.075);
-    --card-border: rgba(255, 255, 255, 0.085);
+    --panel-bg: rgba(16, 16, 16, 0.94);
+    --panel-border: rgba(255, 255, 255, 0.12);
+    --card-bg: rgba(255, 255, 255, 0.04);
+    --card-bg-strong: rgba(255, 255, 255, 0.068);
+    --card-border: rgba(255, 255, 255, 0.12);
     --text-main: #f5f5f5;
     --text-soft: #c9c9c9;
     --text-muted: #8b8b8b;
@@ -125,9 +125,9 @@ PAGE_HTML = r"""<!doctype html>
     overflow-x: hidden;
     overflow-y: auto;
     background:
-      radial-gradient(circle at 50% -20%, rgba(255, 255, 255, 0.12), transparent 34%),
-      radial-gradient(circle at 100% 10%, rgba(255, 255, 255, 0.055), transparent 28%),
-      linear-gradient(180deg, #0d0d0d 0%, var(--page-bg) 58%, #050505 100%);
+      radial-gradient(circle at 50% -18%, rgba(255, 255, 255, 0.1), transparent 32%),
+      radial-gradient(circle at 92% 6%, rgba(255, 255, 255, 0.045), transparent 26%),
+      linear-gradient(180deg, #0b0b0b 0%, var(--page-bg) 56%, #030303 100%);
   }
 
   button,
@@ -148,36 +148,41 @@ PAGE_HTML = r"""<!doctype html>
   }
 
   .app-shell {
-    width: min(100%, 520px);
-    padding: 18px;
+    width: min(100%, 600px);
+    padding: 32px 18px;
     border: 1px solid var(--panel-border);
-    border-radius: 20px;
+    border-radius: 16px;
     background:
-      linear-gradient(180deg, rgba(255, 255, 255, 0.055), transparent 24%),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.018) 42%, rgba(255, 255, 255, 0.026)),
       var(--panel-bg);
-    box-shadow: 0 26px 80px rgba(0, 0, 0, 0.54), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    box-shadow: 0 22px 70px rgba(0, 0, 0, 0.58), inset 0 1px 0 rgba(255, 255, 255, 0.07);
     backdrop-filter: blur(24px);
     -webkit-backdrop-filter: blur(24px);
   }
 
   .hero-card {
     width: 100%;
-    padding: 18px;
+    max-width: 520px;
+    margin: 0 auto;
+    padding: 16px;
     border: 1px solid var(--card-border);
-    border-radius: 16px;
+    border-radius: 12px;
     background:
-      linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.035));
+      linear-gradient(180deg, rgba(255, 255, 255, 0.064), rgba(255, 255, 255, 0.024));
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
   }
 
   .controls-card {
     width: 100%;
-    margin-top: 14px;
-    padding: 16px;
+    max-width: 520px;
+    margin: 12px auto 0;
+    padding: 14px;
     border: 1px solid var(--card-border);
-    border-radius: 14px;
+    border-radius: 12px;
     background:
-      linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.022)),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.018)),
       rgba(0, 0, 0, 0.12);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
   }
 
   .hero-footer,
@@ -203,39 +208,39 @@ PAGE_HTML = r"""<!doctype html>
   .metric-label,
   .section-label {
     margin: 0;
-    font-size: 10px;
+    font-size: 9px;
     font-weight: 700;
-    letter-spacing: 0.14em;
+    letter-spacing: 0.13em;
     text-transform: uppercase;
   }
 
   .temperature {
     flex: 0 0 auto;
     margin: 0;
-    font-size: clamp(38px, 11vw, 58px);
+    font-size: clamp(36px, 10vw, 54px);
     font-weight: 780;
     letter-spacing: -0.06em;
     line-height: 0.92;
   }
 
   .hero-footer {
-    gap: 14px;
+    gap: 12px;
   }
 
   .metric-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 12px;
+    gap: 10px;
     flex: 1;
     min-width: 0;
   }
 
   .metric-value {
     display: block;
-    margin-top: 4px;
+    margin-top: 3px;
     overflow: hidden;
     color: var(--text-main);
-    font-size: 15px;
+    font-size: 14px;
     font-weight: 700;
     letter-spacing: -0.02em;
     text-overflow: ellipsis;
@@ -248,11 +253,11 @@ PAGE_HTML = r"""<!doctype html>
 
   .refresh-button {
     flex: 0 0 auto;
-    min-height: 38px;
-    padding: 0 12px;
+    min-height: 34px;
+    padding: 0 11px;
     border: 1px solid var(--card-border);
-    border-radius: 12px;
-    background: rgba(255, 255, 255, 0.055);
+    border-radius: 9px;
+    background: rgba(255, 255, 255, 0.05);
     color: var(--text-soft);
     font-size: 11px;
     font-weight: 700;
@@ -265,28 +270,28 @@ PAGE_HTML = r"""<!doctype html>
   .restart-button:hover,
   .utility-button:hover {
     border-color: rgba(255, 255, 255, 0.18);
-    background: rgba(255, 255, 255, 0.075);
+    background: rgba(255, 255, 255, 0.085);
   }
 
   .action-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 10px;
+    gap: 8px;
   }
 
   .hero-card .action-grid {
-    margin-top: 12px;
+    margin-top: 10px;
   }
 
   .action-button {
     width: 100%;
-    min-height: 64px;
+    min-height: 56px;
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 12px;
+    padding: 10px;
     border: 1px solid transparent;
-    border-radius: 12px;
+    border-radius: 10px;
     text-align: center;
     transition: transform 0.18s ease, opacity 0.18s ease, background 0.18s ease, border-color 0.18s ease;
   }
@@ -295,13 +300,13 @@ PAGE_HTML = r"""<!doctype html>
   .control-title {
     display: block;
     color: var(--text-main);
-    font-size: 16px;
+    font-size: 15px;
     font-weight: 750;
     letter-spacing: -0.01em;
   }
 
   .action-label {
-    font-size: 14px;
+    font-size: 13px;
   }
 
   .action-button small,
@@ -313,9 +318,9 @@ PAGE_HTML = r"""<!doctype html>
   }
 
   .action-primary {
-    background: linear-gradient(135deg, rgba(245, 245, 245, 0.96), rgba(178, 178, 178, 0.86));
+    background: linear-gradient(135deg, rgba(238, 238, 238, 0.95), rgba(168, 168, 168, 0.84));
     color: var(--accent-contrast);
-    box-shadow: 0 16px 46px rgba(255, 255, 255, 0.12);
+    box-shadow: 0 10px 30px rgba(255, 255, 255, 0.1);
   }
 
   .action-primary .action-label {
@@ -369,7 +374,7 @@ PAGE_HTML = r"""<!doctype html>
   }
 
   .section-label {
-    margin: 18px 2px 9px;
+    margin: 14px 2px 8px;
   }
 
   .controls-card > .section-label:first-child {
@@ -378,15 +383,15 @@ PAGE_HTML = r"""<!doctype html>
 
   .control-list {
     display: grid;
-    gap: 9px;
+    gap: 8px;
   }
 
   .control-row {
     width: 100%;
-    min-height: 66px;
-    gap: 14px;
-    padding: 14px 16px;
-    border-radius: 11px;
+    min-height: 58px;
+    gap: 12px;
+    padding: 12px 14px;
+    border-radius: 9px;
     color: inherit;
     text-align: left;
     cursor: pointer;
@@ -419,8 +424,8 @@ PAGE_HTML = r"""<!doctype html>
   .switch {
     position: relative;
     flex: 0 0 auto;
-    width: 42px;
-    height: 24px;
+    width: 40px;
+    height: 22px;
   }
 
   .switch-input {
@@ -444,8 +449,8 @@ PAGE_HTML = r"""<!doctype html>
     position: absolute;
     top: 3px;
     left: 3px;
-    width: 16px;
-    height: 16px;
+    width: 14px;
+    height: 14px;
     border-radius: 999px;
     background: #fff;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.28);
@@ -462,20 +467,20 @@ PAGE_HTML = r"""<!doctype html>
   }
 
   .power-slider {
-    --power-knob-inset: 6px;
-    --power-knob-size: 44px;
+    --power-knob-inset: 5px;
+    --power-knob-size: 40px;
     --power-progress: 0;
     position: relative;
     width: 100%;
     min-width: 0;
-    min-height: 66px;
+    min-height: 58px;
     display: flex;
     align-items: center;
     justify-content: center;
     overflow: hidden;
-    padding: 0 16px 0 58px;
+    padding: 0 14px 0 52px;
     border: 1px solid var(--card-border);
-    border-radius: 11px;
+    border-radius: 9px;
     background: var(--card-bg);
     color: var(--text-main);
     cursor: default;
@@ -563,7 +568,7 @@ PAGE_HTML = r"""<!doctype html>
     top: 50%;
     display: grid;
     place-items: center;
-    border-radius: 10px;
+    border-radius: 8px;
     transform: translateY(-50%);
   }
 
@@ -575,14 +580,14 @@ PAGE_HTML = r"""<!doctype html>
     color: var(--accent-contrast);
     cursor: grab;
     background: linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(178, 178, 178, 0.9));
-    box-shadow: 0 12px 30px rgba(255, 255, 255, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.38);
+    box-shadow: 0 8px 22px rgba(255, 255, 255, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.38);
     transition: transform 0.2s ease, background 0.18s ease, box-shadow 0.18s ease;
   }
 
   .power-slider.power-on .power-slider-knob {
     color: var(--text-main);
     background: linear-gradient(135deg, rgba(82, 82, 82, 0.98), rgba(36, 36, 36, 0.92));
-    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.32), inset 0 1px 0 rgba(255, 255, 255, 0.18);
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.34), inset 0 1px 0 rgba(255, 255, 255, 0.18);
   }
 
   .power-slider.is-dragging .power-slider-knob {
@@ -590,8 +595,8 @@ PAGE_HTML = r"""<!doctype html>
   }
 
   .footer-row {
-    gap: 10px;
-    margin-top: 14px;
+    gap: 8px;
+    margin-top: 12px;
   }
 
   .footer-row.is-hidden {
@@ -601,18 +606,18 @@ PAGE_HTML = r"""<!doctype html>
   .footer-toggle-wrap {
     display: flex;
     justify-content: center;
-    margin-top: 14px;
+    margin-top: 12px;
   }
 
   .footer-toggle {
-    width: 38px;
+    width: 28px;
     min-width: 0;
-    min-height: 32px;
+    min-height: 24px;
     display: grid;
     place-items: center;
     padding: 0;
     border: 1px solid var(--card-border);
-    border-radius: 10px;
+    border-radius: 7px;
     background: var(--card-bg);
     color: var(--text-soft);
     transition: transform 0.18s ease, background 0.18s ease, border-color 0.18s ease;
@@ -620,10 +625,10 @@ PAGE_HTML = r"""<!doctype html>
 
   .footer-toggle::before {
     content: '';
-    width: 8px;
-    height: 8px;
-    border-right: 2px solid currentColor;
-    border-bottom: 2px solid currentColor;
+    width: 6px;
+    height: 6px;
+    border-right: 1.5px solid currentColor;
+    border-bottom: 1.5px solid currentColor;
     transform: translateY(-2px) rotate(45deg);
     transition: transform 0.18s ease;
   }
@@ -636,7 +641,7 @@ PAGE_HTML = r"""<!doctype html>
   .restart-button,
   .footer-link {
     min-height: 42px;
-    border-radius: 12px;
+    border-radius: 9px;
   }
 
   .utility-button,
@@ -815,38 +820,38 @@ PAGE_HTML = r"""<!doctype html>
   @media (max-width: 560px) {
     body {
       place-items: center;
-      padding: 12px;
+      padding: 10px;
     }
 
     .app-shell {
       width: min(100%, 420px);
-      padding: 12px;
-      border-radius: 18px;
-    }
-
-    .hero-card {
-      padding: 12px;
+      padding: 24px 10px;
       border-radius: 14px;
     }
 
+    .hero-card {
+      padding: 10px;
+      border-radius: 10px;
+    }
+
     .temperature {
-      font-size: clamp(30px, 9vw, 40px);
+      font-size: clamp(28px, 9vw, 38px);
     }
 
     .controls-card {
-      margin-top: 12px;
-      padding: 12px;
-      border-radius: 13px;
+      margin-top: 10px;
+      padding: 10px;
+      border-radius: 10px;
     }
 
     .hero-footer {
       align-items: center;
       flex-direction: row;
-      gap: 8px;
+      gap: 7px;
     }
 
     .metric-grid {
-      gap: 6px;
+      gap: 5px;
     }
 
     .metric-item {
@@ -870,29 +875,31 @@ PAGE_HTML = r"""<!doctype html>
 
     .refresh-button {
       width: auto;
-      min-height: 34px;
-      padding: 0 9px;
+      min-height: 32px;
+      padding: 0 8px;
       font-size: 11px;
     }
 
     .action-grid {
       grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 8px;
+      gap: 7px;
     }
 
     .action-button {
-      min-height: 56px;
+      min-height: 50px;
     }
 
     .control-row {
-      min-height: 60px;
-      padding: 12px 14px;
+      min-height: 52px;
+      padding: 10px 12px;
+      border-radius: 8px;
     }
 
     .power-slider {
-      --power-knob-size: 38px;
-      min-height: 62px;
-      padding: 0 12px 0 48px;
+      --power-knob-size: 36px;
+      min-height: 52px;
+      padding: 0 11px 0 46px;
+      border-radius: 8px;
     }
 
     .power-slider-label {
@@ -901,14 +908,14 @@ PAGE_HTML = r"""<!doctype html>
 
     .footer-row {
       flex-wrap: wrap;
-      gap: 8px;
+      gap: 7px;
     }
 
     .utility-button,
     .restart-button {
       flex: 1 1 calc(50% - 4px);
       min-width: 0;
-      padding: 0 10px;
+      padding: 0 9px;
     }
 
     .footer-link {
@@ -926,17 +933,18 @@ PAGE_HTML = r"""<!doctype html>
 
   @media (max-width: 420px) {
     body {
-      padding: 10px;
+      padding: 8px;
     }
 
     .app-shell {
       width: min(100%, 390px);
-      padding: 10px;
-      border-radius: 16px;
+      padding: 20px 8px;
+      border-radius: 13px;
     }
 
     .hero-card {
-      padding: 10px;
+      padding: 9px;
+      border-radius: 9px;
     }
 
     .temperature {
@@ -972,26 +980,26 @@ PAGE_HTML = r"""<!doctype html>
     }
 
     .controls-card {
-      margin-top: 10px;
-      padding: 10px;
-      border-radius: 12px;
+      margin-top: 9px;
+      padding: 9px;
+      border-radius: 9px;
     }
 
     .action-grid,
     .control-list {
-      gap: 7px;
+      gap: 6px;
     }
 
     .action-button {
-      min-height: 50px;
-      padding: 10px;
-      border-radius: 12px;
+      min-height: 46px;
+      padding: 9px;
+      border-radius: 8px;
     }
 
     .control-row {
-      min-height: 54px;
-      padding: 10px;
-      border-radius: 10px;
+      min-height: 48px;
+      padding: 9px 10px;
+      border-radius: 8px;
     }
 
     .action-label,
@@ -1004,13 +1012,13 @@ PAGE_HTML = r"""<!doctype html>
     }
 
     .switch {
-      width: 38px;
-      height: 22px;
+      width: 36px;
+      height: 20px;
     }
 
     .switch-slider::after {
-      width: 14px;
-      height: 14px;
+      width: 12px;
+      height: 12px;
     }
 
     .switch-input:checked + .switch-slider::after {
@@ -1018,11 +1026,11 @@ PAGE_HTML = r"""<!doctype html>
     }
 
     .power-slider {
-      --power-knob-size: 36px;
+      --power-knob-size: 34px;
       --power-knob-inset: 5px;
-      min-height: 54px;
-      padding: 0 10px 0 44px;
-      border-radius: 10px;
+      min-height: 48px;
+      padding: 0 9px 0 41px;
+      border-radius: 8px;
     }
 
     .power-slider-label {
@@ -1031,7 +1039,7 @@ PAGE_HTML = r"""<!doctype html>
 
     .utility-button,
     .restart-button {
-      min-height: 38px;
+      min-height: 36px;
       font-size: 11px;
     }
   }

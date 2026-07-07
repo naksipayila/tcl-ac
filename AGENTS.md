@@ -4,6 +4,7 @@
 - `config.json` defaults to the real `tcl_home_aws` backend; do not run device-changing commands unless the user explicitly asks.
 - Device-changing paths include CLI `once`, `run`, `startup` and web API POSTs to `/api/start`, `/api/power`, `/api/swing`, `/api/phase`, `/api/restart`, `/api/shutdown`.
 - `status` and `/api/device-status` read the real device shadow when backend is `tcl_home_aws`; treat them as credentialed network calls.
+- Loading the web page calls `/api/device-status` immediately via `loadInitialState`; `--no-browser` avoids that automatic read.
 - For dry-run work, use backend `mock`; `MockBackend` logs actions and does not contact the AC.
 - Never print, commit, or paste `TCL_SSO_TOKEN`, captured `ssotoken`, AWS credentials, Authorization headers, or cookies.
 
@@ -24,6 +25,10 @@
 ## UI/Docs
 - Trust current `web_app.py` over the README Web Panel table if labels differ; README can lag behind UI changes.
 - Keep frontend edits inside `PAGE_HTML`; there are no separate static asset files except `favicon.png`.
+- Current panel is compact and monochrome; keep UI labels English and keep buttons text-only except the power slider knob and shutdown overlay icons.
+- Server controls and phone URL are intentionally hidden behind the small footer arrow toggle (`footerControls`).
+- When `state.power_switch` is false, Start Cycle, Compressor, and Swing should render disabled/off and avoid sending commands.
+- Power toggle is a confirmation slider: drag starts from `.power-slider-knob` and uses `POWER_SLIDE_THRESHOLD = 0.95`; do not replace it with a simple click toggle.
 - `Close Server` stops the cycle and shuts down the process; `Restart Server` uses `os.execv` after socket close.
 
 ## Repo Notes

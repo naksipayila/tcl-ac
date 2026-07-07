@@ -1,57 +1,36 @@
-# TCL Portable AC Cycle Controller
+# TCL AC Cloudflare Controller
 
-A local web panel and CLI tool for the **`TAC-12CHPB/DM4`** TCL portable air conditioner.
+Serverless Cloudflare Worker panel for a TCL `TAC-12CHPB/DM4` portable air conditioner.
 
-The cycle adjusts the thermostat target rather than repeatedly switching the compressor on and off:
+The cycle adjusts the thermostat target instead of repeatedly switching the compressor on and off:
 
-```
-20 min at 70°F  →  20 min at 80°F  →  repeat
-```
-
----
-
-## Quick Start
-
-### 1. Install
-
-```powershell
-py -m pip install -r requirements.txt
+```text
+20 min at 70F -> 20 min at 80F -> repeat
 ```
 
-### 2. Authenticate
+## Live Panel
 
-Capture your `ssotoken` from the **TCL Home** mobile app via [HTTP Toolkit](https://httptoolkit.com). Set it once as a Windows user environment variable:
-
-```powershell
-setx TCL_SSO_TOKEN "YOUR_SSOTOKEN_HERE"
+```text
+https://tcl-ac.qaliqtaha.workers.dev
 ```
 
-*Open a new terminal after running `setx`.*
+The panel is protected by a Cloudflare Worker HttpOnly session cookie.
 
-### 3. Launch the Panel
+## Architecture
 
-Double-click `start-server.cmd` — the server runs silently in the background.
+| Part | Role |
+|------|------|
+| `cloudflare/public/index.html` | Static frontend panel |
+| `cloudflare/src/worker.js` | API, auth, AWS/TCL integration, cron handler |
+| Cloudflare D1 | Stores cycle state |
+| Cloudflare cron | Checks every minute and switches phase when due |
+| Worker secrets | Store `TCL_SSO_TOKEN`, `PANEL_PASSWORD`, `PANEL_SESSION_SECRET` |
 
-Open your browser:
+Device commands use TCL Home auth, AWS Cognito credentials, SigV4, and AWS IoT MQTT-over-WebSocket publish to the device shadow update topic.
 
-```
-http://127.0.0.1:8787/
-```
+## Deploy
 
-Phones on the same Wi‑Fi can use the LAN address shown in the panel footer.
-
----
-
-## Cloudflare Serverless Panel
-
-The `cloudflare/` app runs the panel without keeping your computer on:
-
-- Cloudflare Worker serves the API and static panel.
-- Cloudflare D1 stores cycle state.
-- A cron trigger checks every minute and switches phase when needed.
-- Worker secrets store `TCL_SSO_TOKEN`, `PANEL_PASSWORD`, and `PANEL_SESSION_SECRET`.
-
-Deploy from the `cloudflare/` directory:
+Run from `cloudflare/`:
 
 ```powershell
 npm install
@@ -60,90 +39,37 @@ npx wrangler d1 migrations apply tcl-ac-state --remote
 npx wrangler deploy
 ```
 
-The current Worker URL is:
+Required Cloudflare secrets:
 
+```text
+TCL_SSO_TOKEN
+PANEL_PASSWORD
+PANEL_SESSION_SECRET
 ```
-https://tcl-ac.qaliqtaha.workers.dev
+
+Set or update secrets with:
+
+```powershell
+npx wrangler secret put TCL_SSO_TOKEN
+npx wrangler secret put PANEL_PASSWORD
+npx wrangler secret put PANEL_SESSION_SECRET
 ```
 
----
-
-## Web Panel
-
-
+## Panel Controls
 
 | Control | Action |
 |---------|--------|
-| **Start Cycle / Stop** | Begin or pause the 70°F ↔ 80°F loop |
-| **Start Compressor / Stop Compressor** | Manually set target to 70°F or 80°F *(disabled when the AC is already at that temperature)* |
-| **Power** | Toggle `powerSwitch` — physically turn the AC on or off |
-| **Swing** | Toggle `swingWind` — control the louver oscillation |
-| **Refresh** | Read the current target temperature directly from the device shadow |
-| **Close Server** | Stop the cycle and shut down the local web server |
+| `Start Cycle` | Sends 70F cooling and starts the 20/20 loop |
+| `Stop Cycle` | Stops stored cycle state; it does not power off the AC |
+| `Compressor` | Manually sends 70F or 80F and stops the cycle |
+| `Power` | Toggles `powerSwitch` |
+| `Swing` | Toggles `swingWind` |
+| `Refresh` | Reads the real device shadow |
 
-> **Tip:** Use `"backend": "mock"` in `config.json` for dry‑run testing — nothing is sent to the device.
+## Safety Notes
 
----
-
-## CLI
-
-All commands run against the same `config.json`:
-
-```powershell
-# Validate config (no device commands)
-py tcl_cycle.py validate --config config.json
-
-# Read device shadow
-py tcl_cycle.py status --config config.json
-
-# Send one command
-py tcl_cycle.py once cooling --config config.json    # 70°F
-py tcl_cycle.py once resting --config config.json    # 80°F
-
-# Run the continuous 20/20 cycle
-py tcl_cycle.py run --config config.json
-
-# Send startup (swing on)
-py tcl_cycle.py startup --config config.json
-```
-
----
-
-## How It Works
-
-Commands reach the device through **AWS IoT Shadow** (MQTT‑over‑WebSocket).
-
-The flow:
-
-```
-TCL Home API  →  AWS Cognito  →  SigV4‑signed MQTT/WS  →  Device Shadow
-```
-
-### Shadow Payloads
-
-| Purpose | JSON |
-|---------|------|
-| **Set temperature** | `{"targetCelsiusDegree":21, "targetFahrenheitDegree":70}` |
-| **Power toggle** | `{"powerSwitch":1}` or `{"powerSwitch":0}` |
-| **Swing toggle** | `{"swingWind":1}` or `{"swingWind":0}` |
-
----
-
-## Files
-
-| File | Role |
-|------|------|
-| `web_app.py` | Local HTTP server + responsive HTML panel |
-| `tcl_cycle.py` | CLI runner + AWS IoT Shadow backend |
-| `config.json` | Device ID, cycle timings, API keys |
-| `start-server.cmd` | Double‑click launcher (hidden console) |
-| `requirements.txt` | `websocket-client>=1.8.0` — the only runtime dependency |
----
-
-## Notes
-
-- The `ssotoken` **expires periodically**. Recapture it from TCL Home through HTTP Toolkit when commands start failing.
-- If the room temperature exceeds **80°F**, the compressor may stay on even during the resting phase — this is normal thermostat behaviour.
-- The server binds to `0.0.0.0:8787` for LAN access. Allow Windows Firewall if prompted.
-- Logs are written to `logs/tcl_cycle.log`.
-- Stop a visible‑console server with `Ctrl+C`; stop a hidden server with the **Close Server** button in the panel.
+- `GET /api/state` reads D1 state only.
+- `GET /api/device-status` reads the real device shadow.
+- `POST /api/start`, `/api/power`, `/api/swing`, and `/api/phase` send real device commands.
+- `POST /api/stop` only stops the stored cycle state.
+- Do not put tokens, cookies, authorization headers, or AWS credentials in git.

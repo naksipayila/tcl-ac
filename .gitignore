@@ -1,19 +1,11 @@
-__pycache__/
-*.py[cod]
+.env
+.env.*
+.dev.vars
 
-logs/
-*.log
+node_modules/
+.wrangler/
 
 build/
 dist/
-*.spec
-
-.env
-.venv/
-venv/
-
-*.apk
-*.apkm
-*.xapk
 
 opencode.json

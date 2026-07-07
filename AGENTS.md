@@ -3,7 +3,9 @@
 ## Safety
 - `config.json` defaults to the real `tcl_home_aws` backend; do not run device-changing commands unless the user explicitly asks.
 - Device-changing paths include CLI `once`, `run`, `startup` and web API POSTs to `/api/start`, `/api/power`, `/api/swing`, `/api/phase`, `/api/restart`, `/api/shutdown`.
+- Cloudflare Worker device-changing paths include POSTs to `/api/start`, `/api/power`, `/api/swing`, and `/api/phase`; `/api/stop` only stops the stored cycle state.
 - `status` and `/api/device-status` read the real device shadow when backend is `tcl_home_aws`; treat them as credentialed network calls.
+- Cloudflare `/api/device-status` also reads the real device shadow; do not call it unless the user asks for a real status read.
 - Loading the web page calls `/api/device-status` immediately via `loadInitialState`; `--no-browser` avoids that automatic read.
 - For dry-run work, use backend `mock`; `MockBackend` logs actions and does not contact the AC.
 - Never print, commit, or paste `TCL_SSO_TOKEN`, captured `ssotoken`, AWS credentials, Authorization headers, or cookies.
@@ -15,10 +17,14 @@
 - Run visible web panel: `py web_app.py --config config.json --no-browser`; default bind is `0.0.0.0:8787` for LAN access.
 - Hidden launcher: double-click `start-server.cmd`; it runs `pyw.exe web_app.py --config config.json --no-browser`.
 - CLI command effects: `once cooling` sends 70F, `once resting` sends 80F, `run` starts the 20 min 70F / 20 min 80F loop.
+- Cloudflare deploy commands live under `cloudflare/`; use `npm install`, `npx wrangler login`, `npx wrangler d1 migrations apply tcl-ac-state --remote`, and `npx wrangler deploy`.
+- Cloudflare secrets required: `TCL_SSO_TOKEN`, `PANEL_PASSWORD`, and `PANEL_SESSION_SECRET`; never put them in git or command output.
 
 ## Architecture
 - `tcl_cycle.py` owns config loading/env expansion, logging, CLI, `CycleRunner`, `MockBackend`, and the AWS IoT Shadow backend.
 - `web_app.py` owns the HTTP server, `WebController`, REST endpoints, restart/shutdown behavior, and all HTML/CSS/JS in the `PAGE_HTML` raw string.
+- `cloudflare/src/worker.js` owns the serverless API, login cookie handling, AWS SigV4 IoT Shadow calls, D1 state, and cron phase switching.
+- `cloudflare/public/index.html` owns the Cloudflare-hosted panel; it calls same-origin `/api/*` endpoints.
 - The web controller queues manual commands through one worker and enforces `safety.min_seconds_between_commands`; do not bypass `_safe_apply`.
 - `config.json` sets cycle timings and safety values; `${TCL_SSO_TOKEN}` is expanded by `os.path.expandvars`.
 

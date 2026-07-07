@@ -1,0 +1,30 @@
+name = "tcl-ac"
+main = "src/worker.js"
+compatibility_date = "2026-07-07"
+workers_dev = true
+
+[assets]
+directory = "./public"
+binding = "ASSETS"
+run_worker_first = ["/api/*"]
+
+[triggers]
+crons = ["* * * * *"]
+
+[vars]
+DEVICE_ID = "DWG42RFAAAE"
+API_BASE_URL = "https://eu-iot-api-prod.tcljd.com"
+IOT_DATA_ENDPOINT = "https://data.iot.eu-central-1.amazonaws.com"
+AWS_REGION = "eu-central-1"
+APP_ID = "wx6e1af3fa84fbe523"
+COOLING_SETPOINT_F = "70"
+RESTING_SETPOINT_F = "80"
+COOLING_MINUTES = "20"
+RESTING_MINUTES = "20"
+MIN_SECONDS_BETWEEN_COMMANDS = "30"
+STARTUP_SWING = "1"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "tcl-ac-state"
+database_id = "ca12075b-a5df-443c-8bdc-e7f54323692b"

@@ -1,0 +1,723 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TCL AC Control</title>
+<style>
+  * { box-sizing: border-box; }
+
+  :root {
+    color-scheme: dark;
+    --page-bg: #080808;
+    --panel-bg: rgba(16, 16, 16, 0.94);
+    --panel-border: rgba(255, 255, 255, 0.12);
+    --card-bg: rgba(255, 255, 255, 0.04);
+    --card-border: rgba(255, 255, 255, 0.12);
+    --text-main: #f5f5f5;
+    --text-soft: #c9c9c9;
+    --text-muted: #8b8b8b;
+    --accent-contrast: #090909;
+  }
+
+  body {
+    min-height: 100vh;
+    margin: 0;
+    display: grid;
+    place-items: center;
+    padding: 22px;
+    color: var(--text-main);
+    font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    overflow-x: hidden;
+    background:
+      radial-gradient(circle at 50% -18%, rgba(255, 255, 255, 0.1), transparent 32%),
+      radial-gradient(circle at 92% 6%, rgba(255, 255, 255, 0.045), transparent 26%),
+      linear-gradient(180deg, #0b0b0b 0%, var(--page-bg) 56%, #030303 100%);
+  }
+
+  button,
+  input { font: inherit; }
+
+  button {
+    appearance: none;
+    border: 0;
+    cursor: pointer;
+  }
+
+  .app-shell,
+  .login-shell {
+    width: min(100%, 600px);
+    padding: 32px 18px;
+    border: 1px solid var(--panel-border);
+    border-radius: 16px;
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.018) 42%, rgba(255, 255, 255, 0.026)),
+      var(--panel-bg);
+    box-shadow: 0 22px 70px rgba(0, 0, 0, 0.58), inset 0 1px 0 rgba(255, 255, 255, 0.07);
+  }
+
+  .login-shell { max-width: 420px; }
+
+  .card {
+    width: 100%;
+    max-width: 520px;
+    margin: 0 auto;
+    padding: 16px;
+    border: 1px solid var(--card-border);
+    border-radius: 12px;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.064), rgba(255, 255, 255, 0.024));
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  }
+
+  .controls-card { margin-top: 12px; padding: 14px; }
+
+  .top-row,
+  .control-row,
+  .footer-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .top-row { gap: 12px; }
+
+  .temperature {
+    flex: 0 0 auto;
+    font-size: clamp(36px, 10vw, 54px);
+    font-weight: 780;
+    letter-spacing: -0.06em;
+    line-height: 0.92;
+  }
+
+  .metric-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .metric-label,
+  .section-label,
+  .login-label {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+  }
+
+  .metric-value {
+    display: block;
+    margin-top: 3px;
+    overflow: hidden;
+    color: var(--text-main);
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .refresh-button,
+  .logout-button {
+    flex: 0 0 auto;
+    min-height: 34px;
+    padding: 0 11px;
+    border: 1px solid var(--card-border);
+    border-radius: 9px;
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-soft);
+    font-size: 11px;
+    font-weight: 700;
+  }
+
+  .action-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    margin-top: 10px;
+  }
+
+  .action-button,
+  .login-button {
+    width: 100%;
+    min-height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px;
+    border: 1px solid transparent;
+    border-radius: 10px;
+    color: var(--text-main);
+    background: var(--card-bg);
+    font-size: 13px;
+    font-weight: 750;
+    transition: transform 0.18s ease, opacity 0.18s ease, background 0.18s ease, border-color 0.18s ease;
+  }
+
+  .action-primary,
+  .login-button {
+    color: var(--accent-contrast);
+    background: linear-gradient(135deg, rgba(238, 238, 238, 0.95), rgba(168, 168, 168, 0.84));
+    box-shadow: 0 10px 30px rgba(255, 255, 255, 0.1);
+  }
+
+  .action-button:disabled,
+  .control-row.is-disabled {
+    opacity: 0.42;
+    cursor: not-allowed;
+  }
+
+  .section-label { margin: 0 2px 8px; }
+
+  .control-list {
+    display: grid;
+    gap: 8px;
+  }
+
+  .control-row {
+    width: 100%;
+    min-height: 58px;
+    gap: 12px;
+    padding: 12px 14px;
+    border: 1px solid var(--card-border);
+    border-radius: 9px;
+    background: var(--card-bg);
+    color: inherit;
+    text-align: left;
+  }
+
+  .control-title {
+    display: block;
+    color: var(--text-main);
+    font-size: 15px;
+    font-weight: 750;
+    letter-spacing: -0.01em;
+  }
+
+  .control-meta {
+    display: block;
+    margin-top: 5px;
+    color: var(--text-muted);
+    font-size: 12px;
+    line-height: 1.35;
+  }
+
+  .switch {
+    position: relative;
+    flex: 0 0 auto;
+    width: 40px;
+    height: 22px;
+  }
+
+  .switch input {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .switch span {
+    position: absolute;
+    inset: 0;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.12);
+  }
+
+  .switch span::after {
+    content: '';
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 14px;
+    height: 14px;
+    border-radius: 999px;
+    background: #fff;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.28);
+    transition: transform 0.18s ease;
+  }
+
+  .switch input:checked + span {
+    border-color: rgba(255, 255, 255, 0.36);
+    background: linear-gradient(135deg, rgba(245, 245, 245, 0.92), rgba(168, 168, 168, 0.78));
+  }
+
+  .switch input:checked + span::after { transform: translateX(18px); }
+
+  .power-slider {
+    --power-knob-inset: 5px;
+    --power-knob-size: 40px;
+    --power-progress: 0;
+    position: relative;
+    width: 100%;
+    min-height: 58px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    padding: 0 14px 0 52px;
+    border: 1px solid var(--card-border);
+    border-radius: 9px;
+    background: var(--card-bg);
+    user-select: none;
+    touch-action: pan-y;
+  }
+
+  .power-slider::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.26), rgba(150, 150, 150, 0.2));
+    opacity: 0.75;
+    transform: scaleX(var(--power-progress));
+    transform-origin: left center;
+    transition: transform 0.2s ease;
+  }
+
+  .power-slider-knob {
+    position: absolute;
+    left: var(--power-knob-inset);
+    top: 50%;
+    z-index: 2;
+    width: var(--power-knob-size);
+    height: var(--power-knob-size);
+    display: grid;
+    place-items: center;
+    border-radius: 8px;
+    color: var(--accent-contrast);
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(178, 178, 178, 0.9));
+    box-shadow: 0 8px 22px rgba(255, 255, 255, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.38);
+    cursor: grab;
+    transform: translateY(-50%);
+    transition: transform 0.2s ease;
+  }
+
+  .power-slider-label {
+    position: relative;
+    z-index: 1;
+    overflow: hidden;
+    color: var(--text-soft);
+    font-size: 12px;
+    font-weight: 750;
+    text-align: center;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .power-slider.power-on .power-slider-knob {
+    color: var(--text-main);
+    background: linear-gradient(135deg, rgba(82, 82, 82, 0.98), rgba(36, 36, 36, 0.92));
+  }
+
+  .power-slider.is-dragging::before,
+  .power-slider.is-dragging .power-slider-knob { transition: none; }
+
+  .footer-row {
+    gap: 8px;
+    margin-top: 12px;
+    color: var(--text-muted);
+    font-size: 11px;
+  }
+
+  .login-title {
+    margin: 8px 0 0;
+    font-size: clamp(32px, 9vw, 48px);
+    line-height: 0.95;
+    letter-spacing: -0.05em;
+  }
+
+  .login-copy {
+    margin: 12px 0 0;
+    color: var(--text-soft);
+    font-size: 13px;
+    line-height: 1.55;
+  }
+
+  .login-form {
+    display: grid;
+    gap: 9px;
+    margin-top: 18px;
+  }
+
+  .password-input {
+    width: 100%;
+    min-height: 46px;
+    padding: 0 12px;
+    border: 1px solid var(--card-border);
+    border-radius: 9px;
+    color: var(--text-main);
+    background: rgba(255, 255, 255, 0.04);
+    outline: none;
+  }
+
+  .status-line {
+    min-height: 18px;
+    margin-top: 10px;
+    color: var(--text-muted);
+    font-size: 12px;
+  }
+
+  .hidden { display: none !important; }
+
+  @media (max-width: 560px) {
+    body { padding: 10px; }
+    .app-shell,
+    .login-shell { padding: 24px 10px; border-radius: 14px; }
+    .card { padding: 10px; border-radius: 10px; }
+    .controls-card { margin-top: 10px; }
+    .top-row { gap: 7px; }
+    .temperature { font-size: clamp(28px, 9vw, 38px); }
+    .metric-grid { gap: 5px; }
+    .metric-value { font-size: 13px; }
+    .refresh-button { min-height: 32px; padding: 0 8px; }
+    .action-grid { gap: 7px; }
+    .action-button { min-height: 50px; }
+    .control-row { min-height: 52px; padding: 10px 12px; border-radius: 8px; }
+    .power-slider { --power-knob-size: 36px; min-height: 52px; padding: 0 11px 0 46px; border-radius: 8px; }
+  }
+</style>
+</head>
+<body>
+  <main id="loginShell" class="login-shell hidden">
+    <section class="card">
+      <p class="login-label">Cloudflare protected</p>
+      <h1 class="login-title">TCL AC Control</h1>
+      <p class="login-copy">Sign in to control the serverless AC cycle.</p>
+      <form id="loginForm" class="login-form">
+        <input id="passwordInput" class="password-input" type="password" autocomplete="current-password" placeholder="Panel password" required>
+        <button id="loginBtn" class="login-button" type="submit">Login</button>
+      </form>
+      <div id="loginStatus" class="status-line"></div>
+    </section>
+  </main>
+
+  <main id="appShell" class="app-shell hidden">
+    <section class="card" aria-label="AC status">
+      <div class="top-row">
+        <div class="temperature" id="activeTempF">--</div>
+        <div class="metric-grid">
+          <div>
+            <p class="metric-label">Phase</p>
+            <span class="metric-value" id="phase">stopped</span>
+          </div>
+          <div>
+            <p class="metric-label">Remaining</p>
+            <span class="metric-value" id="remaining">--:--</span>
+          </div>
+        </div>
+        <button id="refreshBtn" class="refresh-button" type="button">Refresh</button>
+      </div>
+      <div class="action-grid" aria-label="Cycle controls">
+        <button id="startBtn" class="action-button action-primary" type="button">Start Cycle</button>
+        <button id="stopBtn" class="action-button" type="button">Stop Cycle</button>
+      </div>
+    </section>
+
+    <section class="card controls-card" aria-label="AC controls">
+      <p class="section-label">Manual Control</p>
+      <div class="control-list">
+        <button id="compressorControl" class="control-row" type="button">
+          <span><span class="control-title">Compressor</span></span>
+          <span class="switch" aria-hidden="true"><input id="compressorToggle" type="checkbox" tabindex="-1"><span></span></span>
+        </button>
+        <button id="swingControl" class="control-row" type="button">
+          <span>
+            <span class="control-title">Swing</span>
+            <span class="control-meta" id="swingState">Off</span>
+          </span>
+          <span class="switch" aria-hidden="true"><input id="swingToggle" type="checkbox" tabindex="-1"><span></span></span>
+        </button>
+        <div id="powerSlider" class="power-slider power-off" role="button" tabindex="0" aria-label="Slide to toggle AC power">
+          <span id="powerKnob" class="power-slider-knob" aria-hidden="true">⏻</span>
+          <span id="powerLabel" class="power-slider-label"></span>
+        </div>
+      </div>
+      <div class="footer-row">
+        <span id="statusLine">Ready</span>
+        <button id="logoutBtn" class="logout-button" type="button">Logout</button>
+      </div>
+    </section>
+  </main>
+
+<script>
+  const POWER_SLIDE_THRESHOLD = 0.95;
+  let latestState = null;
+  let refreshTimer = null;
+  const powerSliderState = { dragging: false, pointerId: null, startX: 0, progress: 0, busy: false };
+
+  const loginShell = document.getElementById('loginShell');
+  const appShell = document.getElementById('appShell');
+  const loginForm = document.getElementById('loginForm');
+  const loginStatus = document.getElementById('loginStatus');
+  const passwordInput = document.getElementById('passwordInput');
+  const statusLine = document.getElementById('statusLine');
+
+  function showLogin(message) {
+    appShell.classList.add('hidden');
+    loginShell.classList.remove('hidden');
+    if (refreshTimer) clearInterval(refreshTimer);
+    refreshTimer = null;
+    if (message) loginStatus.textContent = message;
+    passwordInput.focus();
+  }
+
+  function showApp() {
+    loginShell.classList.add('hidden');
+    appShell.classList.remove('hidden');
+  }
+
+  async function requestJson(path, options) {
+    const response = await fetch(path, {
+      credentials: 'same-origin',
+      headers: { Accept: 'application/json', ...(options && options.headers ? options.headers : {}) },
+      ...options,
+    });
+    const data = await response.json().catch(() => ({}));
+    if (response.status === 401) {
+      showLogin('Login required.');
+      throw new Error(data.error || 'Login required.');
+    }
+    if (!response.ok || data.ok === false) throw new Error(data.error || 'Request failed.');
+    return data;
+  }
+
+  function setStatus(message) {
+    statusLine.textContent = message || 'Ready';
+  }
+
+  function formatRemaining(seconds) {
+    if (seconds === null || seconds === undefined) return '--:--';
+    const total = Math.max(0, Math.floor(seconds));
+    const minutes = String(Math.floor(total / 60)).padStart(2, '0');
+    const secs = String(total % 60).padStart(2, '0');
+    return minutes + ':' + secs;
+  }
+
+  function renderTemperature(temp, powered) {
+    const value = Number(temp && temp.fahrenheit);
+    document.getElementById('activeTempF').textContent = powered && Number.isFinite(value) ? Math.round(value) + 'F' : '--';
+  }
+
+  function renderState(state) {
+    if (!state) return;
+    latestState = state;
+    const powered = Boolean(state.power_switch);
+    renderTemperature(state.active_temperature, powered);
+    document.getElementById('phase').textContent = state.phase || 'stopped';
+    document.getElementById('remaining').textContent = formatRemaining(state.remaining_seconds);
+    document.getElementById('startBtn').disabled = Boolean(state.running) || !powered;
+    document.getElementById('stopBtn').disabled = !state.running;
+
+    const activeTempF = Number(state.active_temperature && state.active_temperature.fahrenheit);
+    const coolingSetpointF = Number(state.cycle && state.cycle.cooling_setpoint_f);
+    const restingSetpointF = Number(state.cycle && state.cycle.resting_setpoint_f);
+    const compressorOn = Number.isFinite(activeTempF) && Number.isFinite(coolingSetpointF) && Math.abs(activeTempF - coolingSetpointF) < 0.5;
+    const compressorControl = document.getElementById('compressorControl');
+    const compressorToggle = document.getElementById('compressorToggle');
+    compressorToggle.checked = powered && compressorOn;
+    compressorControl.classList.toggle('is-disabled', !powered);
+    compressorControl.disabled = !powered;
+    compressorControl.title = powered ? (compressorOn ? 'Set to ' + restingSetpointF + 'F.' : 'Set to ' + coolingSetpointF + 'F.') : 'Turn AC on first.';
+
+    const swingToggle = document.getElementById('swingToggle');
+    const swingControl = document.getElementById('swingControl');
+    swingToggle.checked = powered && Boolean(state.swing_wind);
+    swingControl.classList.toggle('is-disabled', !powered);
+    swingControl.disabled = !powered;
+    document.getElementById('swingState').textContent = powered && state.swing_wind ? 'On' : 'Off';
+
+    renderPowerSlider();
+    if (state.last_error) setStatus(state.last_error);
+  }
+
+  async function loadState() {
+    const data = await requestJson('/api/state');
+    renderState(data.state);
+  }
+
+  async function readDeviceStatus() {
+    setStatus('Refreshing...');
+    const data = await requestJson('/api/device-status');
+    renderState(data.state);
+    setStatus('Device refreshed.');
+  }
+
+  async function postAction(path, body) {
+    setStatus('Sending...');
+    try {
+      const data = await requestJson(path, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body || {}),
+      });
+      renderState(data.state);
+      setStatus(data.message || 'Done.');
+    } catch (error) {
+      setStatus(error.message);
+      await loadState().catch(() => {});
+    }
+  }
+
+  async function toggleCompressor() {
+    if (!latestState || !latestState.power_switch) return;
+    const isCooling = Boolean(document.getElementById('compressorToggle').checked);
+    await postAction('/api/phase', { phase: isCooling ? 'resting' : 'cooling' });
+  }
+
+  async function toggleSwing() {
+    if (!latestState || !latestState.power_switch) return;
+    await postAction('/api/swing', { enabled: !latestState.swing_wind });
+  }
+
+  async function togglePower() {
+    if (powerSliderState.busy) return;
+    powerSliderState.busy = true;
+    renderPowerSlider();
+    try {
+      await postAction('/api/power', { enabled: !(latestState && latestState.power_switch) });
+    } finally {
+      powerSliderState.busy = false;
+      resetPowerSlider();
+      renderPowerSlider();
+    }
+  }
+
+  function powerSliderElements() {
+    return { slider: document.getElementById('powerSlider'), knob: document.getElementById('powerKnob') };
+  }
+
+  function powerSliderMaxTravel(slider, knob) {
+    return Math.max(1, slider.clientWidth - knob.clientWidth - 10);
+  }
+
+  function setPowerSliderProgress(progress) {
+    const { slider, knob } = powerSliderElements();
+    if (!slider || !knob) return;
+    const clamped = Math.max(0, Math.min(1, progress));
+    powerSliderState.progress = clamped;
+    slider.style.setProperty('--power-progress', clamped);
+    knob.style.transform = 'translateY(-50%) translateX(' + Math.round(powerSliderMaxTravel(slider, knob) * clamped) + 'px)';
+    updatePowerSliderLabel();
+  }
+
+  function resetPowerSlider() {
+    setPowerSliderProgress(0);
+  }
+
+  function updatePowerSliderLabel() {
+    const label = document.getElementById('powerLabel');
+    if (powerSliderState.busy) {
+      label.textContent = 'Sending...';
+      return;
+    }
+    if (powerSliderState.dragging) {
+      label.textContent = powerSliderState.progress >= POWER_SLIDE_THRESHOLD ? 'Release to confirm' : 'Keep sliding';
+      return;
+    }
+    label.textContent = latestState && latestState.power_switch ? 'On' : 'Off';
+  }
+
+  function renderPowerSlider() {
+    const { slider } = powerSliderElements();
+    if (!slider) return;
+    const on = latestState && latestState.power_switch;
+    slider.classList.toggle('power-on', Boolean(on));
+    slider.classList.toggle('power-off', !on);
+    updatePowerSliderLabel();
+  }
+
+  function beginPowerDrag(event) {
+    if (powerSliderState.busy || (event.button !== undefined && event.button !== 0)) return;
+    const { slider } = powerSliderElements();
+    if (!slider || !(event.target instanceof Element) || !event.target.closest('.power-slider-knob')) return;
+    powerSliderState.dragging = true;
+    powerSliderState.pointerId = event.pointerId;
+    powerSliderState.startX = event.clientX;
+    slider.classList.add('is-dragging');
+    slider.setPointerCapture(event.pointerId);
+    setPowerSliderProgress(0);
+    event.preventDefault();
+  }
+
+  function movePowerDrag(event) {
+    if (!powerSliderState.dragging || event.pointerId !== powerSliderState.pointerId) return;
+    const { slider, knob } = powerSliderElements();
+    const distance = Math.max(0, event.clientX - powerSliderState.startX);
+    setPowerSliderProgress(distance / powerSliderMaxTravel(slider, knob));
+  }
+
+  function finishPowerDrag(event, cancelled) {
+    if (!powerSliderState.dragging || event.pointerId !== powerSliderState.pointerId) return;
+    const { slider } = powerSliderElements();
+    powerSliderState.dragging = false;
+    powerSliderState.pointerId = null;
+    if (slider) {
+      slider.classList.remove('is-dragging');
+      if (slider.hasPointerCapture(event.pointerId)) slider.releasePointerCapture(event.pointerId);
+    }
+    if (!cancelled && powerSliderState.progress >= POWER_SLIDE_THRESHOLD) {
+      setPowerSliderProgress(1);
+      togglePower();
+      return;
+    }
+    resetPowerSlider();
+  }
+
+  async function init() {
+    const session = await fetch('/api/session', { credentials: 'same-origin' }).then((r) => r.json()).catch(() => ({ authenticated: false }));
+    if (!session.authenticated) {
+      showLogin();
+      return;
+    }
+    showApp();
+    await loadState();
+    refreshTimer = setInterval(() => loadState().catch(() => {}), 5000);
+  }
+
+  loginForm.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    loginStatus.textContent = 'Signing in...';
+    try {
+      await requestJson('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: passwordInput.value }),
+      });
+      passwordInput.value = '';
+      showApp();
+      await loadState();
+      refreshTimer = setInterval(() => loadState().catch(() => {}), 5000);
+    } catch (error) {
+      loginStatus.textContent = error.message || 'Login failed.';
+    }
+  });
+
+  document.getElementById('logoutBtn').addEventListener('click', async () => {
+    await fetch('/api/logout', { method: 'POST', credentials: 'same-origin' });
+    showLogin('Logged out.');
+  });
+  document.getElementById('refreshBtn').addEventListener('click', () => readDeviceStatus().catch((error) => setStatus(error.message)));
+  document.getElementById('startBtn').addEventListener('click', () => postAction('/api/start'));
+  document.getElementById('stopBtn').addEventListener('click', () => postAction('/api/stop'));
+  document.getElementById('compressorControl').addEventListener('click', toggleCompressor);
+  document.getElementById('swingControl').addEventListener('click', toggleSwing);
+
+  const { slider } = powerSliderElements();
+  slider.addEventListener('pointerdown', beginPowerDrag);
+  slider.addEventListener('pointermove', movePowerDrag);
+  slider.addEventListener('pointerup', (event) => finishPowerDrag(event, false));
+  slider.addEventListener('pointercancel', (event) => finishPowerDrag(event, true));
+  slider.addEventListener('keydown', (event) => {
+    if (event.key !== 'Enter' && event.key !== ' ') return;
+    event.preventDefault();
+    setPowerSliderProgress(1);
+    togglePower();
+  });
+
+  init();
+</script>
+</body>
+</html>

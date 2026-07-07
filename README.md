@@ -42,6 +42,32 @@ Phones on the same Wi‑Fi can use the LAN address shown in the panel footer.
 
 ---
 
+## Cloudflare Serverless Panel
+
+The `cloudflare/` app runs the panel without keeping your computer on:
+
+- Cloudflare Worker serves the API and static panel.
+- Cloudflare D1 stores cycle state.
+- A cron trigger checks every minute and switches phase when needed.
+- Worker secrets store `TCL_SSO_TOKEN`, `PANEL_PASSWORD`, and `PANEL_SESSION_SECRET`.
+
+Deploy from the `cloudflare/` directory:
+
+```powershell
+npm install
+npx wrangler login
+npx wrangler d1 migrations apply tcl-ac-state --remote
+npx wrangler deploy
+```
+
+The current Worker URL is:
+
+```
+https://tcl-ac.qaliqtaha.workers.dev
+```
+
+---
+
 ## Web Panel
 
 

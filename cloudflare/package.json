@@ -1,0 +1,14 @@
+{
+  "name": "tcl-ac-cloudflare",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "check": "node --check src/worker.js",
+    "deploy": "wrangler deploy",
+    "dev": "wrangler dev",
+    "migrate": "wrangler d1 migrations apply tcl-ac-state"
+  },
+  "devDependencies": {
+    "wrangler": "^4.0.0"
+  }
+}

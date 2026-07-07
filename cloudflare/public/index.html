@@ -3,7 +3,14 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="icon" type="image/png" href="/favicon.png">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="alternate icon" type="image/png" href="/favicon.png">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/icons/icon-192.png">
+<meta name="theme-color" content="#05070c">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="TCL AC">
 <title>TCL AC Control</title>
 <style>
   * { box-sizing: border-box; }
@@ -250,7 +257,7 @@
 
   .readout-grid {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 7px;
   }
 
@@ -812,7 +819,7 @@
   }
 
   .readout-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 6px;
   }
 
@@ -1102,7 +1109,7 @@
     .status-subtitle { margin-top: 4px; font-size: 9px; line-height: 1.25; }
 
     .readout-grid {
-      grid-template-columns: repeat(3, minmax(0, 1fr));
+      grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 4px;
     }
 
@@ -1401,7 +1408,7 @@
   }
 
   .readout-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 8px;
   }
 
@@ -1734,7 +1741,7 @@
     .status-subtitle { margin-top: 9px; font-size: 13px; }
 
     .readout-grid {
-      grid-template-columns: repeat(3, minmax(0, 1fr));
+      grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 6px;
     }
 
@@ -2242,12 +2249,42 @@
     cursor: wait;
   }
 
+  .control-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .section-heading .power-button {
+    width: 42px;
+    height: 42px;
+    min-height: 42px;
+    border-radius: 15px;
+    box-shadow: 0 10px 22px rgba(63, 93, 127, 0.1);
+  }
+
+  .section-heading .power-button svg {
+    width: 20px;
+    height: 20px;
+  }
+
   @media (max-width: 560px) {
     .power-button {
       width: 54px;
       height: 54px;
       min-height: 54px;
       border-radius: 19px;
+    }
+
+    .control-actions {
+      gap: 7px;
+    }
+
+    .section-heading .power-button {
+      width: 40px;
+      height: 40px;
+      min-height: 40px;
+      border-radius: 14px;
     }
   }
 
@@ -2258,43 +2295,1136 @@
       min-height: 50px;
       border-radius: 17px;
     }
+
+    .section-heading .power-button {
+      width: 38px;
+      height: 38px;
+      min-height: 38px;
+      border-radius: 13px;
+    }
+  }
+
+  .app-shell {
+    gap: 10px;
+    padding: 14px;
+  }
+
+  .panel-actions {
+    min-height: 34px;
+  }
+
+  .card {
+    padding: 15px;
+  }
+
+  .status-card {
+    padding: 17px;
+  }
+
+  .hero-status {
+    margin: 18px 0 13px;
+  }
+
+  .status-title {
+    font-size: clamp(36px, 6.8vw, 54px);
+  }
+
+  .status-subtitle {
+    margin-top: 8px;
+    font-size: 13px;
+  }
+
+  .readout-grid {
+    gap: 7px;
+  }
+
+  .readout {
+    min-height: 54px;
+    padding: 9px 10px;
+  }
+
+  .metric-value {
+    margin-top: 4px;
+    font-size: clamp(15px, 3.2vw, 19px);
+  }
+
+  .action-grid {
+    margin-top: 11px;
+    gap: 8px;
+  }
+
+  .action-button,
+  .login-button {
+    min-height: 48px;
+  }
+
+  .controls-card {
+    padding: 14px;
+  }
+
+  .section-heading {
+    margin-bottom: 9px;
+  }
+
+  .control-list {
+    gap: 7px;
+  }
+
+  .control-row {
+    min-height: 52px;
+    padding: 9px 12px;
+  }
+
+  .control-icon {
+    width: 32px;
+    height: 32px;
+  }
+
+  .footer-row {
+    margin-top: 7px;
+  }
+
+  @media (max-width: 560px) {
+    body {
+      padding: 8px;
+    }
+
+    .app-shell {
+      width: min(100%, 378px);
+      gap: 8px;
+      padding: 0;
+    }
+
+    .panel-actions {
+      min-height: 36px;
+      padding-bottom: 0;
+    }
+
+    .card {
+      padding: 12px;
+      border-radius: 22px;
+    }
+
+    .status-card {
+      padding: 14px;
+    }
+
+    .hero-status {
+      margin: 13px 0 10px;
+    }
+
+    .status-title {
+      font-size: clamp(32px, 10vw, 44px);
+    }
+
+    .status-subtitle {
+      display: none;
+    }
+
+    .readout-grid {
+      gap: 5px;
+    }
+
+    .readout {
+      min-height: 46px;
+      padding: 7px 6px;
+      border-radius: 15px;
+    }
+
+    .metric-value {
+      font-size: 12px;
+    }
+
+    .action-grid {
+      margin-top: 8px;
+      gap: 6px;
+    }
+
+    .action-button {
+      min-height: 40px;
+      border-radius: 16px;
+      font-size: 11px;
+    }
+
+    .controls-card {
+      padding: 12px;
+    }
+
+    .section-heading {
+      margin-bottom: 8px;
+    }
+
+    .control-list {
+      gap: 6px;
+    }
+
+    .control-row {
+      min-height: 48px;
+      padding: 8px 10px;
+      border-radius: 17px;
+    }
+
+    .control-icon {
+      width: 30px;
+      height: 30px;
+    }
+
+    .section-heading .power-button {
+      width: 36px;
+      height: 36px;
+      min-height: 36px;
+      border-radius: 13px;
+    }
+
+    .footer-row {
+      margin-top: 6px;
+      font-size: 10px;
+    }
+  }
+
+  @media (max-width: 560px) and (max-height: 700px) {
+    .app-shell {
+      gap: 6px;
+    }
+
+    .status-card,
+    .controls-card {
+      padding: 11px;
+    }
+
+    .hero-status {
+      margin: 10px 0 8px;
+    }
+
+    .readout {
+      min-height: 42px;
+      padding: 6px;
+    }
+
+    .action-button {
+      min-height: 38px;
+    }
+
+    .control-row {
+      min-height: 44px;
+    }
+  }
+
+  .app-shell {
+    gap: 8px;
+    padding: 12px;
+  }
+
+  .panel-actions {
+    min-height: 32px;
+  }
+
+  .device-model {
+    min-height: 31px;
+    padding-inline: 12px;
+    font-size: 11px;
+  }
+
+  .logout-icon-button {
+    width: 34px;
+    height: 34px;
+    min-height: 34px;
+  }
+
+  .card {
+    padding: 13px;
+  }
+
+  .status-card {
+    padding: 14px;
+  }
+
+  .phase-chip {
+    min-height: 27px;
+    padding-inline: 10px;
+  }
+
+  .hero-status {
+    margin: 14px 0 10px;
+  }
+
+  .status-title {
+    font-size: clamp(32px, 6vw, 48px);
+  }
+
+  .status-subtitle {
+    margin-top: 6px;
+    font-size: 12px;
+  }
+
+  .readout {
+    min-height: 48px;
+    padding: 8px 9px;
+  }
+
+  .action-grid {
+    margin-top: 8px;
+  }
+
+  .action-button,
+  .login-button {
+    min-height: 44px;
+  }
+
+  .controls-card {
+    padding: 12px;
+  }
+
+  .section-heading {
+    margin-bottom: 7px;
+  }
+
+  .control-list {
+    gap: 6px;
+  }
+
+  .control-row {
+    min-height: 47px;
+    padding: 8px 11px;
+  }
+
+  .control-icon {
+    width: 30px;
+    height: 30px;
+  }
+
+  .footer-row {
+    margin-top: 5px;
+    font-size: 11px;
+  }
+
+  @media (max-width: 560px) {
+    body {
+      padding: 6px;
+    }
+
+    .app-shell {
+      width: min(100%, 372px);
+      gap: 6px;
+      padding: 0;
+    }
+
+    .panel-actions {
+      min-height: 34px;
+    }
+
+    .card {
+      padding: 10px;
+      border-radius: 20px;
+    }
+
+    .status-card {
+      padding: 12px;
+    }
+
+    .hero-status {
+      margin: 10px 0 8px;
+    }
+
+    .status-title {
+      font-size: clamp(30px, 9.5vw, 40px);
+    }
+
+    .readout {
+      min-height: 40px;
+      padding: 6px;
+      border-radius: 14px;
+    }
+
+    .metric-value {
+      margin-top: 2px;
+      font-size: 11px;
+    }
+
+    .action-grid {
+      margin-top: 6px;
+      gap: 5px;
+    }
+
+    .action-button {
+      min-height: 36px;
+      border-radius: 14px;
+      font-size: 10px;
+    }
+
+    .controls-card {
+      padding: 10px;
+    }
+
+    .section-heading {
+      margin-bottom: 6px;
+    }
+
+    .section-heading .power-button {
+      width: 34px;
+      height: 34px;
+      min-height: 34px;
+      border-radius: 12px;
+    }
+
+    .control-row {
+      min-height: 42px;
+      padding: 7px 9px;
+      border-radius: 15px;
+    }
+
+    .control-icon {
+      width: 28px;
+      height: 28px;
+    }
+
+    .control-title {
+      font-size: 13px;
+    }
+
+    .footer-row {
+      margin-top: 4px;
+      font-size: 10px;
+    }
+  }
+
+  @media (max-width: 560px) and (max-height: 700px) {
+    .status-card,
+    .controls-card {
+      padding: 10px;
+    }
+
+    .hero-status {
+      margin: 8px 0 6px;
+    }
+
+    .readout {
+      min-height: 38px;
+    }
+
+    .action-button {
+      min-height: 34px;
+    }
+
+    .control-row {
+      min-height: 40px;
+    }
+  }
+
+  @media (max-width: 560px) {
+    body {
+      min-height: 100svh;
+      padding: 12px 10px;
+      background:
+        radial-gradient(circle at 50% -10%, rgba(10, 132, 255, 0.18), transparent 34%),
+        linear-gradient(180deg, #fbfdff 0%, #f4f8fd 42%, #edf3fa 100%);
+    }
+
+    .app-shell {
+      width: min(100%, 386px);
+      gap: 10px;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      box-shadow: none;
+    }
+
+    .panel-actions {
+      min-height: 38px;
+      padding: 0 2px;
+    }
+
+    .device-model {
+      min-height: 34px;
+      padding: 0 13px 0 31px;
+      border: 1px solid rgba(10, 132, 255, 0.1);
+      background: rgba(255, 255, 255, 0.88);
+      color: #40566d;
+      font-size: 11px;
+      box-shadow: 0 10px 26px rgba(64, 93, 124, 0.09);
+    }
+
+    .device-model::before {
+      left: 12px;
+      width: 8px;
+      height: 8px;
+      box-shadow: 0 0 0 5px var(--phase-soft, rgba(10, 132, 255, 0.12));
+    }
+
+    .logout-icon-button {
+      width: 36px;
+      height: 36px;
+      min-height: 36px;
+      border: 0;
+      background: rgba(255, 255, 255, 0.9);
+      color: #64748b;
+      box-shadow: 0 10px 26px rgba(64, 93, 124, 0.1);
+    }
+
+    .card {
+      padding: 14px;
+      border: 1px solid rgba(27, 72, 116, 0.06);
+      border-radius: 26px;
+      background: rgba(255, 255, 255, 0.94);
+      box-shadow: 0 18px 36px rgba(64, 93, 124, 0.11);
+    }
+
+    .status-card {
+      padding: 16px;
+      text-align: center;
+      background:
+        radial-gradient(circle at 50% -28%, var(--phase-soft), transparent 38%),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(250, 252, 255, 0.94));
+    }
+
+    .status-topline {
+      justify-content: center;
+      min-height: 30px;
+    }
+
+    .phase-chip {
+      min-height: 28px;
+      padding: 0 11px;
+      font-size: 11px;
+    }
+
+    .hero-status {
+      margin: 14px 0 12px;
+    }
+
+    .status-title {
+      font-size: clamp(34px, 10.5vw, 46px);
+      letter-spacing: -0.07em;
+    }
+
+    .status-subtitle {
+      display: block;
+      max-width: 240px;
+      margin: 7px auto 0;
+      color: #64748b;
+      font-size: 12px;
+      line-height: 1.28;
+    }
+
+    .readout-grid {
+      gap: 7px;
+      text-align: left;
+    }
+
+    .readout {
+      min-height: 50px;
+      padding: 8px;
+      border-radius: 17px;
+      background: rgba(246, 249, 253, 0.86);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.75);
+    }
+
+    .metric-label {
+      font-size: 7px;
+      letter-spacing: 0.1em;
+    }
+
+    .metric-value {
+      margin-top: 3px;
+      font-size: 12px;
+      letter-spacing: -0.035em;
+    }
+
+    .action-grid {
+      gap: 7px;
+      margin-top: 10px;
+    }
+
+    .action-button {
+      min-height: 42px;
+      border-radius: 16px;
+      font-size: 11px;
+      box-shadow: none;
+    }
+
+    .action-primary {
+      box-shadow: 0 12px 22px rgba(10, 132, 255, 0.2);
+    }
+
+    .controls-card {
+      padding: 14px;
+    }
+
+    .section-heading {
+      margin-bottom: 10px;
+    }
+
+    .section-label {
+      color: #64748b;
+      font-size: 9px;
+    }
+
+    .control-actions {
+      gap: 7px;
+    }
+
+    .section-note {
+      padding: 4px 9px;
+      border-radius: 999px;
+      background: var(--phase-soft, rgba(10, 132, 255, 0.1));
+      color: var(--phase, var(--cool));
+      font-size: 10px;
+      line-height: 1;
+    }
+
+    .section-heading .power-button {
+      width: 38px;
+      height: 38px;
+      min-height: 38px;
+      border-radius: 14px;
+      box-shadow: 0 10px 20px rgba(64, 93, 124, 0.1);
+    }
+
+    .section-heading .power-button svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    .control-list {
+      gap: 8px;
+    }
+
+    .control-row {
+      min-height: 52px;
+      padding: 9px 11px;
+      border-radius: 19px;
+      background: #f8fbff;
+    }
+
+    .control-main {
+      gap: 10px;
+    }
+
+    .control-icon {
+      width: 31px;
+      height: 31px;
+      box-shadow: 0 7px 16px rgba(64, 93, 124, 0.08);
+    }
+
+    .control-title {
+      font-size: 14px;
+    }
+
+    .switch {
+      width: 42px;
+      height: 24px;
+    }
+
+    .switch span::after {
+      width: 18px;
+      height: 18px;
+    }
+
+    .switch input:checked + span::after {
+      transform: translateX(18px);
+    }
+
+    .footer-row {
+      justify-content: center;
+      margin-top: 8px;
+      color: #94a3b8;
+      font-size: 10px;
+    }
+  }
+
+  @media (max-width: 390px) {
+    body { padding: 9px 8px; }
+    .app-shell { width: min(100%, 366px); gap: 8px; }
+    .card { padding: 12px; border-radius: 23px; }
+    .status-card { padding: 14px; }
+    .hero-status { margin: 11px 0 9px; }
+    .status-title { font-size: clamp(31px, 9.7vw, 41px); }
+    .status-subtitle { display: none; }
+    .readout { min-height: 43px; padding: 7px 6px; border-radius: 15px; }
+    .action-grid { margin-top: 8px; gap: 6px; }
+    .action-button { min-height: 38px; border-radius: 15px; font-size: 10px; }
+    .controls-card { padding: 12px; }
+    .control-row { min-height: 46px; padding: 8px 10px; border-radius: 17px; }
+    .control-icon { width: 28px; height: 28px; }
+    .control-title { font-size: 13px; }
+    .section-heading .power-button { width: 34px; height: 34px; min-height: 34px; border-radius: 12px; }
+  }
+
+  @media (max-width: 560px) and (max-height: 700px) {
+    body { padding-block: 7px; }
+    .app-shell { gap: 7px; }
+    .panel-actions { min-height: 34px; }
+    .device-model { min-height: 31px; }
+    .logout-icon-button { width: 33px; height: 33px; min-height: 33px; }
+    .status-card,
+    .controls-card { padding: 11px; }
+    .hero-status { margin: 9px 0 7px; }
+    .readout { min-height: 40px; }
+    .action-button { min-height: 36px; }
+    .section-heading { margin-bottom: 7px; }
+    .control-row { min-height: 42px; }
+    .footer-row { margin-top: 5px; }
+  }
+
+  :root {
+    color-scheme: dark;
+    --page-bg: #05070c;
+    --page-glow: rgba(59, 130, 246, 0.12);
+    --panel-bg: rgba(6, 10, 16, 0.94);
+    --panel-border: rgba(113, 130, 151, 0.16);
+    --card-bg: rgba(11, 17, 27, 0.96);
+    --card-bg-strong: rgba(14, 22, 34, 0.98);
+    --card-border: rgba(113, 130, 151, 0.18);
+    --text-main: #e6edf6;
+    --text-soft: #99a7b8;
+    --text-muted: #6f7f92;
+    --accent-contrast: #f7fbff;
+    --cool: #3b82f6;
+    --cool-soft: rgba(59, 130, 246, 0.12);
+    --rest: #d89b45;
+    --rest-soft: rgba(216, 155, 69, 0.12);
+    --danger: #ef6464;
+    --danger-soft: rgba(239, 100, 100, 0.12);
+  }
+
+  body[data-phase="cooling"] { --page-glow: rgba(59, 130, 246, 0.16); }
+  body[data-phase="resting"] { --page-glow: rgba(216, 155, 69, 0.14); }
+  body[data-phase="off"] { --page-glow: rgba(239, 100, 100, 0.13); }
+
+  .app-shell {
+    --phase: #8794a7;
+    --phase-soft: rgba(135, 148, 167, 0.12);
+    --phase-contrast: #e6edf6;
+  }
+
+  .app-shell[data-phase="cooling"] {
+    --phase: var(--cool);
+    --phase-soft: var(--cool-soft);
+  }
+
+  .app-shell[data-phase="resting"] {
+    --phase: var(--rest);
+    --phase-soft: var(--rest-soft);
+  }
+
+  .app-shell[data-phase="off"] {
+    --phase: var(--danger);
+    --phase-soft: var(--danger-soft);
+  }
+
+  body {
+    color: var(--text-main);
+    background:
+      radial-gradient(circle at 50% -18%, var(--page-glow), transparent 34%),
+      radial-gradient(circle at 88% 8%, rgba(87, 113, 146, 0.12), transparent 28%),
+      linear-gradient(180deg, #0b111a 0%, var(--page-bg) 52%, #020308 100%) !important;
+  }
+
+  .app-shell,
+  .login-shell {
+    border-color: var(--panel-border);
+    background:
+      linear-gradient(180deg, rgba(38, 52, 72, 0.42), rgba(8, 12, 18, 0.62)),
+      var(--panel-bg);
+    box-shadow: 0 28px 70px rgba(0, 0, 0, 0.46), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  }
+
+  .card,
+  .controls-card {
+    border-color: var(--card-border);
+    background: var(--card-bg);
+    box-shadow: 0 18px 42px rgba(0, 0, 0, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.035);
+  }
+
+  .status-card {
+    border-color: rgba(124, 154, 188, 0.18);
+    background:
+      radial-gradient(ellipse at 50% -24%, var(--phase-soft), transparent 34%),
+      linear-gradient(180deg, rgba(13, 20, 31, 0.98), rgba(7, 11, 18, 0.98));
+  }
+
+  .status-card .hero-status {
+    margin-bottom: 44px;
+  }
+
+  .status-title {
+    font-weight: 760;
+    text-shadow: none;
+  }
+
+  .status-title,
+  .metric-value,
+  .control-title,
+  .power-slider-label,
+  .login-title {
+    color: var(--text-main);
+  }
+
+  .status-subtitle,
+  .login-copy,
+  .control-meta,
+  .power-slider-hint,
+  .footer-row,
+  .status-line {
+    color: var(--text-soft);
+  }
+
+  .metric-label,
+  .section-label,
+  .login-label,
+  .eyebrow,
+  .last-updated {
+    color: var(--text-muted);
+  }
+
+  .phase-chip,
+  .section-note {
+    border: 1px solid color-mix(in srgb, var(--phase) 22%, rgba(113, 130, 151, 0.16));
+    background: color-mix(in srgb, var(--phase) 10%, rgba(10, 16, 25, 0.92));
+    color: var(--phase);
+  }
+
+  .readout,
+  .control-row,
+  .power-slider,
+  .password-input {
+    border-color: rgba(124, 154, 188, 0.14);
+    background: rgba(8, 13, 21, 0.82);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.035);
+  }
+
+  .readout {
+    background: rgba(9, 15, 24, 0.78);
+  }
+
+  .password-input {
+    color: var(--text-main);
+  }
+
+  .password-input::placeholder {
+    color: var(--text-muted);
+  }
+
+  .device-model,
+  .logout-button,
+  .logout-icon-button {
+    border-color: rgba(124, 154, 188, 0.16);
+    background: rgba(12, 18, 28, 0.84);
+    color: var(--text-soft);
+    box-shadow: 0 12px 26px rgba(0, 0, 0, 0.28);
+  }
+
+  .device-model::before {
+    background: var(--phase, var(--cool));
+    box-shadow: 0 0 0 5px var(--phase-soft, rgba(39, 168, 255, 0.16));
+  }
+
+  .logout-button:hover,
+  .logout-icon-button:hover {
+    border-color: rgba(39, 168, 255, 0.3);
+    background: rgba(16, 27, 42, 0.96);
+    color: var(--cool);
+  }
+
+  .action-button,
+  .login-button {
+    border-color: rgba(124, 154, 188, 0.14);
+    background: rgba(17, 25, 38, 0.98);
+    color: var(--text-main);
+  }
+
+  .action-primary,
+  .login-button {
+    border-color: rgba(59, 130, 246, 0.3);
+    background: linear-gradient(135deg, #2563eb, #3b82f6);
+    color: #f7fbff;
+    box-shadow: 0 14px 26px rgba(59, 130, 246, 0.18);
+  }
+
+  .action-danger {
+    border-color: rgba(239, 100, 100, 0.24);
+    background: rgba(239, 100, 100, 0.08);
+    color: #f7a8a8;
+  }
+
+  .action-button:not(:disabled):hover,
+  .control-row:not(:disabled):hover,
+  .power-slider:not(.is-busy):not(.is-dragging):hover {
+    border-color: rgba(59, 130, 246, 0.24);
+    background: rgba(18, 29, 44, 0.98);
+    color: var(--text-main);
+  }
+
+  .action-primary:not(:disabled):hover,
+  .login-button:not(:disabled):hover {
+    border-color: rgba(59, 130, 246, 0.38);
+    background: linear-gradient(135deg, #2d6fec, #4f8df7);
+    color: #f7fbff;
+  }
+
+  .action-danger:not(:disabled):hover {
+    border-color: rgba(239, 100, 100, 0.32);
+    background: rgba(239, 100, 100, 0.12);
+    color: #fbc0c0;
+  }
+
+  .control-row.is-active {
+    border-color: color-mix(in srgb, var(--phase) 34%, transparent);
+    background: color-mix(in srgb, var(--phase) 12%, rgba(9, 15, 24, 0.9));
+  }
+
+  .control-row.is-active:not(:disabled):hover,
+  .power-slider.power-on:not(.is-busy):not(.is-dragging):hover {
+    border-color: color-mix(in srgb, var(--phase) 42%, transparent);
+    background: color-mix(in srgb, var(--phase) 16%, rgba(10, 17, 27, 0.94));
+  }
+
+  .control-icon {
+    background: rgba(22, 33, 49, 0.95);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.28);
+  }
+
+  .control-icon::before {
+    background: #64748b;
+  }
+
+  .switch span {
+    background: #1d2938;
+  }
+
+  .switch span::after {
+    background: #b7c4d5;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.32);
+  }
+
+  .switch input:checked + span {
+    background: var(--cool);
+  }
+
+  .switch input:checked + span::after {
+    background: #f7fbff;
+  }
+
+  .power-button,
+  .power-button.power-off {
+    border-color: rgba(124, 154, 188, 0.16);
+    background: rgba(14, 21, 32, 0.92);
+    color: var(--text-soft);
+    box-shadow: 0 14px 26px rgba(0, 0, 0, 0.28);
+  }
+
+  .power-button.power-on {
+    border-color: rgba(59, 130, 246, 0.34);
+    background: linear-gradient(135deg, #2563eb, #3b82f6);
+    color: #f7fbff;
+    box-shadow: 0 14px 26px rgba(59, 130, 246, 0.2);
+  }
+
+  .power-button:not(:disabled):hover {
+    border-color: rgba(59, 130, 246, 0.28);
+    background: rgba(18, 29, 44, 0.98);
+    color: var(--cool);
+  }
+
+  .power-button.power-on:not(:disabled):hover {
+    background: linear-gradient(135deg, #2d6fec, #4f8df7);
+    color: #f7fbff;
+  }
+
+  .action-button:disabled,
+  .control-row.is-disabled {
+    opacity: 0.42;
+  }
+
+  .status-topline {
+    justify-content: space-between;
+  }
+
+  .status-topline .power-button,
+  .hero-logout-button {
+    width: 34px;
+    height: 34px;
+    min-height: 34px;
+    border-radius: 14px;
+  }
+
+  .status-topline .power-button {
+    justify-self: auto;
+  }
+
+  .status-topline .power-button svg,
+  .hero-logout-button svg {
+    width: 17px;
+    height: 17px;
+  }
+
+  .hero-phase-chip {
+    margin-bottom: 12px;
+  }
+
+  .action-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .status-toast {
+    position: fixed;
+    left: 50%;
+    top: 50%;
+    z-index: 50;
+    width: min(340px, calc(100vw - 32px));
+    padding: 11px 14px;
+    border: 1px solid rgba(113, 130, 151, 0.22);
+    border-radius: 16px;
+    background: rgba(9, 15, 24, 0.94);
+    color: var(--text-main);
+    box-shadow: 0 18px 42px rgba(0, 0, 0, 0.42), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    font-size: 12px;
+    font-weight: 720;
+    line-height: 1.35;
+    text-align: center;
+    transform: translate(-50%, -50%);
+    backdrop-filter: blur(16px);
+  }
+
+  .status-toast.is-error {
+    border-color: rgba(239, 100, 100, 0.36);
+    background: rgba(34, 15, 20, 0.96);
+    color: #fbc0c0;
+  }
+
+  .login-shell {
+    width: min(100%, 360px);
+    padding: 12px;
+  }
+
+  .login-card {
+    padding: 22px;
+    border-radius: 24px;
+    background: rgba(9, 15, 24, 0.96);
+  }
+
+  .login-card .login-form {
+    gap: 9px;
+    margin-top: 0;
+  }
+
+  .login-card .password-input {
+    min-height: 44px;
+    padding: 0 13px;
+    border-color: rgba(113, 130, 151, 0.18);
+    border-radius: 15px;
+    background: rgba(5, 9, 15, 0.72);
+    color: var(--text-main);
+    font-size: 13px;
+  }
+
+  .login-card .login-button {
+    min-height: 44px;
+    border-radius: 15px;
+    font-size: 13px;
+    box-shadow: 0 12px 24px rgba(59, 130, 246, 0.16);
+  }
+
+  .login-card .status-line {
+    min-height: 16px;
+    margin-top: 10px;
+    font-size: 11px;
+  }
+
+  @media (max-width: 560px) {
+    body {
+      background:
+        radial-gradient(circle at 50% -12%, var(--page-glow), transparent 36%),
+        linear-gradient(180deg, #0b111a 0%, #05070c 48%, #020308 100%) !important;
+    }
+
+    .app-shell {
+      border: 0;
+      background: transparent;
+      box-shadow: none;
+    }
+
+    .card,
+    .status-card,
+    .controls-card {
+      border-color: rgba(124, 154, 188, 0.16);
+      background: rgba(13, 19, 29, 0.94);
+      box-shadow: 0 18px 38px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.035);
+    }
+
+    .status-card {
+      background:
+        radial-gradient(ellipse at 50% -30%, var(--phase-soft), transparent 36%),
+        linear-gradient(180deg, rgba(13, 20, 31, 0.98), rgba(7, 11, 18, 0.98));
+    }
+
+    .status-card .hero-status {
+      margin-bottom: 38px;
+    }
+
+    .readout,
+    .control-row {
+      background: rgba(8, 13, 21, 0.82);
+    }
+
+    .status-toast {
+      width: min(320px, calc(100vw - 24px));
+    }
+
+    .login-shell {
+      width: min(100%, 340px);
+      padding: 0;
+      border: 0;
+      background: transparent;
+      box-shadow: none;
+    }
+
+    .login-card {
+      padding: 22px;
+      border-radius: 24px;
+    }
+
+    .status-topline .power-button,
+    .hero-logout-button {
+      width: 34px;
+      height: 34px;
+      min-height: 34px;
+      border-radius: 13px;
+    }
   }
 </style>
 </head>
 <body>
   <main id="loginShell" class="login-shell hidden">
-    <section class="card">
-      <p class="login-label">TCL Home</p>
-      <h1 class="login-title">Air Conditioner</h1>
-      <p class="login-copy">Sign in to manage your AC cycle.</p>
+    <section class="card login-card">
       <form id="loginForm" class="login-form">
-        <input id="passwordInput" class="password-input" type="password" autocomplete="current-password" placeholder="Panel password" required>
+        <input id="passwordInput" class="password-input" type="password" autocomplete="current-password" placeholder="Password" required>
         <button id="loginBtn" class="login-button" type="submit">Login</button>
       </form>
-      <div id="loginStatus" class="status-line"></div>
     </section>
   </main>
 
   <main id="appShell" class="app-shell hidden">
-    <header class="panel-header panel-actions" aria-label="Panel actions">
-      <span class="device-model">TAC-12CHPB/DM4</span>
-      <button id="logoutBtn" class="logout-button logout-icon-button" type="button" aria-label="Logout" title="Logout">
-        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-          <path d="M10 6H6.75A1.75 1.75 0 0 0 5 7.75v8.5C5 17.22 5.78 18 6.75 18H10" />
-          <path d="M14 8l4 4-4 4" />
-          <path d="M18 12H9" />
-        </svg>
-      </button>
-    </header>
-
     <section class="card status-card" aria-label="AC status">
       <div class="status-topline">
-        <span class="phase-chip"><span class="phase-dot" aria-hidden="true"></span><span id="phase">Stopped</span></span>
+        <button id="powerButton" class="power-button power-off" type="button" aria-label="Toggle AC power" title="Toggle AC power">
+          <svg id="powerButtonIcon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <path d="M12 3v8" />
+            <path d="M7.05 7.05a7 7 0 1 0 9.9 0" />
+          </svg>
+        </button>
+        <button id="logoutBtn" class="logout-button logout-icon-button hero-logout-button" type="button" aria-label="Logout" title="Logout">
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <path d="M10 6H6.75A1.75 1.75 0 0 0 5 7.75v8.5C5 17.22 5.78 18 6.75 18H10" />
+            <path d="M14 8l4 4-4 4" />
+            <path d="M18 12H9" />
+          </svg>
+        </button>
       </div>
       <div class="hero-status">
+        <span class="phase-chip hero-phase-chip"><span class="phase-dot" aria-hidden="true"></span><span id="phase">Stopped</span></span>
         <p class="metric-label">Device Status</p>
         <h2 id="statusTitle" class="status-title">Stopped</h2>
-        <p id="statusSubtitle" class="status-subtitle">Ready for a cycle.</p>
       </div>
       <div class="readout-grid">
         <div class="readout">
@@ -2305,21 +3435,15 @@
           <p class="metric-label">Setpoint</p>
           <span class="metric-value" id="activeTempF">--</span>
         </div>
-        <div class="readout">
-          <p class="metric-label">Cycle Target</p>
-          <span class="metric-value" id="targetTempF">--</span>
-        </div>
       </div>
       <div class="action-grid" aria-label="Cycle controls">
-        <button id="startBtn" class="action-button action-primary" type="button">Start Cycle</button>
-        <button id="stopBtn" class="action-button action-danger" type="button">Stop Cycle</button>
+        <button id="cycleBtn" class="action-button action-primary" type="button">Start Cycle</button>
       </div>
     </section>
 
     <section class="card controls-card" aria-label="AC controls">
       <div class="section-heading">
         <p class="section-label">Controls</p>
-        <span id="manualNote" class="section-note">Power required</span>
       </div>
       <div class="control-list">
         <button id="compressorControl" class="control-row" type="button">
@@ -2342,31 +3466,24 @@
           </span>
           <span class="switch" aria-hidden="true"><input id="swingToggle" type="checkbox" tabindex="-1"><span></span></span>
         </button>
-        <button id="powerButton" class="power-button power-off" type="button" aria-label="Toggle AC power" title="Toggle AC power">
-          <svg id="powerButtonIcon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-            <path d="M12 3v8" />
-            <path d="M7.05 7.05a7 7 0 1 0 9.9 0" />
-          </svg>
-        </button>
-      </div>
-      <div class="footer-row">
-        <span id="statusLine">Ready</span>
       </div>
     </section>
   </main>
+
+  <div id="statusToast" class="status-toast hidden" role="status" aria-live="polite"></div>
 
 <script>
   const POWER_SLIDE_THRESHOLD = 0.95;
   let latestState = null;
   let refreshTimer = null;
+  let statusToastTimer = null;
   const powerSliderState = { dragging: false, pointerId: null, startX: 0, progress: 0, busy: false };
 
   const loginShell = document.getElementById('loginShell');
   const appShell = document.getElementById('appShell');
   const loginForm = document.getElementById('loginForm');
-  const loginStatus = document.getElementById('loginStatus');
   const passwordInput = document.getElementById('passwordInput');
-  const statusLine = document.getElementById('statusLine');
+  const statusToast = document.getElementById('statusToast');
 
   function showLogin(message) {
     appShell.classList.add('hidden');
@@ -2374,7 +3491,7 @@
     document.body.removeAttribute('data-phase');
     if (refreshTimer) clearInterval(refreshTimer);
     refreshTimer = null;
-    if (message) loginStatus.textContent = message;
+    if (message) setStatus(message);
     passwordInput.focus();
   }
 
@@ -2398,8 +3515,19 @@
     return data;
   }
 
-  function setStatus(message) {
-    statusLine.textContent = message || 'Ready';
+  function setStatus(message, isError) {
+    const text = String(message || '').trim();
+    if (!text || text === 'Ready') return;
+    statusToast.textContent = text;
+    statusToast.classList.toggle('is-error', Boolean(isError));
+    statusToast.setAttribute('role', isError ? 'alert' : 'status');
+    statusToast.classList.remove('hidden');
+    if (statusToastTimer) clearTimeout(statusToastTimer);
+    statusToastTimer = setTimeout(() => {
+      statusToast.classList.add('hidden');
+      statusToast.classList.remove('is-error');
+      statusToast.setAttribute('role', 'status');
+    }, isError ? 4200 : 2400);
   }
 
   function formatRemaining(seconds) {
@@ -2423,21 +3551,6 @@
     if (phase === 'cooling') return 'Cooling';
     if (phase === 'resting') return 'Resting';
     return 'Stopped';
-  }
-
-  function cycleTargetForPhase(state, phase) {
-    const cycle = state && state.cycle ? state.cycle : {};
-    if (phase === 'cooling') return Number(cycle.cooling_setpoint_f);
-    if (phase === 'resting') return Number(cycle.resting_setpoint_f);
-    return NaN;
-  }
-
-  function statusSubtitle(state, powered, phase, targetF) {
-    if (!powered) return 'AC power is off. Tap power to turn it on.';
-    if (!state.running) return 'Ready for a cycle.';
-    if (phase === 'cooling') return 'Cooling toward ' + formatFahrenheit(targetF) + '.';
-    if (phase === 'resting') return 'Resting at ' + formatFahrenheit(targetF) + '.';
-    return 'Cycle is active.';
   }
 
   function updateLastUpdated() {
@@ -2464,18 +3577,18 @@
     const activeTempF = Number(state.active_temperature && state.active_temperature.fahrenheit);
     const coolingSetpointF = Number(state.cycle && state.cycle.cooling_setpoint_f);
     const restingSetpointF = Number(state.cycle && state.cycle.resting_setpoint_f);
-    const targetF = cycleTargetForPhase(state, phase);
 
     appShell.dataset.phase = visualPhase;
     document.body.dataset.phase = visualPhase;
     renderTemperature(state.active_temperature, powered);
     document.getElementById('phase').textContent = powered ? phaseLabel(phase) : 'Power Off';
     document.getElementById('statusTitle').textContent = powered ? phaseLabel(phase) : 'Power Off';
-    document.getElementById('statusSubtitle').textContent = statusSubtitle(state, powered, phase, targetF);
     document.getElementById('remaining').textContent = formatRemaining(state.remaining_seconds);
-    document.getElementById('targetTempF').textContent = powered && state.running ? formatFahrenheit(targetF) : '--';
-    document.getElementById('startBtn').disabled = Boolean(state.running) || !powered;
-    document.getElementById('stopBtn').disabled = !state.running;
+    const cycleBtn = document.getElementById('cycleBtn');
+    cycleBtn.textContent = state.running ? 'Stop Cycle' : 'Start Cycle';
+    cycleBtn.disabled = state.running ? false : !powered;
+    cycleBtn.classList.toggle('action-primary', !state.running);
+    cycleBtn.classList.toggle('action-danger', Boolean(state.running));
 
     const compressorOn = Number.isFinite(activeTempF) && Number.isFinite(coolingSetpointF) && Math.abs(activeTempF - coolingSetpointF) < 0.5;
     const compressorControl = document.getElementById('compressorControl');
@@ -2495,11 +3608,10 @@
     swingControl.classList.toggle('is-disabled', !powered);
     swingControl.disabled = !powered;
     document.getElementById('swingState').textContent = '';
-    document.getElementById('manualNote').textContent = powered ? 'Ready' : 'Power off';
 
     renderPowerSlider();
     updateLastUpdated();
-    if (state.last_error) setStatus(state.last_error);
+    if (state.last_error) setStatus(state.last_error, true);
   }
 
   async function loadState() {
@@ -2525,7 +3637,7 @@
       renderState(data.state);
       setStatus(data.message || 'Done.');
     } catch (error) {
-      setStatus(error.message);
+      setStatus(error.message, true);
       await loadState().catch(() => {});
     }
   }
@@ -2552,6 +3664,11 @@
       resetPowerSlider();
       renderPowerSlider();
     }
+  }
+
+  function toggleCycle() {
+    const running = latestState && latestState.running;
+    return postAction(running ? '/api/stop' : '/api/start');
   }
 
   function powerSliderElements() {
@@ -2669,7 +3786,7 @@
 
   loginForm.addEventListener('submit', async (event) => {
     event.preventDefault();
-    loginStatus.textContent = 'Signing in...';
+    setStatus('Signing in...');
     try {
       await requestJson('/api/login', {
         method: 'POST',
@@ -2681,7 +3798,7 @@
       await loadState();
       refreshTimer = setInterval(() => loadState().catch(() => {}), 5000);
     } catch (error) {
-      loginStatus.textContent = error.message || 'Login failed.';
+      setStatus(error.message || 'Login failed.', true);
     }
   });
 
@@ -2690,14 +3807,19 @@
     showLogin('Logged out.');
   });
   const refreshBtn = document.getElementById('refreshBtn');
-  if (refreshBtn) refreshBtn.addEventListener('click', () => readDeviceStatus().catch((error) => setStatus(error.message)));
-  document.getElementById('startBtn').addEventListener('click', () => postAction('/api/start'));
-  document.getElementById('stopBtn').addEventListener('click', () => postAction('/api/stop'));
+  if (refreshBtn) refreshBtn.addEventListener('click', () => readDeviceStatus().catch((error) => setStatus(error.message, true)));
+  document.getElementById('cycleBtn').addEventListener('click', toggleCycle);
   document.getElementById('compressorControl').addEventListener('click', toggleCompressor);
   document.getElementById('swingControl').addEventListener('click', toggleSwing);
 
   const { slider } = powerSliderElements();
   if (slider) slider.addEventListener('click', togglePower);
+
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/sw.js').catch(() => {});
+    });
+  }
 
   init();
 </script>

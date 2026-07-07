@@ -3,35 +3,41 @@
 ## Safety
 - This repo is Cloudflare-only; the old local Python panel/CLI has been removed.
 - Live Worker URL is `https://tcl-ac.qaliqtaha.workers.dev`; do not use GitHub Pages for this app.
+- Do not deploy unless the user explicitly asks for deploy.
 - Device-changing Cloudflare Worker paths include POSTs to `/api/start`, `/api/power`, `/api/swing`, and `/api/phase`.
 - `POST /api/start` sends the 70F cooling setpoint and startup swing when `STARTUP_SWING=1`.
 - `/api/stop` only stops the stored D1 cycle state; it does not power off the AC.
 - `GET /api/session` and `GET /api/state` are safe; they do not contact the device.
 - `GET /api/device-status` reads the real device shadow; do not call it unless the user asks for a real status read.
 - The Worker cron can send commands when D1 state has `running=true`.
-- Never print, commit, or paste `TCL_SSO_TOKEN`, captured `ssotoken`, AWS credentials, Authorization headers, cookies, or presigned AWS URLs.
+- Never print, commit, or paste `TCL_SSO_TOKEN`, captured `ssotoken`, AWS credentials, Authorization headers, cookies, or presigned AWS/MQTT URLs.
 
 ## Commands
 - Work from `cloudflare/` for Cloudflare tasks.
 - Install dependencies: `npm install`.
-- Safe syntax check: `npm run check` or `node --check src/worker.js`.
+- Local preview: `npm run dev`; login needs local `.dev.vars` with `PANEL_PASSWORD` and `PANEL_SESSION_SECRET` because Worker secrets are not auto-loaded.
+- Omit `TCL_SSO_TOKEN` from `.dev.vars` unless intentionally testing real device commands locally.
+- Safe syntax check: `npm run check` or `node --check src/worker.js`; also run `node --check public/sw.js` after service worker edits.
 - Wrangler dry-run: `npx wrangler deploy --dry-run`.
-- Apply D1 migrations: `npx wrangler d1 migrations apply tcl-ac-state --remote`.
-- Deploy: `npx wrangler deploy`.
+- Apply remote D1 migrations: `npx wrangler d1 migrations apply tcl-ac-state --remote`; `npm run migrate` lacks `--remote`.
+- Deploy only on explicit request: `npm run deploy` or `npx wrangler deploy`.
 - Required Worker secrets: `TCL_SSO_TOKEN`, `PANEL_PASSWORD`, and `PANEL_SESSION_SECRET`; never put them in git or command output.
 
 ## Architecture
-- `cloudflare/src/worker.js` owns the serverless API, login cookie handling, AWS SigV4, MQTT-over-WebSocket shadow publishing, D1 state, and cron phase switching.
-- `cloudflare/public/index.html` owns the hosted panel and calls same-origin `/api/*` endpoints.
+- `cloudflare/src/worker.js` owns the serverless API, login cookie handling, AWS SigV4, MQTT-over-WebSocket shadow publishing, D1 state key `controller`, and cron phase switching.
+- `cloudflare/public/index.html` owns the hosted panel and calls same-origin `/api/*` endpoints; there is no frontend build step.
+- PWA install metadata lives in `cloudflare/public/manifest.webmanifest`, `cloudflare/public/sw.js`, and `cloudflare/public/icons/`; the service worker must not cache `/api/*`.
 - `cloudflare/wrangler.toml` owns Worker bindings, D1 database binding, env vars, assets, and cron schedule; keep `assets.run_worker_first = ["/api/*"]` or API routes fall through to asset 404s.
 - `cloudflare/migrations/` owns D1 schema migrations.
 - Device writes must use AWS IoT MQTT-over-WebSocket publish to `$aws/things/{DEVICE_ID}/shadow/update`; REST shadow update and REST topic publish returned 403 for this device.
-- D1 stores the controller state under key `controller`; `powerSwitch=false` from `/api/device-status` stops the stored cycle.
+- `powerSwitch=false` from `/api/device-status` stops the stored cycle; manual `/api/phase` also stops the loop and sends a setpoint.
 
 ## UI/Docs
-- Current panel is compact and monochrome; keep UI labels English.
+- Current panel uses a TCL Home-style dark UI; keep visible UI labels English and do not show the model label unless asked.
+- There is no visible Refresh button; avoid adding UI that reads the real device shadow unless asked.
+- Power is an icon-only normal button in the status hero, not a confirmation slider.
+- Start/Stop cycle is a single stateful button.
 - When `state.power_switch` is false, Start Cycle, Compressor, and Swing should render disabled/off and avoid sending commands.
-- Power toggle is a confirmation slider; do not replace it with a simple click toggle.
 - Keep docs Cloudflare-only; do not reintroduce local Python server instructions unless explicitly asked.
 
 ## Repo Notes

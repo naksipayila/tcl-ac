@@ -1,14 +1,20 @@
 const STATE_KEY = "controller";
 const SESSION_COOKIE = "tcl_ac_session";
 const SESSION_TTL_SECONDS = 60 * 60 * 24 * 30;
+const D1_RETRY_DELAYS_MS = [80, 200, 500];
+const LOGIN_RATE_LIMIT_ATTEMPTS = 5;
+const LOGIN_RATE_LIMIT_WINDOW_SECONDS = 5 * 60;
+const DEVICE_COMMAND_CONFIRM_TIMEOUT_MS = 20000;
+const DEVICE_CONFIRM_INTERVAL_MS = 1000;
 
 let credentialCache = null;
 
 class HttpError extends Error {
-  constructor(status, message) {
+  constructor(status, message, options = {}) {
     super(message);
     this.name = "HttpError";
     this.status = status;
+    this.silent = Boolean(options.silent);
   }
 }
 
@@ -75,10 +81,14 @@ async function handleApi(request, env, url) {
 
   if (url.pathname === "/api/device-status" && request.method === "GET") {
     const state = await loadState(env);
-    const status = await readDeviceStatus(env);
-    applyDeviceStatus(state, status);
+    const status = await refreshDeviceStatus(env, state).catch(() => null);
     await saveState(env, state);
     return jsonResponse({ ok: true, status, state: snapshot(state) });
+  }
+
+  if (url.pathname === "/api/device-probe" && request.method === "POST") {
+    const result = await probeDevice(env);
+    return jsonResponse(result);
   }
 
   if (url.pathname === "/api/start" && request.method === "POST") {
@@ -113,12 +123,18 @@ async function handleApi(request, env, url) {
 }
 
 async function handleLogin(request, env) {
+  const rateKey = await loginRateKey(request, env);
+  await assertLoginRateLimit(env, rateKey);
+
   const body = await readJsonBody(request);
   const password = typeof body.password === "string" ? body.password : "";
   const expected = env.PANEL_PASSWORD || "";
   if (!expected || !safeEqual(password, expected)) {
+    await recordFailedLogin(env, rateKey);
     throw new HttpError(401, "Invalid password");
   }
+
+  await clearLoginRateLimit(env, rateKey);
 
   const issuedAt = nowSeconds();
   const expiresAt = issuedAt + SESSION_TTL_SECONDS;
@@ -151,16 +167,72 @@ async function isAuthenticated(request, env) {
   }
 }
 
+async function assertLoginRateLimit(env, rateKey) {
+  const rate = await loadLoginRate(env, rateKey);
+  if (rate.attempts < LOGIN_RATE_LIMIT_ATTEMPTS) return;
+  const minutes = Math.max(1, Math.ceil((rate.reset_at - nowSeconds()) / 60));
+  throw new HttpError(429, `Too many login attempts. Try again in ${minutes} minute${minutes === 1 ? "" : "s"}.`);
+}
+
+async function recordFailedLogin(env, rateKey) {
+  const now = nowSeconds();
+  const rate = await loadLoginRate(env, rateKey);
+  const resetAt = rate.reset_at > now ? rate.reset_at : now + LOGIN_RATE_LIMIT_WINDOW_SECONDS;
+  const nextRate = { attempts: Number(rate.attempts || 0) + 1, reset_at: resetAt };
+  await runD1Operation(() =>
+    env.DB.prepare("INSERT OR REPLACE INTO state (key, value, updated_at) VALUES (?, ?, ?)")
+      .bind(rateKey, JSON.stringify(nextRate), now)
+      .run(),
+  );
+}
+
+async function clearLoginRateLimit(env, rateKey) {
+  await runD1Operation(() => env.DB.prepare("DELETE FROM state WHERE key = ?").bind(rateKey).run());
+}
+
+async function loadLoginRate(env, rateKey) {
+  const now = nowSeconds();
+  const fresh = { attempts: 0, reset_at: now + LOGIN_RATE_LIMIT_WINDOW_SECONDS };
+  const row = await runD1Operation(() => env.DB.prepare("SELECT value FROM state WHERE key = ?").bind(rateKey).first());
+  if (!row || typeof row.value !== "string") return fresh;
+
+  try {
+    const stored = JSON.parse(row.value);
+    const resetAt = Number(stored.reset_at || 0);
+    if (!Number.isFinite(resetAt) || resetAt <= now) return fresh;
+    const attempts = Math.max(0, Number(stored.attempts || 0));
+    return { attempts, reset_at: resetAt };
+  } catch (_error) {
+    return fresh;
+  }
+}
+
+async function loginRateKey(request, env) {
+  const secret = env.PANEL_SESSION_SECRET || env.PANEL_PASSWORD || "login-rate";
+  const digest = await hmacBase64Url(secret, clientAddress(request));
+  return `login_rate:${digest}`;
+}
+
+function clientAddress(request) {
+  const cfAddress = String(request.headers.get("CF-Connecting-IP") || "").trim();
+  if (cfAddress) return cfAddress;
+  const forwardedFor = String(request.headers.get("X-Forwarded-For") || "").split(",")[0].trim();
+  if (forwardedFor) return forwardedFor;
+  return "unknown";
+}
+
 async function startCycle(env) {
   const state = await loadState(env);
   if (state.running) {
     return { ok: true, message: "Cycle is already running.", state: snapshot(state) };
   }
+  await assertDeviceReady(env, state, { requirePower: true });
 
   const now = nowSeconds();
-  const desired = buildSetpointDesired(config(env).cycle.cooling_setpoint_f);
+  const setpoint = config(env).cycle.cooling_setpoint_f;
+  const desired = buildSetpointDesired(setpoint);
   if (config(env).startup_swing) desired.swingWind = 1;
-  await sendDesiredWithSafety(env, state, desired, "cf_start");
+  await sendDesiredWithSafety(env, state, desired, "cf_start", confirmTemperature(setpoint));
 
   state.running = true;
   state.phase = "cooling";
@@ -168,7 +240,6 @@ async function startCycle(env) {
   state.phase_started_at = now;
   state.phase_end_at = now + config(env).cycle.cooling_minutes * 60;
   state.active_temperature = temperatureState(config(env).cycle.cooling_setpoint_f, "cycle.cooling");
-  if (config(env).startup_swing) state.swing_wind = true;
   state.last_error = null;
   await saveState(env, state);
   return { ok: true, message: "Cycle started.", state: snapshot(state) };
@@ -197,11 +268,12 @@ async function sendPhase(env, phase) {
   }
 
   const state = await loadState(env);
+  await assertDeviceReady(env, state, { requirePower: true });
+  await sendDesiredWithSafety(env, state, buildSetpointDesired(setpoint), `cf_${phase}`, confirmTemperature(setpoint));
   state.running = false;
   state.phase = "stopped";
   state.phase_started_at = null;
   state.phase_end_at = null;
-  await sendDesiredWithSafety(env, state, buildSetpointDesired(setpoint), `cf_${phase}`);
   state.active_temperature = temperatureState(setpoint, `manual.${phase}`);
   state.last_error = null;
   await saveState(env, state);
@@ -210,13 +282,14 @@ async function sendPhase(env, phase) {
 
 async function setPower(env, enabled) {
   const state = await loadState(env);
+  await assertDeviceReady(env, state);
+  await sendDesiredWithSafety(env, state, { powerSwitch: enabled ? 1 : 0 }, "cf_power", [confirmBoolean("powerSwitch", enabled)]);
   if (!enabled) {
     state.running = false;
     state.phase = "stopped";
     state.phase_started_at = null;
     state.phase_end_at = null;
   }
-  await sendDesiredWithSafety(env, state, { powerSwitch: enabled ? 1 : 0 }, "cf_power");
   state.power_switch = enabled;
   state.last_error = null;
   await saveState(env, state);
@@ -225,7 +298,8 @@ async function setPower(env, enabled) {
 
 async function setSwing(env, enabled) {
   const state = await loadState(env);
-  await sendDesiredWithSafety(env, state, { swingWind: enabled ? 1 : 0 }, "cf_swing");
+  await assertDeviceReady(env, state, { requirePower: true });
+  await sendDesiredWithSafety(env, state, { swingWind: enabled ? 1 : 0 }, "cf_swing", [confirmBoolean("swingWind", enabled)]);
   state.swing_wind = enabled;
   state.last_error = null;
   await saveState(env, state);
@@ -235,6 +309,7 @@ async function setSwing(env, enabled) {
 async function runScheduledCycle(env) {
   const state = await loadState(env);
   if (!state.running || !state.phase_end_at || nowSeconds() < Number(state.phase_end_at)) return;
+  await assertDeviceReady(env, state, { requirePower: true });
 
   const cfg = config(env);
   const nextPhase = state.phase === "cooling" ? "resting" : "cooling";
@@ -242,7 +317,7 @@ async function runScheduledCycle(env) {
   const minutes = nextPhase === "cooling" ? cfg.cycle.cooling_minutes : cfg.cycle.resting_minutes;
   const now = nowSeconds();
 
-  await sendDesiredWithSafety(env, state, buildSetpointDesired(setpoint), `cf_cron_${nextPhase}`);
+  await sendDesiredWithSafety(env, state, buildSetpointDesired(setpoint), `cf_cron_${nextPhase}`, confirmTemperature(setpoint));
   state.phase = nextPhase;
   state.phase_started_at = now;
   state.phase_end_at = now + minutes * 60;
@@ -251,14 +326,85 @@ async function runScheduledCycle(env) {
   await saveState(env, state);
 }
 
-async function sendDesiredWithSafety(env, state, desired, tokenPrefix) {
+async function probeDevice(env) {
+  const state = await loadState(env);
+  state.last_error = null;
+  state.device_checked_at = nowSeconds();
+
+  let connectivity = null;
+  let connectivityError = null;
+  try {
+    connectivity = await readThingConnectivity(env);
+  } catch (error) {
+    connectivityError = safeErrorMessage(error);
+  }
+
+  let status = null;
+  let statusError = null;
+  try {
+    status = await readDeviceStatus(env);
+    applyReportedDeviceState(state, status);
+  } catch (error) {
+    statusError = safeErrorMessage(error);
+  }
+
+  if (status) {
+    const connection = inferDeviceConnection(status);
+    if (connectivity && connectivity.connected) {
+      markDeviceOnline(state, status, { verified: true, source: "search_index" });
+    } else if (connection.online) {
+      markDeviceOnline(state, status, { verified: connection.verified, source: connection.source });
+    } else if (connectivity && connectivity.connected === false) {
+      markDeviceOffline(state, "Device is offline.", { verified: true, source: "search_index" });
+    } else {
+      markDeviceOffline(state, connection.error || "Device is offline.", { verified: connection.verified, source: connection.source });
+    }
+    await saveState(env, state);
+    return { ok: true, message: state.device_online ? (state.device_connection_verified ? "Device online." : "Device status loaded from last known shadow.") : "Device offline.", state: snapshot(state) };
+  }
+
+  if (connectivity && connectivity.connected) {
+    markDeviceOnline(state, null, { verified: true, source: "search_index" });
+    await saveState(env, state);
+    return { ok: true, message: "Device online.", state: snapshot(state) };
+  }
+
+  if (connectivity) {
+    markDeviceOffline(state, "Device is offline.", { verified: true, source: "search_index" });
+  } else {
+    markDeviceOffline(state, statusError || connectivityError || "Device status could not be verified.", {
+      verified: false,
+      source: connectivityError ? "search_index_unavailable" : null,
+    });
+  }
+  await saveState(env, state);
+  return { ok: true, message: "Device offline.", state: snapshot(state) };
+}
+
+async function assertDeviceReady(env, state, options = {}) {
+  if (!state.device_online) {
+    throw new HttpError(409, "Device is offline.", { silent: true });
+  }
+  if (options.requirePower && !state.power_switch) {
+    throw new HttpError(409, "Turn AC power on first.");
+  }
+}
+
+async function sendDesiredWithSafety(env, state, desired, tokenPrefix, confirmation = []) {
   const elapsed = nowSeconds() - Number(state.last_command_at || 0);
   const wait = config(env).min_seconds_between_commands - elapsed;
   if (state.last_command_at && wait > 0) {
     throw new HttpError(429, `Safety wait: try again in ${Math.ceil(wait)} seconds.`);
   }
-  await sendDesiredState(env, desired, tokenPrefix);
-  state.last_command_at = nowSeconds();
+  try {
+    await sendDesiredState(env, desired, tokenPrefix);
+    state.last_command_at = nowSeconds();
+    await waitForDeviceConfirmation(env, state, desired, confirmation, tokenPrefix);
+  } catch (error) {
+    state.last_error = error instanceof HttpError && error.silent ? null : safeErrorMessage(error);
+    await saveState(env, state).catch(() => null);
+    throw error;
+  }
 }
 
 async function sendDesiredState(env, desired, tokenPrefix) {
@@ -271,8 +417,88 @@ async function sendDesiredState(env, desired, tokenPrefix) {
   return mqttWsPublish(env, topic, payload);
 }
 
+async function waitForDeviceConfirmation(env, state, desired, confirmation, tokenPrefix) {
+  const checks = Array.isArray(confirmation) ? confirmation : [];
+  if (!checks.length) return;
+
+  const deadline = Date.now() + DEVICE_COMMAND_CONFIRM_TIMEOUT_MS;
+  while (Date.now() <= deadline) {
+    await delay(DEVICE_CONFIRM_INTERVAL_MS);
+    const status = await readDeviceStatus(env).catch(() => null);
+    if (!status) {
+      markDeviceUnverified(state, "Device status could not be verified.", { source: "shadow" });
+      throw new HttpError(504, "Device status could not be verified.", { silent: true });
+    }
+    applyDeviceStatus(env, state, status);
+    if (confirmationMatches(status, checks)) {
+      markDeviceOnline(state, status);
+      return;
+    }
+    if (extractExplicitOnlineStatus(status) === false) {
+      markDeviceOffline(state, "Device is offline.");
+      throw new HttpError(409, "Device is offline.", { silent: true });
+    }
+  }
+
+  state.device_status_error = "Device did not confirm command.";
+  throw new HttpError(504, "Device did not confirm command.", { silent: true });
+}
+
+function confirmTemperature(fahrenheit) {
+  return [{ type: "temperature", fahrenheit: Math.round(fahrenheit) }];
+}
+
+function confirmBoolean(property, value) {
+  return { type: "boolean", property, value: Boolean(value) };
+}
+
+function reportedNumericProperty(status, property) {
+  const paths = [
+    ["state", "reported", property],
+    ["reported", property],
+  ];
+  for (const path of paths) {
+    const value = numericValue(valueAtPath(status, path));
+    if (value !== null) return value;
+  }
+  return null;
+}
+
+function confirmationMatches(status, checks) {
+  for (const check of checks) {
+    if (check.type === "temperature") {
+      const temp = extractActiveTemperature(status);
+      if (!Number.isFinite(temp.fahrenheit) || Math.abs(temp.fahrenheit - check.fahrenheit) > 0.5) return false;
+      continue;
+    }
+    if (check.type === "boolean") {
+      if (extractReportedBoolProperty(status, check.property) !== check.value) return false;
+      continue;
+    }
+    return false;
+  }
+  return true;
+}
+
 async function readDeviceStatus(env) {
   return iotData(env, "GET", `/things/${config(env).device_id}/shadow`);
+}
+
+async function readThingConnectivity(env) {
+  const cfg = config(env);
+  const result = await iotControl(env, "POST", "/indices/search", {
+    queryString: `thingName:${cfg.device_id}`,
+    maxResults: 1,
+  });
+  const things = Array.isArray(result && result.things) ? result.things : [];
+  const thing = things.find((item) => item && item.thingName === cfg.device_id) || things[0];
+  const connectivity = thing && typeof thing === "object" ? thing.connectivity : null;
+  if (!connectivity || typeof connectivity.connected !== "boolean") return null;
+  return {
+    connected: connectivity.connected,
+    timestamp: connectivityTimestamp(connectivity.timestamp),
+    disconnect_reason: typeof connectivity.disconnectReason === "string" ? connectivity.disconnectReason : null,
+  };
 }
 
 async function mqttWsPublish(env, topic, payload) {
@@ -455,10 +681,33 @@ async function iotData(env, method, path, body = null, canonicalQuery = "") {
   return JSON.parse(text);
 }
 
+async function iotControl(env, method, path, body = null, canonicalQuery = "") {
+  const cfg = config(env);
+  const canonicalUri = encodeCanonicalPath(path);
+  const bodyText = body === null ? "" : JSON.stringify(body);
+  const headers = await awsSignedHeaders(env, "iot", cfg.iot_control_endpoint, method, canonicalUri, canonicalQuery, bodyText);
+  const response = await fetch(`${cfg.iot_control_endpoint}${canonicalUri}${canonicalQuery ? `?${canonicalQuery}` : ""}`, {
+    method,
+    headers,
+    body: body === null ? undefined : bodyText,
+  });
+  const text = await response.text();
+  if (!response.ok) {
+    throw new HttpError(502, `AWS IoT ${method} failed with HTTP ${response.status}: ${text.slice(0, 300)}`);
+  }
+  if (!text) return null;
+  return JSON.parse(text);
+}
+
 async function awsHeaders(env, method, canonicalUri, canonicalQuery, bodyText) {
   const cfg = config(env);
+  return awsSignedHeaders(env, "iotdata", cfg.iot_data_endpoint, method, canonicalUri, canonicalQuery, bodyText);
+}
+
+async function awsSignedHeaders(env, service, endpoint, method, canonicalUri, canonicalQuery, bodyText) {
+  const cfg = config(env);
   const credentials = await ensureAwsCredentials(env);
-  const host = new URL(cfg.iot_data_endpoint).host;
+  const host = new URL(endpoint).host;
   const now = new Date();
   const amzDate = isoAmzDate(now);
   const dateStamp = amzDate.slice(0, 8);
@@ -473,14 +722,14 @@ async function awsHeaders(env, method, canonicalUri, canonicalQuery, bodyText) {
     signedHeaders,
     payloadHash,
   ].join("\n");
-  const credentialScope = `${dateStamp}/${cfg.region}/iotdata/aws4_request`;
+  const credentialScope = `${dateStamp}/${cfg.region}/${service}/aws4_request`;
   const stringToSign = [
     "AWS4-HMAC-SHA256",
     amzDate,
     credentialScope,
     await sha256Hex(canonicalRequest),
   ].join("\n");
-  const signingKey = await awsSignatureKey(credentials.secretKey, dateStamp, cfg.region, "iotdata");
+  const signingKey = await awsSignatureKey(credentials.secretKey, dateStamp, cfg.region, service);
   const signature = hexFromBytes(await hmacBytes(signingKey, stringToSign));
   return {
     Authorization: `AWS4-HMAC-SHA256 Credential=${credentials.accessKey}/${credentialScope}, SignedHeaders=${signedHeaders}, Signature=${signature}`,
@@ -565,7 +814,7 @@ async function cognitoCredentials(env, identityId, cognitoToken) {
 
 async function loadState(env) {
   const defaults = defaultState(env);
-  const row = await env.DB.prepare("SELECT value FROM state WHERE key = ?").bind(STATE_KEY).first();
+  const row = await runD1Operation(() => env.DB.prepare("SELECT value FROM state WHERE key = ?").bind(STATE_KEY).first());
   if (!row || typeof row.value !== "string") return defaults;
   try {
     const stored = JSON.parse(row.value);
@@ -577,11 +826,30 @@ async function loadState(env) {
 
 async function saveState(env, state) {
   const normalized = normalizeState({ ...state, cycle: config(env).cycle, updated_at: nowSeconds() });
-  await env.DB.prepare("INSERT OR REPLACE INTO state (key, value, updated_at) VALUES (?, ?, ?)")
-    .bind(STATE_KEY, JSON.stringify(normalized), nowSeconds())
-    .run();
+  await runD1Operation(() =>
+    env.DB.prepare("INSERT OR REPLACE INTO state (key, value, updated_at) VALUES (?, ?, ?)")
+      .bind(STATE_KEY, JSON.stringify(normalized), nowSeconds())
+      .run(),
+  );
   Object.assign(state, normalized);
   return normalized;
+}
+
+async function runD1Operation(operation) {
+  let lastError = null;
+  for (let attempt = 0; attempt <= D1_RETRY_DELAYS_MS.length; attempt += 1) {
+    try {
+      return await operation();
+    } catch (error) {
+      lastError = error;
+      if (!isRetriableD1Error(error) || attempt === D1_RETRY_DELAYS_MS.length) break;
+      await delay(D1_RETRY_DELAYS_MS[attempt]);
+    }
+  }
+  if (isD1Error(lastError)) {
+    throw new HttpError(503, friendlyD1ErrorMessage(lastError));
+  }
+  throw lastError;
 }
 
 function defaultState(env) {
@@ -594,6 +862,12 @@ function defaultState(env) {
     last_command_at: 0,
     power_switch: false,
     swing_wind: false,
+    device_online: false,
+    device_connection_verified: false,
+    device_status_source: null,
+    device_checked_at: 0,
+    device_last_seen_at: null,
+    device_status_error: "Device status has not been checked yet.",
     active_temperature: emptyTemperature(),
     cycle: config(env).cycle,
     last_error: null,
@@ -611,6 +885,12 @@ function normalizeState(state) {
     last_command_at: Number(state.last_command_at || 0),
     power_switch: Boolean(state.power_switch),
     swing_wind: Boolean(state.swing_wind),
+    device_online: Boolean(state.device_online),
+    device_connection_verified: Boolean(state.device_connection_verified),
+    device_status_source: typeof state.device_status_source === "string" ? state.device_status_source : null,
+    device_checked_at: Number(state.device_checked_at || 0),
+    device_last_seen_at: nullableNumber(state.device_last_seen_at),
+    device_status_error: state.device_status_error || null,
     active_temperature: state.active_temperature || emptyTemperature(),
     cycle: state.cycle,
     last_error: state.last_error || null,
@@ -625,6 +905,12 @@ function snapshot(state) {
     phase: state.running ? state.phase : "stopped",
     power_switch: state.power_switch,
     swing_wind: state.swing_wind,
+    device_online: state.device_online,
+    device_connection_verified: state.device_connection_verified,
+    device_status_source: state.device_status_source,
+    device_checked_at: state.device_checked_at,
+    device_last_seen_at: state.device_last_seen_at,
+    device_status_error: state.device_status_error,
     remaining_seconds: remaining,
     cycle: state.cycle,
     active_temperature: state.active_temperature || emptyTemperature(),
@@ -634,10 +920,40 @@ function snapshot(state) {
   };
 }
 
-function applyDeviceStatus(state, status) {
+async function refreshDeviceStatus(env, state) {
+  state.device_checked_at = nowSeconds();
+  try {
+    const status = await readDeviceStatus(env);
+    applyDeviceStatus(env, state, status);
+    if (state.device_online) {
+      state.device_status_error = null;
+    }
+    return status;
+  } catch (error) {
+    markDeviceOffline(state, "Device status could not be verified.");
+    state.device_status_error = safeErrorMessage(error);
+    return Promise.reject(error);
+  }
+}
+
+function applyDeviceStatus(env, state, status) {
+  applyReportedDeviceState(state, status);
+
+  const connection = inferDeviceConnection(status);
+  state.device_online = connection.online;
+  state.device_connection_verified = connection.verified;
+  state.device_status_source = connection.source;
+  state.device_last_seen_at = connection.last_seen_at;
+  state.device_status_error = connection.error;
+  if (!connection.online) {
+    markDeviceOffline(state, connection.error || "Device is offline.", { verified: connection.verified, source: connection.source });
+  }
+}
+
+function applyReportedDeviceState(state, status) {
   state.active_temperature = extractActiveTemperature(status);
-  const swingWind = extractBoolProperty(status, "swingWind");
-  const powerSwitch = extractBoolProperty(status, "powerSwitch");
+  const swingWind = extractReportedBoolProperty(status, "swingWind");
+  const powerSwitch = extractReportedBoolProperty(status, "powerSwitch");
   if (swingWind !== null) state.swing_wind = swingWind;
   if (powerSwitch !== null) {
     state.power_switch = powerSwitch;
@@ -650,12 +966,35 @@ function applyDeviceStatus(state, status) {
   }
 }
 
-function extractBoolProperty(status, propertyName) {
+function markDeviceOffline(state, reason, options = {}) {
+  state.device_online = false;
+  state.device_connection_verified = Boolean(options.verified);
+  state.device_status_source = typeof options.source === "string" ? options.source : null;
+  state.device_status_error = reason || "Device is offline.";
+  state.device_checked_at = nowSeconds();
+}
+
+function markDeviceUnverified(state, reason, options = {}) {
+  state.device_online = Boolean(state.device_online);
+  state.device_connection_verified = false;
+  state.device_status_source = typeof options.source === "string" ? options.source : state.device_status_source;
+  state.device_status_error = reason || "Device status could not be verified.";
+  state.device_checked_at = nowSeconds();
+}
+
+function markDeviceOnline(state, status, options = {}) {
+  state.device_online = true;
+  state.device_connection_verified = options.verified === undefined ? true : Boolean(options.verified);
+  state.device_status_source = typeof options.source === "string" ? options.source : "command";
+  state.device_checked_at = nowSeconds();
+  state.device_last_seen_at = status ? latestReportedTimestamp(status) || nowSeconds() : nowSeconds();
+  state.device_status_error = null;
+}
+
+function extractReportedBoolProperty(status, propertyName) {
   const paths = [
     ["state", "reported", propertyName],
-    ["state", "desired", propertyName],
     ["reported", propertyName],
-    ["desired", propertyName],
   ];
   for (const path of paths) {
     const value = booleanValue(valueAtPath(status, path));
@@ -668,8 +1007,8 @@ function extractActiveTemperature(status) {
   const paths = [
     [["state", "reported", "targetFahrenheitDegree"], "F"],
     [["state", "reported", "targetCelsiusDegree"], "C"],
-    [["state", "desired", "targetFahrenheitDegree"], "F"],
-    [["state", "desired", "targetCelsiusDegree"], "C"],
+    [["reported", "targetFahrenheitDegree"], "F"],
+    [["reported", "targetCelsiusDegree"], "C"],
   ];
   for (const [path, unit] of paths) {
     const raw = numericValue(valueAtPath(status, path));
@@ -684,6 +1023,130 @@ function extractActiveTemperature(status) {
     };
   }
   return emptyTemperature();
+}
+
+function inferDeviceConnection(status) {
+  const explicit = extractExplicitOnlineStatus(status);
+  const lastSeenAt = latestReportedTimestamp(status);
+  if (explicit !== null) {
+    return {
+      online: explicit,
+      verified: true,
+      source: "shadow",
+      last_seen_at: explicit ? nowSeconds() : lastSeenAt,
+      error: explicit ? null : "Device is offline.",
+    };
+  }
+
+  if (hasReportedDeviceState(status)) {
+    return {
+      online: true,
+      verified: false,
+      source: "shadow",
+      last_seen_at: lastSeenAt || nowSeconds(),
+      error: null,
+    };
+  }
+
+  return {
+    online: false,
+    verified: false,
+    source: "shadow",
+    last_seen_at: lastSeenAt,
+    error: "Device online status could not be confirmed.",
+  };
+}
+
+function hasReportedDeviceState(status) {
+  return reportedNumericProperty(status, "targetFahrenheitDegree") !== null
+    || reportedNumericProperty(status, "targetCelsiusDegree") !== null
+    || extractReportedBoolProperty(status, "powerSwitch") !== null
+    || extractReportedBoolProperty(status, "swingWind") !== null;
+}
+
+function extractExplicitOnlineStatus(status) {
+  const roots = [valueAtPath(status, ["state", "reported"]), valueAtPath(status, ["reported"]), status];
+  for (const root of roots) {
+    const value = findOnlineStatusValue(root, 0);
+    if (value !== null) return value;
+  }
+  return null;
+}
+
+function findOnlineStatusValue(value, depth) {
+  if (!value || typeof value !== "object" || depth > 4) return null;
+  for (const [key, child] of Object.entries(value)) {
+    const keyKind = onlineStatusKeyKind(key);
+    if (keyKind) {
+      const parsed = onlineStatusValue(child, keyKind === "generic");
+      if (parsed !== null) return parsed;
+    }
+    if (child && typeof child === "object") {
+      const nested = findOnlineStatusValue(child, depth + 1);
+      if (nested !== null) return nested;
+    }
+  }
+  return null;
+}
+
+function onlineStatusKeyKind(key) {
+  const normalized = String(key).toLowerCase().replace(/[^a-z0-9]+/g, "");
+  if ([
+    "online",
+    "isonline",
+    "connected",
+    "isconnected",
+    "connectstatus",
+    "connectionstatus",
+    "devicestatus",
+    "networkstatus",
+    "wifistatus",
+    "reachable",
+    "isreachable",
+    "availability",
+    "available",
+    "isavailable",
+    "presence",
+  ].includes(normalized)) return "explicit";
+  return null;
+}
+
+function onlineStatusValue(value, genericStatus = false) {
+  if (genericStatus && typeof value !== "string") return null;
+  if (typeof value === "boolean") return value;
+  if (typeof value === "number") return Number.isFinite(value) ? value !== 0 : null;
+  if (typeof value !== "string") return null;
+  const normalized = value.trim().toLowerCase().replace(/[^a-z0-9]+/g, "_");
+  if (!normalized) return null;
+  if (["online", "connected", "connect", "wifi_connected", "network_connected", "reachable", "available", "active"].includes(normalized)) return true;
+  if (["offline", "disconnected", "disconnect", "wifi_disconnected", "network_disconnected", "unreachable", "unavailable", "inactive"].includes(normalized)) return false;
+  if (genericStatus) return null;
+  if (["1", "true", "yes", "on"].includes(normalized)) return true;
+  if (["0", "false", "no", "off"].includes(normalized)) return false;
+  return null;
+}
+
+function latestReportedTimestamp(status) {
+  const roots = [valueAtPath(status, ["metadata", "reported"]), valueAtPath(status, ["state", "metadata", "reported"]), valueAtPath(status, ["reported", "metadata"])]
+    .filter(Boolean);
+  let latest = null;
+  for (const root of roots) {
+    latest = maxTimestamp(root, latest);
+  }
+  return latest;
+}
+
+function maxTimestamp(value, current) {
+  let latest = current;
+  if (!value || typeof value !== "object") return latest;
+  const timestamp = Number(value.timestamp);
+  if (Number.isFinite(timestamp) && timestamp > 0) {
+    latest = latest === null ? timestamp : Math.max(latest, timestamp);
+  }
+  for (const child of Object.values(value)) {
+    if (child && typeof child === "object") latest = maxTimestamp(child, latest);
+  }
+  return latest;
 }
 
 function valueAtPath(value, path) {
@@ -718,6 +1181,12 @@ function booleanValue(value) {
   return null;
 }
 
+function connectivityTimestamp(value) {
+  const timestamp = numericValue(value);
+  if (timestamp === null || timestamp <= 0) return null;
+  return timestamp > 10_000_000_000 ? Math.floor(timestamp / 1000) : Math.floor(timestamp);
+}
+
 function emptyTemperature() {
   return { fahrenheit: null, celsius: null, source: null, updated_at: nowSeconds(), error: null };
 }
@@ -741,11 +1210,13 @@ function buildSetpointDesired(setpointF) {
 }
 
 function config(env) {
+  const region = env.AWS_REGION || "eu-central-1";
   return {
     device_id: env.DEVICE_ID || "DWG42RFAAAE",
     api_base_url: trimTrailingSlash(env.API_BASE_URL || "https://eu-iot-api-prod.tcljd.com"),
     iot_data_endpoint: trimTrailingSlash(env.IOT_DATA_ENDPOINT || "https://data.iot.eu-central-1.amazonaws.com"),
-    region: env.AWS_REGION || "eu-central-1",
+    iot_control_endpoint: trimTrailingSlash(env.IOT_CONTROL_ENDPOINT || `https://iot.${region}.amazonaws.com`),
+    region,
     app_id: env.APP_ID || "wx6e1af3fa84fbe523",
     min_seconds_between_commands: numberEnv(env.MIN_SECONDS_BETWEEN_COMMANDS, 30),
     startup_swing: String(env.STARTUP_SWING || "1") !== "0",
@@ -884,7 +1355,8 @@ function jsonResponse(data, status = 200, headers = {}) {
 function errorResponse(error) {
   const status = error instanceof HttpError ? error.status : 500;
   const message = sanitizeErrorMessage(error instanceof Error ? error.message : "Internal error");
-  return jsonResponse({ ok: false, error: message }, status);
+  const silent = error instanceof HttpError && error.silent;
+  return jsonResponse(silent ? { ok: false, silent: true } : { ok: false, error: message }, status);
 }
 
 function securityHeaders() {
@@ -900,12 +1372,37 @@ function safeErrorMessage(error) {
 }
 
 function sanitizeErrorMessage(message) {
-  return String(message)
+  const text = String(message);
+  if (isD1ErrorMessage(text)) return friendlyD1ErrorMessage(text);
+  return text
     .replace(/https:\/\/[^\s"']*X-Amz-[^\s"']*/g, "[redacted-presigned-url]")
     .replace(/wss:\/\/[^\s"']*X-Amz-[^\s"']*/g, "[redacted-presigned-url]")
     .replace(/X-Amz-Credential=[^&\s"']+/g, "X-Amz-Credential=[redacted]")
     .replace(/X-Amz-Security-Token=[^&\s"']+/g, "X-Amz-Security-Token=[redacted]")
     .replace(/X-Amz-Signature=[^&\s"']+/g, "X-Amz-Signature=[redacted]");
+}
+
+function isD1Error(error) {
+  return error instanceof Error && isD1ErrorMessage(error.message);
+}
+
+function isD1ErrorMessage(message) {
+  return /\bD1_(?:ERROR|EXEC_ERROR)\b|D1 DB storage|SQLITE_BUSY|database is locked|object to be reset/i.test(String(message));
+}
+
+function isRetriableD1Error(error) {
+  if (!(error instanceof Error)) return false;
+  return /D1 DB storage operation exceeded timeout|SQLITE_BUSY|database is locked|timed? ?out|timeout|object to be reset/i.test(
+    error.message,
+  );
+}
+
+function friendlyD1ErrorMessage(error) {
+  const message = error instanceof Error ? error.message : String(error || "");
+  if (/timed? ?out|timeout|object to be reset/i.test(message)) {
+    return "State storage timed out. Please try again.";
+  }
+  return "State storage is temporarily unavailable. Please try again.";
 }
 
 function nullableNumber(value) {

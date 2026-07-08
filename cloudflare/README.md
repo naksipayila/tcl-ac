@@ -9,6 +9,7 @@ Serverless version of the TCL AC panel.
 - Cycle state in Cloudflare D1.
 - Minute cron trigger for phase changes.
 - Device commands are sent with AWS IoT MQTT-over-WebSocket publish to the device shadow update topic.
+- The panel probes online status on load/login. If AWS connectivity is unavailable but the shadow has usable reported state, the panel shows `Last Known`; controls are disabled only when the device is definitely offline or status cannot be read.
 - Secrets in Cloudflare Worker secrets, not in git.
 
 ## Required Secrets
@@ -35,5 +36,7 @@ npx wrangler deploy
 - Visiting the panel only checks login/session.
 - `GET /api/state` reads D1 state only.
 - `GET /api/device-status` reads the real device shadow.
+- `POST /api/device-probe` is read-only for the AC: it tries AWS IoT SearchIndex connectivity, then falls back to reading shadow reported values. It does not change setpoints or publish desired state.
 - `POST /api/start`, `/api/phase`, `/api/power`, `/api/swing` send device commands.
+- Device command routes require the device to be online or `Last Known` before sending and wait for reported-state confirmation before updating panel state; command desired state is not cleared on confirmation timeout.
 - Cron sends commands only when D1 state has `running=true`.

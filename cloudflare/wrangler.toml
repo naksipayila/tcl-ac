@@ -15,13 +15,14 @@ crons = ["* * * * *"]
 DEVICE_ID = "DWG42RFAAAE"
 API_BASE_URL = "https://eu-iot-api-prod.tcljd.com"
 IOT_DATA_ENDPOINT = "https://data.iot.eu-central-1.amazonaws.com"
+IOT_CONTROL_ENDPOINT = "https://iot.eu-central-1.amazonaws.com"
 AWS_REGION = "eu-central-1"
 APP_ID = "wx6e1af3fa84fbe523"
 COOLING_SETPOINT_F = "70"
 RESTING_SETPOINT_F = "80"
 COOLING_MINUTES = "20"
 RESTING_MINUTES = "20"
-MIN_SECONDS_BETWEEN_COMMANDS = "30"
+MIN_SECONDS_BETWEEN_COMMANDS = "5"
 STARTUP_SWING = "1"
 
 [[d1_databases]]

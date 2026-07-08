@@ -4,14 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
-<link rel="alternate icon" type="image/png" href="/favicon.png">
 <link rel="manifest" href="/manifest.webmanifest">
-<link rel="apple-touch-icon" href="/icons/icon-192.png">
+<link rel="apple-touch-icon" href="/favicon.svg">
 <meta name="theme-color" content="#05070c">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="TCL AC">
-<title>TCL AC Control</title>
+<meta name="apple-mobile-web-app-title" content="AC Control">
+<title>AC Control</title>
 <style>
   * { box-sizing: border-box; }
 
@@ -42,11 +41,11 @@
   body[data-phase="off"] { --page-glow: rgba(128, 42, 42, 0.18); }
 
   body {
-    min-height: 100vh;
+    min-height: 100svh;
     margin: 0;
     display: grid;
     place-items: center;
-    padding: 24px;
+    padding: 12px 10px;
     color: var(--text-main);
     font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     overflow-x: hidden;
@@ -73,6 +72,13 @@
     outline-offset: 3px;
   }
 
+  .page-stack {
+    width: min(100%, 386px);
+    display: grid;
+    justify-items: center;
+    gap: 8px;
+  }
+
   .app-shell,
   .login-shell {
     width: min(100%, 760px);
@@ -93,7 +99,7 @@
     --phase-soft: rgba(86, 96, 109, 0.18);
     --phase-contrast: #ecf1f6;
     display: grid;
-    grid-template-columns: minmax(0, 1.08fr) minmax(260px, 0.92fr);
+    grid-template-columns: 1fr;
     align-items: start;
     gap: 9px;
   }
@@ -281,7 +287,6 @@
     white-space: nowrap;
   }
 
-  .refresh-button,
   .logout-button {
     flex: 0 0 auto;
     min-height: 28px;
@@ -295,7 +300,6 @@
     transition: transform 0.18s var(--ease), border-color 0.18s var(--ease), background 0.18s var(--ease);
   }
 
-  .refresh-button:hover,
   .logout-button:hover {
     border-color: rgba(118, 136, 158, 0.42);
     background: rgba(26, 31, 38, 0.92);
@@ -708,7 +712,7 @@
   }
 
   .app-shell {
-    grid-template-columns: minmax(0, 1.08fr) minmax(252px, 0.92fr);
+    grid-template-columns: 1fr;
     gap: 10px;
   }
 
@@ -847,7 +851,6 @@
 
   .action-button,
   .login-button,
-  .refresh-button,
   .logout-button {
     border-radius: 2px;
     box-shadow: none;
@@ -882,7 +885,6 @@
   .login-button:not(:disabled):hover,
   .control-row:not(:disabled):hover,
   .power-slider:not(.is-busy):not(.is-dragging):hover,
-  .refresh-button:hover,
   .logout-button:hover {
     transform: none;
     border-color: #405161;
@@ -898,7 +900,6 @@
     border-color: rgba(179, 93, 93, 0.72);
   }
 
-  .refresh-button,
   .logout-button {
     min-height: 26px;
     border-color: #2a3743;
@@ -1172,7 +1173,6 @@
       font-size: 8px;
     }
 
-    .refresh-button,
     .logout-button { min-height: 22px; padding: 0 7px; font-size: 8px; }
   }
 
@@ -1242,7 +1242,7 @@
     --phase: #8b98aa;
     --phase-soft: #eef2f7;
     --phase-contrast: #ffffff;
-    grid-template-columns: minmax(0, 1.05fr) minmax(260px, 0.95fr);
+    grid-template-columns: 1fr;
     gap: 14px;
   }
 
@@ -1429,7 +1429,6 @@
     letter-spacing: -0.04em;
   }
 
-  .refresh-button,
   .logout-button,
   .action-button,
   .login-button {
@@ -1437,7 +1436,6 @@
     text-transform: none;
   }
 
-  .refresh-button,
   .logout-button {
     min-height: 34px;
     padding: 0 14px;
@@ -1449,7 +1447,6 @@
     box-shadow: 0 8px 20px rgba(63, 93, 127, 0.08);
   }
 
-  .refresh-button:hover,
   .logout-button:hover {
     border-color: rgba(10, 132, 255, 0.18);
     background: #f8fbff;
@@ -1791,7 +1788,6 @@
     .power-slider-knob { border-radius: 14px; }
     .power-slider-label { font-size: 12px; }
     .power-slider-hint { font-size: 10px; }
-    .refresh-button,
     .logout-button { min-height: 30px; padding: 0 11px; font-size: 11px; }
   }
 
@@ -2036,15 +2032,9 @@
       gap: 8px;
     }
 
-    .phase-chip,
-    .refresh-button {
+    .phase-chip {
       min-height: 30px;
       font-size: 11px;
-    }
-
-    .refresh-button {
-      padding: 0 12px;
-      box-shadow: none;
     }
 
     .hero-status {
@@ -2990,11 +2980,18 @@
   body[data-phase="cooling"] { --page-glow: rgba(59, 130, 246, 0.16); }
   body[data-phase="resting"] { --page-glow: rgba(216, 155, 69, 0.14); }
   body[data-phase="off"] { --page-glow: rgba(239, 100, 100, 0.13); }
+  body[data-phase="offline"] { --page-glow: rgba(64, 71, 82, 0.08); }
 
   .app-shell {
     --phase: #8794a7;
     --phase-soft: rgba(135, 148, 167, 0.12);
     --phase-contrast: #e6edf6;
+    width: min(100%, 386px);
+    gap: 10px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
   }
 
   .app-shell[data-phase="cooling"] {
@@ -3012,39 +3009,47 @@
     --phase-soft: var(--danger-soft);
   }
 
+  .app-shell[data-phase="offline"] {
+    --phase: #737b87;
+    --phase-soft: rgba(82, 91, 105, 0.12);
+  }
+
+  .app-shell[data-phase="off"] .status-title,
+  .app-shell[data-phase="offline"] .status-title {
+    font-size: clamp(28px, 8vw, 36px);
+    letter-spacing: -0.045em;
+  }
+
   body {
     color: var(--text-main);
     background:
-      radial-gradient(circle at 50% -18%, var(--page-glow), transparent 34%),
-      radial-gradient(circle at 88% 8%, rgba(87, 113, 146, 0.12), transparent 28%),
-      linear-gradient(180deg, #0b111a 0%, var(--page-bg) 52%, #020308 100%) !important;
+      radial-gradient(circle at 50% -12%, var(--page-glow), transparent 36%),
+      linear-gradient(180deg, #0b111a 0%, #05070c 48%, #020308 100%) !important;
   }
 
   .app-shell,
   .login-shell {
-    border-color: var(--panel-border);
-    background:
-      linear-gradient(180deg, rgba(38, 52, 72, 0.42), rgba(8, 12, 18, 0.62)),
-      var(--panel-bg);
-    box-shadow: 0 28px 70px rgba(0, 0, 0, 0.46), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    border: 0;
+    background: transparent;
+    box-shadow: none;
   }
 
   .card,
+  .status-card,
   .controls-card {
-    border-color: var(--card-border);
-    background: var(--card-bg);
-    box-shadow: 0 18px 42px rgba(0, 0, 0, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.035);
+    border-color: rgba(124, 154, 188, 0.16);
+    background: rgba(13, 19, 29, 0.94);
+    box-shadow: 0 18px 38px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.035);
   }
 
   .status-card {
-    border-color: rgba(124, 154, 188, 0.18);
     background:
-      radial-gradient(ellipse at 50% -24%, var(--phase-soft), transparent 34%),
+      radial-gradient(ellipse at 50% -30%, var(--phase-soft), transparent 36%),
       linear-gradient(180deg, rgba(13, 20, 31, 0.98), rgba(7, 11, 18, 0.98));
   }
 
   .status-card .hero-status {
-    margin-bottom: 44px;
+    margin-bottom: 38px;
   }
 
   .status-title {
@@ -3094,7 +3099,7 @@
   }
 
   .readout {
-    background: rgba(9, 15, 24, 0.78);
+    background: rgba(8, 13, 21, 0.82);
   }
 
   .password-input {
@@ -3106,6 +3111,7 @@
   }
 
   .device-model,
+  .refresh-icon-button,
   .logout-button,
   .logout-icon-button {
     border-color: rgba(124, 154, 188, 0.16);
@@ -3120,6 +3126,7 @@
   }
 
   .logout-button:hover,
+  .refresh-icon-button:hover,
   .logout-icon-button:hover {
     border-color: rgba(39, 168, 255, 0.3);
     background: rgba(16, 27, 42, 0.96);
@@ -3231,9 +3238,77 @@
     color: #f7fbff;
   }
 
+  .refresh-icon-button {
+    width: 34px;
+    height: 34px;
+    min-height: 34px;
+    display: grid;
+    place-items: center;
+    padding: 0;
+    border-radius: 13px;
+  }
+
   .action-button:disabled,
   .control-row.is-disabled {
     opacity: 0.42;
+  }
+
+  .app-shell[data-device-online="false"] .status-card,
+  .app-shell[data-device-online="false"] .controls-card {
+    opacity: 0.74;
+    filter: grayscale(1) brightness(0.58) saturate(0);
+  }
+
+  .app-shell[data-device-online="false"] .phase-chip,
+  .app-shell[data-device-online="false"] .readout,
+  .app-shell[data-device-online="false"] .action-button,
+  .app-shell[data-device-online="false"] .control-row,
+  .app-shell[data-device-online="false"] .power-button {
+    border-color: rgba(116, 126, 140, 0.12) !important;
+    background: rgba(9, 13, 19, 0.64) !important;
+    box-shadow: none !important;
+  }
+
+  .app-shell[data-device-online="false"] .action-button,
+  .app-shell[data-device-online="false"] .control-row,
+  .app-shell[data-device-online="false"] .power-button {
+    color: rgba(178, 188, 202, 0.44) !important;
+    opacity: 0.48;
+    cursor: not-allowed;
+  }
+
+  .app-shell[data-device-online="false"] .action-primary,
+  .app-shell[data-device-online="false"] .action-danger,
+  .app-shell[data-device-online="false"] .control-row.is-active,
+  .app-shell[data-device-online="false"] .power-button.power-on {
+    background: rgba(9, 13, 19, 0.64) !important;
+    color: rgba(178, 188, 202, 0.44) !important;
+  }
+
+  .app-shell[data-device-online="false"] .switch span,
+  .app-shell[data-device-online="false"] .switch input:checked + span {
+    border-color: rgba(116, 126, 140, 0.12) !important;
+    background: rgba(18, 23, 31, 0.7) !important;
+  }
+
+  .app-shell[data-device-online="false"] .switch span::after {
+    background: rgba(145, 155, 169, 0.58) !important;
+    box-shadow: none !important;
+  }
+
+  .app-shell[data-device-online="false"] .status-card::after,
+  .app-shell[data-device-online="false"] .controls-card::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: rgba(0, 0, 0, 0.26);
+    pointer-events: none;
+  }
+
+  .app-shell[data-device-online="false"] .controls-card {
+    position: relative;
+    overflow: hidden;
   }
 
   .status-topline {
@@ -3245,7 +3320,7 @@
     width: 34px;
     height: 34px;
     min-height: 34px;
-    border-radius: 14px;
+    border-radius: 13px;
   }
 
   .status-topline .power-button {
@@ -3259,7 +3334,28 @@
   }
 
   .hero-phase-chip {
-    margin-bottom: 12px;
+    display: flex;
+    width: fit-content;
+    margin: 0 auto 12px;
+  }
+
+  .hero-status {
+    text-align: center;
+  }
+
+  .hero-status > .metric-label {
+    text-align: center;
+  }
+
+  .readout-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .readout {
+    display: grid;
+    align-content: center;
+    justify-items: center;
+    text-align: center;
   }
 
   .action-grid {
@@ -3267,40 +3363,61 @@
   }
 
   .status-toast {
-    position: fixed;
-    left: 50%;
-    top: 50%;
-    z-index: 50;
-    width: min(340px, calc(100vw - 32px));
-    padding: 11px 14px;
-    border: 1px solid rgba(113, 130, 151, 0.22);
-    border-radius: 16px;
-    background: rgba(9, 15, 24, 0.94);
-    color: var(--text-main);
-    box-shadow: 0 18px 42px rgba(0, 0, 0, 0.42), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    position: static;
+    width: min(100%, 386px);
+    height: 34px;
+    padding: 0 6px;
+    border: 0;
+    background: transparent;
+    color: var(--text-soft);
+    box-shadow: none;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
     font-size: 12px;
     font-weight: 720;
     line-height: 1.35;
+    overflow: hidden;
     text-align: center;
-    transform: translate(-50%, -50%);
-    backdrop-filter: blur(16px);
+    transform: none;
+    backdrop-filter: none;
+  }
+
+  .status-toast.hidden {
+    display: flex !important;
+    visibility: hidden;
   }
 
   .status-toast.is-error {
-    border-color: rgba(239, 100, 100, 0.36);
-    background: rgba(34, 15, 20, 0.96);
-    color: #fbc0c0;
+    color: #f7a8a8;
+  }
+
+  .login-shell:not(.hidden) ~ .status-toast {
+    width: min(100%, 340px);
   }
 
   .login-shell {
-    width: min(100%, 360px);
-    padding: 12px;
+    width: min(100%, 340px);
+    padding: 0;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
   }
 
   .login-card {
     padding: 22px;
     border-radius: 24px;
     background: rgba(9, 15, 24, 0.96);
+  }
+
+  .login-card .login-title {
+    margin: 0 0 14px;
+    color: var(--text-main);
+    font-size: 18px;
+    font-weight: 780;
+    line-height: 1;
+    letter-spacing: -0.03em;
+    text-align: center;
   }
 
   .login-card .login-form {
@@ -3368,7 +3485,7 @@
     }
 
     .status-toast {
-      width: min(320px, calc(100vw - 24px));
+      width: min(100%, 340px);
     }
 
     .login-shell {
@@ -3392,11 +3509,80 @@
       border-radius: 13px;
     }
   }
+
+  .status-card,
+  .controls-card {
+    border-color: rgba(154, 176, 204, 0.2);
+    background:
+      linear-gradient(145deg, rgba(20, 30, 45, 0.76), rgba(5, 9, 15, 0.88)),
+      rgba(8, 13, 21, 0.82);
+    box-shadow:
+      0 22px 46px rgba(0, 0, 0, 0.34),
+      inset 0 1px 0 rgba(255, 255, 255, 0.075),
+      inset 0 -1px 0 rgba(255, 255, 255, 0.025);
+    backdrop-filter: blur(22px) saturate(145%);
+    -webkit-backdrop-filter: blur(22px) saturate(145%);
+  }
+
+  .status-card {
+    background:
+      radial-gradient(ellipse at 50% -30%, color-mix(in srgb, var(--phase) 18%, transparent), transparent 38%),
+      linear-gradient(145deg, rgba(20, 30, 45, 0.74), rgba(5, 9, 15, 0.9)),
+      rgba(8, 13, 21, 0.84);
+  }
+
+  .controls-card {
+    background:
+      radial-gradient(circle at 16% 0%, rgba(124, 154, 188, 0.1), transparent 36%),
+      linear-gradient(145deg, rgba(17, 27, 42, 0.76), rgba(5, 9, 15, 0.88)),
+      rgba(8, 13, 21, 0.84);
+  }
+
+  @media (max-width: 560px) {
+    .phase-chip {
+      font-size: 11px;
+    }
+
+    .metric-label,
+    .section-label {
+      font-size: 10px;
+    }
+
+    .status-title {
+      font-size: clamp(42px, 13vw, 58px);
+    }
+
+    .metric-value {
+      font-size: 18px;
+    }
+
+    .action-button,
+    .control-title,
+    .login-card .password-input,
+    .login-card .login-button {
+      font-size: 15px;
+    }
+
+    .login-card .login-title {
+      font-size: 22px;
+    }
+
+    .status-toast {
+      font-size: 13px;
+    }
+  }
+
+  .status-title {
+    font-size: clamp(28px, 8vw, 36px);
+    letter-spacing: -0.045em;
+  }
 </style>
 </head>
 <body>
+  <div class="page-stack">
   <main id="loginShell" class="login-shell hidden">
     <section class="card login-card">
+      <h1 class="login-title">Login</h1>
       <form id="loginForm" class="login-form">
         <input id="passwordInput" class="password-input" type="password" autocomplete="current-password" placeholder="Password" required>
         <button id="loginBtn" class="login-button" type="submit">Login</button>
@@ -3432,8 +3618,8 @@
           <span class="metric-value" id="remaining">--:--</span>
         </div>
         <div class="readout">
-          <p class="metric-label">Setpoint</p>
-          <span class="metric-value" id="activeTempF">--</span>
+          <p class="metric-label">Set Temp</p>
+          <span class="metric-value" id="activeTempValue">--</span>
         </div>
       </div>
       <div class="action-grid" aria-label="Cycle controls">
@@ -3442,9 +3628,6 @@
     </section>
 
     <section class="card controls-card" aria-label="AC controls">
-      <div class="section-heading">
-        <p class="section-label">Controls</p>
-      </div>
       <div class="control-list">
         <button id="compressorControl" class="control-row" type="button">
           <span class="control-main">
@@ -3471,12 +3654,17 @@
   </main>
 
   <div id="statusToast" class="status-toast hidden" role="status" aria-live="polite"></div>
+  </div>
 
 <script>
   const POWER_SLIDE_THRESHOLD = 0.95;
+  const STATE_REFRESH_MS = 1000;
   let latestState = null;
   let refreshTimer = null;
   let statusToastTimer = null;
+  let deviceProbeBusy = false;
+  let deviceProbeChecked = false;
+  let deviceProbeChecking = false;
   const powerSliderState = { dragging: false, pointerId: null, startX: 0, progress: 0, busy: false };
 
   const loginShell = document.getElementById('loginShell');
@@ -3489,6 +3677,8 @@
     appShell.classList.add('hidden');
     loginShell.classList.remove('hidden');
     document.body.removeAttribute('data-phase');
+    deviceProbeChecked = false;
+    deviceProbeChecking = false;
     if (refreshTimer) clearInterval(refreshTimer);
     refreshTimer = null;
     if (message) setStatus(message);
@@ -3511,7 +3701,11 @@
       showLogin('Login required.');
       throw new Error(data.error || 'Login required.');
     }
-    if (!response.ok || data.ok === false) throw new Error(data.error || 'Request failed.');
+    if (!response.ok || data.ok === false) {
+      const error = new Error(data.error || 'Request failed.');
+      error.silent = Boolean(data.silent);
+      throw error;
+    }
     return data;
   }
 
@@ -3538,8 +3732,21 @@
     return minutes + ':' + secs;
   }
 
+  function startStateRefresh() {
+    if (refreshTimer) clearInterval(refreshTimer);
+    refreshTimer = setInterval(() => loadState().catch(() => {}), STATE_REFRESH_MS);
+  }
+
   function formatFahrenheit(value) {
-    return Number.isFinite(value) ? Math.round(value) + 'F' : '--';
+    return Number.isFinite(value) ? Math.round(value) + '°F' : '--';
+  }
+
+  function formatTemperature(temp) {
+    const fahrenheit = Number(temp && temp.fahrenheit);
+    const celsius = Number(temp && temp.celsius);
+    if (Number.isFinite(celsius) && Number.isFinite(fahrenheit)) return Math.round(celsius) + '°C / ' + Math.round(fahrenheit) + '°F';
+    if (Number.isFinite(celsius)) return Math.round(celsius) + '°C';
+    return formatFahrenheit(fahrenheit);
   }
 
   function normalizePhase(state) {
@@ -3564,29 +3771,42 @@
   }
 
   function renderTemperature(temp, powered) {
-    const value = Number(temp && temp.fahrenheit);
-    document.getElementById('activeTempF').textContent = powered ? formatFahrenheit(value) : '--';
+    const activeTempValue = document.getElementById('activeTempValue');
+    if (activeTempValue) activeTempValue.textContent = powered ? formatTemperature(temp) : '--';
+  }
+
+  function isDeviceOnlineState(state) {
+    return !deviceProbeChecking && deviceProbeChecked && state && state.device_online === true;
+  }
+
+  function connectionTitle(state, deviceOnline, checkingDevice) {
+    if (checkingDevice) return 'Checking Device';
+    if (!deviceOnline) return 'Device Offline';
+    return state.device_connection_verified === false ? 'Last Known' : 'Online';
   }
 
   function renderState(state) {
     if (!state) return;
     latestState = state;
-    const powered = Boolean(state.power_switch);
+    const checkingDevice = deviceProbeChecking && !deviceProbeChecked;
+    const deviceOnline = isDeviceOnlineState(state);
+    const powered = deviceOnline && Boolean(state.power_switch);
     const phase = normalizePhase(state);
-    const visualPhase = powered ? phase : 'off';
+    const visualPhase = checkingDevice ? 'checking' : (deviceOnline ? (powered ? phase : 'off') : 'offline');
     const activeTempF = Number(state.active_temperature && state.active_temperature.fahrenheit);
     const coolingSetpointF = Number(state.cycle && state.cycle.cooling_setpoint_f);
     const restingSetpointF = Number(state.cycle && state.cycle.resting_setpoint_f);
 
     appShell.dataset.phase = visualPhase;
+    appShell.dataset.deviceOnline = deviceOnline ? 'true' : 'false';
     document.body.dataset.phase = visualPhase;
     renderTemperature(state.active_temperature, powered);
-    document.getElementById('phase').textContent = powered ? phaseLabel(phase) : 'Power Off';
-    document.getElementById('statusTitle').textContent = powered ? phaseLabel(phase) : 'Power Off';
-    document.getElementById('remaining').textContent = formatRemaining(state.remaining_seconds);
+    document.getElementById('phase').textContent = checkingDevice ? 'Checking' : (deviceOnline ? (powered ? phaseLabel(phase) : 'Power Off') : 'Offline');
+    document.getElementById('statusTitle').textContent = connectionTitle(state, deviceOnline, checkingDevice);
+    document.getElementById('remaining').textContent = deviceOnline ? formatRemaining(state.remaining_seconds) : '--:--';
     const cycleBtn = document.getElementById('cycleBtn');
     cycleBtn.textContent = state.running ? 'Stop Cycle' : 'Start Cycle';
-    cycleBtn.disabled = state.running ? false : !powered;
+    cycleBtn.disabled = !deviceOnline || (state.running ? false : !powered);
     cycleBtn.classList.toggle('action-primary', !state.running);
     cycleBtn.classList.toggle('action-danger', Boolean(state.running));
 
@@ -3596,22 +3816,22 @@
     const compressorState = document.getElementById('compressorState');
     compressorToggle.checked = powered && compressorOn;
     compressorControl.classList.toggle('is-active', powered && compressorOn);
-    compressorControl.classList.toggle('is-disabled', !powered);
-    compressorControl.disabled = !powered;
-    compressorControl.title = powered ? (compressorOn ? 'Set to ' + formatFahrenheit(restingSetpointF) + '.' : 'Set to ' + formatFahrenheit(coolingSetpointF) + '.') : 'Turn AC on first.';
+    compressorControl.classList.toggle('is-disabled', !deviceOnline || !powered);
+    compressorControl.disabled = !deviceOnline || !powered;
+    compressorControl.title = deviceOnline ? (powered ? (compressorOn ? 'Set to ' + formatFahrenheit(restingSetpointF) + '.' : 'Set to ' + formatFahrenheit(coolingSetpointF) + '.') : 'Turn AC on first.') : 'Device is offline.';
     compressorState.textContent = '';
 
     const swingToggle = document.getElementById('swingToggle');
     const swingControl = document.getElementById('swingControl');
     swingToggle.checked = powered && Boolean(state.swing_wind);
     swingControl.classList.toggle('is-active', powered && Boolean(state.swing_wind));
-    swingControl.classList.toggle('is-disabled', !powered);
-    swingControl.disabled = !powered;
+    swingControl.classList.toggle('is-disabled', !deviceOnline || !powered);
+    swingControl.disabled = !deviceOnline || !powered;
     document.getElementById('swingState').textContent = '';
 
     renderPowerSlider();
     updateLastUpdated();
-    if (state.last_error) setStatus(state.last_error, true);
+    if (deviceOnline && state.last_error) setStatus(state.last_error, true);
   }
 
   async function loadState() {
@@ -3619,11 +3839,30 @@
     renderState(data.state);
   }
 
-  async function readDeviceStatus() {
-    setStatus('Refreshing...');
-    const data = await requestJson('/api/device-status');
-    renderState(data.state);
-    setStatus('Device refreshed.');
+  function setDeviceProbeBusy(busy) {
+    deviceProbeBusy = Boolean(busy);
+    deviceProbeChecking = Boolean(busy);
+  }
+
+  async function probeDeviceStatus() {
+    if (deviceProbeBusy) return;
+    deviceProbeChecked = false;
+    setDeviceProbeBusy(true);
+    if (latestState) renderState(latestState);
+    try {
+      const data = await requestJson('/api/device-probe', { method: 'POST' });
+      deviceProbeChecked = true;
+      latestState = data.state;
+    } catch (error) {
+      deviceProbeChecked = true;
+      if (latestState) {
+        latestState = { ...latestState, device_online: false, device_connection_verified: false, device_status_error: error.message || 'Device status could not be verified.' };
+      }
+      throw error;
+    } finally {
+      setDeviceProbeBusy(false);
+      if (latestState) renderState(latestState);
+    }
   }
 
   async function postAction(path, body) {
@@ -3637,24 +3876,24 @@
       renderState(data.state);
       setStatus(data.message || 'Done.');
     } catch (error) {
-      setStatus(error.message, true);
+      if (!error.silent) setStatus(error.message, true);
       await loadState().catch(() => {});
     }
   }
 
   async function toggleCompressor() {
-    if (!latestState || !latestState.power_switch) return;
+    if (!isDeviceOnlineState(latestState) || !latestState.power_switch) return;
     const isCooling = Boolean(document.getElementById('compressorToggle').checked);
     await postAction('/api/phase', { phase: isCooling ? 'resting' : 'cooling' });
   }
 
   async function toggleSwing() {
-    if (!latestState || !latestState.power_switch) return;
+    if (!isDeviceOnlineState(latestState) || !latestState.power_switch) return;
     await postAction('/api/swing', { enabled: !latestState.swing_wind });
   }
 
   async function togglePower() {
-    if (powerSliderState.busy) return;
+    if (powerSliderState.busy || !isDeviceOnlineState(latestState)) return;
     powerSliderState.busy = true;
     renderPowerSlider();
     try {
@@ -3667,6 +3906,7 @@
   }
 
   function toggleCycle() {
+    if (!isDeviceOnlineState(latestState)) return;
     const running = latestState && latestState.running;
     return postAction(running ? '/api/stop' : '/api/start');
   }
@@ -3692,10 +3932,16 @@
   function updatePowerSliderLabel() {
     const label = document.getElementById('powerLabel');
     const hint = document.getElementById('powerHint');
-    const on = latestState && latestState.power_switch;
+    const deviceOnline = isDeviceOnlineState(latestState);
+    const on = deviceOnline && latestState && latestState.power_switch;
     const { slider } = powerSliderElements();
     if (!label || !hint) {
-      if (slider) slider.title = on ? 'Turn AC power off' : 'Turn AC power on';
+      if (slider) slider.title = deviceOnline ? (on ? 'Turn AC power off' : 'Turn AC power on') : 'Device is offline.';
+      return;
+    }
+    if (!deviceOnline) {
+      label.textContent = 'Device offline';
+      hint.textContent = 'Reconnect WiFi to enable controls.';
       return;
     }
     if (powerSliderState.busy) {
@@ -3715,19 +3961,20 @@
   function renderPowerSlider() {
     const { slider } = powerSliderElements();
     if (!slider) return;
-    const on = latestState && latestState.power_switch;
+    const deviceOnline = isDeviceOnlineState(latestState);
+    const on = deviceOnline && latestState && latestState.power_switch;
     slider.classList.toggle('power-on', Boolean(on));
     slider.classList.toggle('power-off', !on);
     slider.classList.toggle('is-busy', powerSliderState.busy);
-    slider.disabled = powerSliderState.busy;
-    slider.setAttribute('aria-label', on ? 'Turn AC power off' : 'Turn AC power on');
+    slider.disabled = powerSliderState.busy || !deviceOnline;
+    slider.setAttribute('aria-label', deviceOnline ? (on ? 'Turn AC power off' : 'Turn AC power on') : 'Device offline');
     slider.setAttribute('aria-pressed', on ? 'true' : 'false');
-    slider.title = on ? 'Turn AC power off' : 'Turn AC power on';
+    slider.title = deviceOnline ? (on ? 'Turn AC power off' : 'Turn AC power on') : 'Device is offline.';
     updatePowerSliderLabel();
   }
 
   function beginPowerDrag(event) {
-    if (powerSliderState.busy || (event.button !== undefined && event.button !== 0)) return;
+    if (powerSliderState.busy || !isDeviceOnlineState(latestState) || (event.button !== undefined && event.button !== 0)) return;
     const { slider } = powerSliderElements();
     if (!slider || !(event.target instanceof Element) || !event.target.closest('.power-slider-knob')) return;
     powerSliderState.dragging = true;
@@ -3772,7 +4019,8 @@
     }
     showApp();
     await loadState();
-    refreshTimer = setInterval(() => loadState().catch(() => {}), 5000);
+    await probeDeviceStatus().catch(() => {});
+    startStateRefresh();
   }
 
   function setEnvironmentBadge() {
@@ -3796,7 +4044,8 @@
       passwordInput.value = '';
       showApp();
       await loadState();
-      refreshTimer = setInterval(() => loadState().catch(() => {}), 5000);
+      await probeDeviceStatus().catch(() => {});
+      startStateRefresh();
     } catch (error) {
       setStatus(error.message || 'Login failed.', true);
     }
@@ -3806,8 +4055,6 @@
     await fetch('/api/logout', { method: 'POST', credentials: 'same-origin' });
     showLogin('Logged out.');
   });
-  const refreshBtn = document.getElementById('refreshBtn');
-  if (refreshBtn) refreshBtn.addEventListener('click', () => readDeviceStatus().catch((error) => setStatus(error.message, true)));
   document.getElementById('cycleBtn').addEventListener('click', toggleCycle);
   document.getElementById('compressorControl').addEventListener('click', toggleCompressor);
   document.getElementById('swingControl').addEventListener('click', toggleSwing);

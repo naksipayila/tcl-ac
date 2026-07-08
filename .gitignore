@@ -9,3 +9,4 @@ build/
 dist/
 
 opencode.json
+/package-lock.json

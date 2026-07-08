@@ -64,12 +64,15 @@ npx wrangler secret put PANEL_SESSION_SECRET
 | `Compressor` | Manually sends 70F or 80F and stops the cycle |
 | `Power` | Toggles `powerSwitch` |
 | `Swing` | Toggles `swingWind` |
-| `Refresh` | Reads the real device shadow |
+
+The panel probes device online status on load/login. If AWS connectivity is unavailable but the shadow has usable reported state, the panel shows `Last Known`; controls stay disabled only when the device is definitely offline or status cannot be read.
 
 ## Safety Notes
 
 - `GET /api/state` reads D1 state only.
 - `GET /api/device-status` reads the real device shadow.
+- `POST /api/device-probe` is read-only for the AC: it tries AWS IoT SearchIndex connectivity, then falls back to reading shadow reported values. It does not change setpoints or publish desired state.
 - `POST /api/start`, `/api/power`, `/api/swing`, and `/api/phase` send real device commands.
+- Device command routes require the device to be online or `Last Known` before sending and wait for reported-state confirmation before updating panel state; command desired state is not cleared on confirmation timeout.
 - `POST /api/stop` only stops the stored cycle state.
 - Do not put tokens, cookies, authorization headers, or AWS credentials in git.

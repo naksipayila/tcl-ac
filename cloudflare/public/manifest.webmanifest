@@ -1,7 +1,7 @@
 {
-  "name": "AC Control",
-  "short_name": "AC Control",
-  "description": "Air conditioner cycle control panel.",
+  "name": "Home Control",
+  "short_name": "Home Control",
+  "description": "Home device control panel.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
@@ -10,10 +10,10 @@
   "theme_color": "#05070c",
   "icons": [
     {
-      "src": "/favicon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "src": "/favicon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
     }
   ]
 }

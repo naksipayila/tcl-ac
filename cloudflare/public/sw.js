@@ -1,7 +1,7 @@
-const CACHE_NAME = "tcl-ac-shell-v12";
+const CACHE_NAME = "home-control-shell-v15";
 const SHELL_ASSETS = [
   "/",
-  "/favicon.svg",
+  "/favicon.png",
   "/manifest.webmanifest",
 ];
 

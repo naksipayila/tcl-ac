@@ -1,4 +1,6 @@
 const STATE_KEY = "controller";
+const WOL_COMMAND_KEY = "command:current";
+const WOL_RELAY_KEY = "relay:last_seen";
 const SESSION_COOKIE = "tcl_ac_session";
 const SESSION_TTL_SECONDS = 60 * 60 * 24 * 30;
 const D1_RETRY_DELAYS_MS = [80, 200, 500];
@@ -6,8 +8,10 @@ const LOGIN_RATE_LIMIT_ATTEMPTS = 5;
 const LOGIN_RATE_LIMIT_WINDOW_SECONDS = 5 * 60;
 const DEVICE_COMMAND_CONFIRM_TIMEOUT_MS = 20000;
 const DEVICE_CONFIRM_INTERVAL_MS = 1000;
+const CYCLE_RETRY_SECONDS = 5 * 60;
 
 let credentialCache = null;
+let wolRelayLastSeenWriteMs = 0;
 
 class HttpError extends Error {
   constructor(status, message, options = {}) {
@@ -72,7 +76,20 @@ async function handleApi(request, env, url) {
     );
   }
 
+  if (url.pathname.startsWith("/api/relay/")) {
+    return handleWolRelayApi(request, env, url);
+  }
+
   await requireAuth(request, env);
+
+  if (url.pathname === "/api/wol/status" && request.method === "GET") {
+    return jsonResponse(await buildWolStatus(env));
+  }
+
+  if (url.pathname === "/api/wol/wake" && request.method === "POST") {
+    await createWolWakeCommand(env);
+    return jsonResponse({ ...(await buildWolStatus(env)), message: "Wake command queued. Waiting for the relay." });
+  }
 
   if (url.pathname === "/api/state" && request.method === "GET") {
     const state = await loadState(env);
@@ -117,6 +134,28 @@ async function handleApi(request, env, url) {
     const body = await readJsonBody(request);
     const result = await setSwing(env, Boolean(body.enabled));
     return jsonResponse(result);
+  }
+
+  throw new HttpError(404, "Not found");
+}
+
+async function handleWolRelayApi(request, env, url) {
+  requireWolRelay(request, env);
+
+  if (url.pathname === "/api/relay/ping" && request.method === "POST") {
+    await tryMarkWolRelaySeen(env);
+    return jsonResponse({ ok: true, serverTime: Date.now() });
+  }
+
+  if (url.pathname === "/api/relay/next" && request.method === "GET") {
+    await tryMarkWolRelaySeen(env);
+    return jsonResponse(await nextWolRelayCommand(env));
+  }
+
+  if (url.pathname === "/api/relay/report" && request.method === "POST") {
+    await tryMarkWolRelaySeen(env);
+    await reportWolRelayResult(env, await readJsonBody(request));
+    return jsonResponse({ ok: true });
   }
 
   throw new HttpError(404, "Not found");
@@ -221,6 +260,183 @@ function clientAddress(request) {
   return "unknown";
 }
 
+function bearerToken(request) {
+  const header = request.headers.get("Authorization") || "";
+  const match = header.match(/^Bearer\s+(.+)$/i);
+  return match ? match[1].trim() : "";
+}
+
+function requireWolStorage(env) {
+  if (!env.DB && !env.WOL_STATE) {
+    throw new HttpError(500, "WOL state storage is not configured.");
+  }
+}
+
+function requireWolRelay(request, env) {
+  requireWolStorage(env);
+  if (!env.RELAY_TOKEN) {
+    throw new HttpError(500, "RELAY_TOKEN secret is not configured.");
+  }
+  if (!safeEqual(bearerToken(request), env.RELAY_TOKEN)) {
+    throw new HttpError(401, "Invalid relay token.");
+  }
+}
+
+async function getWolJson(env, key) {
+  requireWolStorage(env);
+  const d1Value = await getD1Json(env, key);
+  if (d1Value !== null) return d1Value;
+  return getWolKvJson(env, key);
+}
+
+async function putWolJson(env, key, value) {
+  requireWolStorage(env);
+  if (env.DB) {
+    await putD1Json(env, key, value);
+    return;
+  }
+  await env.WOL_STATE.put(key, JSON.stringify(value));
+}
+
+async function getD1Json(env, key) {
+  if (!env.DB) return null;
+  const row = await runD1Operation(() => env.DB.prepare("SELECT value FROM state WHERE key = ?").bind(key).first());
+  if (!row || typeof row.value !== "string") return null;
+  try {
+    return JSON.parse(row.value);
+  } catch (_error) {
+    return null;
+  }
+}
+
+async function putD1Json(env, key, value) {
+  await runD1Operation(() =>
+    env.DB.prepare("INSERT OR REPLACE INTO state (key, value, updated_at) VALUES (?, ?, ?)")
+      .bind(key, JSON.stringify(value), nowSeconds())
+      .run(),
+  );
+}
+
+async function getWolKvJson(env, key) {
+  if (!env.WOL_STATE) return null;
+  const value = await env.WOL_STATE.get(key);
+  if (!value) return null;
+  try {
+    return JSON.parse(value);
+  } catch (_error) {
+    return null;
+  }
+}
+
+async function markWolRelaySeen(env) {
+  const now = Date.now();
+  const heartbeatMs = numberEnv(env.WOL_RELAY_HEARTBEAT_SECONDS, 120) * 1000;
+  if (wolRelayLastSeenWriteMs && now - wolRelayLastSeenWriteMs < heartbeatMs) return;
+
+  const relay = await getWolJson(env, WOL_RELAY_KEY);
+  const lastSeen = Number(relay && relay.lastSeen);
+  if (Number.isFinite(lastSeen) && lastSeen > 0 && now - lastSeen < heartbeatMs) {
+    wolRelayLastSeenWriteMs = lastSeen;
+    return;
+  }
+
+  await putWolJson(env, WOL_RELAY_KEY, { lastSeen: now });
+  wolRelayLastSeenWriteMs = now;
+}
+
+async function tryMarkWolRelaySeen(env) {
+  try {
+    await markWolRelaySeen(env);
+  } catch (error) {
+    console.error("Could not persist WOL relay heartbeat", safeErrorMessage(error));
+  }
+}
+
+async function buildWolStatus(env) {
+  const now = Date.now();
+  const relay = await getWolJson(env, WOL_RELAY_KEY);
+  const rawLastSeen = Number(relay && relay.lastSeen);
+  const lastSeen = Number.isFinite(rawLastSeen) && rawLastSeen > 0 ? rawLastSeen : null;
+  const offlineAfterMs = numberEnv(env.RELAY_OFFLINE_AFTER_SECONDS, 20) * 1000;
+  const command = await getWolJson(env, WOL_COMMAND_KEY);
+
+  return {
+    ok: true,
+    pcName: env.PC_NAME || "Home PC",
+    serverTime: now,
+    relay: {
+      online: Boolean(lastSeen && now - lastSeen <= offlineAfterMs),
+      lastSeen,
+    },
+    command,
+  };
+}
+
+async function createWolWakeCommand(env) {
+  const now = Date.now();
+  const command = {
+    id: crypto.randomUUID(),
+    action: "wake",
+    status: "pending",
+    createdAt: now,
+    claimedAt: null,
+    reportedAt: null,
+    message: "Waiting for relay.",
+  };
+  await putWolJson(env, WOL_COMMAND_KEY, command);
+  return command;
+}
+
+async function nextWolRelayCommand(env) {
+  const now = Date.now();
+  const command = await getWolJson(env, WOL_COMMAND_KEY);
+  const pollAfter = numberEnv(env.RELAY_POLL_SECONDS, 3);
+  if (!command) {
+    return { ok: true, command: null, pollAfter, serverTime: now };
+  }
+
+  const claimTimeoutMs = numberEnv(env.CLAIM_TIMEOUT_SECONDS, 30) * 1000;
+  const claimExpired = command.status === "claimed" && command.claimedAt && now - command.claimedAt > claimTimeoutMs;
+  if (command.status === "pending" || claimExpired) {
+    const claimed = {
+      ...command,
+      status: "claimed",
+      claimedAt: now,
+      message: "Relay picked up the command.",
+    };
+    await putWolJson(env, WOL_COMMAND_KEY, claimed);
+    return {
+      ok: true,
+      command: { id: claimed.id, action: claimed.action },
+      pollAfter,
+      serverTime: now,
+    };
+  }
+
+  return { ok: true, command: null, pollAfter, serverTime: now };
+}
+
+async function reportWolRelayResult(env, body) {
+  if (!body || typeof body.id !== "string") {
+    throw new HttpError(400, "Missing command id.");
+  }
+
+  const command = await getWolJson(env, WOL_COMMAND_KEY);
+  if (!command || command.id !== body.id) return;
+
+  const ok = Boolean(body.ok);
+  const message = typeof body.message === "string" && body.message.trim()
+    ? body.message.trim().slice(0, 280)
+    : ok ? "WOL packet sent." : "Relay reported a failure.";
+
+  await putWolJson(env, WOL_COMMAND_KEY, {
+    ...command,
+    status: ok ? "succeeded" : "failed",
+    reportedAt: Date.now(),
+    message,
+  });
+}
+
 async function startCycle(env) {
   const state = await loadState(env);
   if (state.running) {
@@ -237,6 +453,7 @@ async function startCycle(env) {
   state.running = true;
   state.phase = "cooling";
   state.cycle_number = Number(state.cycle_number || 0) + 1;
+  bumpCycleVersion(state);
   state.phase_started_at = now;
   state.phase_end_at = now + config(env).cycle.cooling_minutes * 60;
   state.active_temperature = temperatureState(config(env).cycle.cooling_setpoint_f, "cycle.cooling");
@@ -249,6 +466,7 @@ async function stopCycle(env) {
   const state = await loadState(env);
   state.running = false;
   state.phase = "stopped";
+  bumpCycleVersion(state);
   state.phase_started_at = null;
   state.phase_end_at = null;
   state.last_error = null;
@@ -272,6 +490,7 @@ async function sendPhase(env, phase) {
   await sendDesiredWithSafety(env, state, buildSetpointDesired(setpoint), `cf_${phase}`, confirmTemperature(setpoint));
   state.running = false;
   state.phase = "stopped";
+  bumpCycleVersion(state);
   state.phase_started_at = null;
   state.phase_end_at = null;
   state.active_temperature = temperatureState(setpoint, `manual.${phase}`);
@@ -287,6 +506,7 @@ async function setPower(env, enabled) {
   if (!enabled) {
     state.running = false;
     state.phase = "stopped";
+    bumpCycleVersion(state);
     state.phase_started_at = null;
     state.phase_end_at = null;
   }
@@ -309,7 +529,7 @@ async function setSwing(env, enabled) {
 async function runScheduledCycle(env) {
   const state = await loadState(env);
   if (!state.running || !state.phase_end_at || nowSeconds() < Number(state.phase_end_at)) return;
-  await assertDeviceReady(env, state, { requirePower: true });
+  const expected = cycleRunToken(state);
 
   const cfg = config(env);
   const nextPhase = state.phase === "cooling" ? "resting" : "cooling";
@@ -317,13 +537,63 @@ async function runScheduledCycle(env) {
   const minutes = nextPhase === "cooling" ? cfg.cycle.cooling_minutes : cfg.cycle.resting_minutes;
   const now = nowSeconds();
 
-  await sendDesiredWithSafety(env, state, buildSetpointDesired(setpoint), `cf_cron_${nextPhase}`, confirmTemperature(setpoint));
-  state.phase = nextPhase;
-  state.phase_started_at = now;
-  state.phase_end_at = now + minutes * 60;
-  state.active_temperature = temperatureState(setpoint, `cycle.${nextPhase}`);
-  state.last_error = null;
-  await saveState(env, state);
+  try {
+    await assertDeviceReady(env, state, { requirePower: true });
+    await sendDesiredWithSafety(env, state, buildSetpointDesired(setpoint), `cf_cron_${nextPhase}`, confirmTemperature(setpoint));
+  } catch (error) {
+    await deferCycleRetry(env, expected, error);
+    return;
+  }
+
+  const latest = await loadState(env);
+  if (!sameCycleRun(latest, expected)) return;
+  copyDeviceObservations(latest, state);
+  latest.phase = nextPhase;
+  bumpCycleVersion(latest);
+  latest.phase_started_at = now;
+  latest.phase_end_at = now + minutes * 60;
+  latest.active_temperature = temperatureState(setpoint, `cycle.${nextPhase}`);
+  latest.last_command_at = state.last_command_at;
+  latest.last_error = null;
+  await saveState(env, latest);
+}
+
+async function deferCycleRetry(env, expected, error) {
+  const latest = await loadState(env);
+  if (!sameCycleRun(latest, expected)) return;
+  latest.phase_end_at = nowSeconds() + CYCLE_RETRY_SECONDS;
+  latest.last_error = safeErrorMessage(error);
+  await saveState(env, latest);
+}
+
+function cycleRunToken(state) {
+  return {
+    version: Number(state.cycle_version || 0),
+    phase: state.phase,
+    phaseEndAt: nullableNumber(state.phase_end_at),
+  };
+}
+
+function sameCycleRun(state, expected) {
+  return Boolean(state.running)
+    && Number(state.cycle_version || 0) === expected.version
+    && state.phase === expected.phase
+    && nullableNumber(state.phase_end_at) === expected.phaseEndAt;
+}
+
+function bumpCycleVersion(state) {
+  state.cycle_version = Number(state.cycle_version || 0) + 1;
+}
+
+function copyDeviceObservations(target, source) {
+  target.power_switch = source.power_switch;
+  target.swing_wind = source.swing_wind;
+  target.device_online = source.device_online;
+  target.device_connection_verified = source.device_connection_verified;
+  target.device_status_source = source.device_status_source;
+  target.device_checked_at = source.device_checked_at;
+  target.device_last_seen_at = source.device_last_seen_at;
+  target.device_status_error = source.device_status_error;
 }
 
 async function probeDevice(env) {
@@ -857,6 +1127,7 @@ function defaultState(env) {
     running: false,
     phase: "stopped",
     cycle_number: 0,
+    cycle_version: 0,
     phase_started_at: null,
     phase_end_at: null,
     last_command_at: 0,
@@ -880,6 +1151,7 @@ function normalizeState(state) {
     running: Boolean(state.running),
     phase: typeof state.phase === "string" ? state.phase : "stopped",
     cycle_number: Number(state.cycle_number || 0),
+    cycle_version: Number(state.cycle_version || 0),
     phase_started_at: nullableNumber(state.phase_started_at),
     phase_end_at: nullableNumber(state.phase_end_at),
     last_command_at: Number(state.last_command_at || 0),
@@ -915,6 +1187,7 @@ function snapshot(state) {
     cycle: state.cycle,
     active_temperature: state.active_temperature || emptyTemperature(),
     cycle_number: state.cycle_number,
+    cycle_version: state.cycle_version,
     last_error: state.last_error,
     updated_at: state.updated_at,
   };
@@ -960,6 +1233,7 @@ function applyReportedDeviceState(state, status) {
     if (!powerSwitch && state.running) {
       state.running = false;
       state.phase = "stopped";
+      bumpCycleVersion(state);
       state.phase_started_at = null;
       state.phase_end_at = null;
     }
@@ -1406,6 +1680,7 @@ function friendlyD1ErrorMessage(error) {
 }
 
 function nullableNumber(value) {
+  if (value === null || value === undefined || value === "") return null;
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : null;
 }

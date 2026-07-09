@@ -11,6 +11,10 @@ run_worker_first = ["/api/*"]
 [triggers]
 crons = ["* * * * *"]
 
+[[kv_namespaces]]
+binding = "WOL_STATE"
+id = "6c19831b829f4044a8e2b7d51605ab39"
+
 [vars]
 DEVICE_ID = "DWG42RFAAAE"
 API_BASE_URL = "https://eu-iot-api-prod.tcljd.com"
@@ -24,6 +28,11 @@ COOLING_MINUTES = "20"
 RESTING_MINUTES = "20"
 MIN_SECONDS_BETWEEN_COMMANDS = "5"
 STARTUP_SWING = "1"
+PC_NAME = "Home PC"
+RELAY_OFFLINE_AFTER_SECONDS = "240"
+RELAY_POLL_SECONDS = "3"
+WOL_RELAY_HEARTBEAT_SECONDS = "120"
+CLAIM_TIMEOUT_SECONDS = "30"
 
 [[d1_databases]]
 binding = "DB"

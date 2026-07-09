@@ -1,0 +1,14 @@
+name = "wakeonlan-web"
+main = "worker.js"
+compatibility_date = "2026-07-09"
+workers_dev = true
+
+[[kv_namespaces]]
+binding = "WOL_STATE"
+id = "replace-with-your-kv-namespace-id"
+
+[vars]
+PC_NAME = "Home PC"
+RELAY_OFFLINE_AFTER_SECONDS = "20"
+RELAY_POLL_SECONDS = "3"
+CLAIM_TIMEOUT_SECONDS = "30"

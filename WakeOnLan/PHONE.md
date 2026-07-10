@@ -4,7 +4,14 @@ This setup runs on an Android phone with Termux. The phone and the target PC mus
 
 Sending a magic packet directly from a browser is not possible because mobile browsers cannot send UDP broadcast packets. That is why the command runs through Termux.
 
-The current PC MAC address is already written to `phone/config.env`. After entering the project directory in Termux, just run:
+Create the local configuration from `phone/config.example.env`, then run:
+
+```sh
+cp phone/config.example.env phone/config.env
+nano phone/config.env
+```
+
+After entering the project directory in Termux, run:
 
 ```sh
 sh phone/wake-pc.sh
@@ -47,7 +54,7 @@ sh phone/wake-pc.sh --dry-run
 
 ## Write The MAC Address To Config
 
-This PC MAC address is already written to `phone/config.env`. To use another computer:
+To configure this PC or another computer:
 
 ```sh
 cp phone/config.example.env phone/config.env

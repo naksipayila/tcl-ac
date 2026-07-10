@@ -15,7 +15,7 @@
 - After service worker edits run `node --check public/sw.js`; after manifest edits run `node -e "JSON.parse(require('fs').readFileSync('public/manifest.webmanifest','utf8'));"`.
 - Local preview login needs `.dev.vars` with `PANEL_PASSWORD` and `PANEL_SESSION_SECRET`; apply local D1 first with `npx wrangler d1 migrations apply tcl-ac-state --local`.
 - Keep `TCL_SSO_TOKEN` out of `.dev.vars` unless intentionally testing real AC commands locally.
-- Remote D1 migrations require `npx wrangler d1 migrations apply tcl-ac-state --remote`; `npm run migrate` is not remote.
+- Use `npm run migrate:local` or `npm run migrate:remote`; remote migrations require `--remote`.
 
 ## Architecture
 - `cloudflare/src/worker.js` owns API routing, auth cookies, D1 state, WOL relay endpoints, AWS SigV4, MQTT-over-WebSocket shadow publishing, and cron phase switching.
@@ -50,4 +50,4 @@
 ## Repo Notes
 - Required Worker secrets are `TCL_SSO_TOKEN`, `PANEL_PASSWORD`, `PANEL_SESSION_SECRET`, and `RELAY_TOKEN`; keep them in Cloudflare secrets.
 - `cloudflare/package-lock.json` is the real lockfile; root `/package-lock.json` is ignored.
-- `node_modules/`, `.wrangler/`, `.dev.vars`, `.env*`, and `opencode.json` are local-only and should not be committed. `opencode.json` is user-specific HTTP Toolkit MCP config.
+- `node_modules/`, `.wrangler/`, `.dev.vars`, `.env*`, `WakeOnLan/relay/web-config.env`, `WakeOnLan/phone/config.env`, Python bytecode, and `opencode.json` are local-only and should not be committed. `opencode.json` is user-specific HTTP Toolkit MCP config.

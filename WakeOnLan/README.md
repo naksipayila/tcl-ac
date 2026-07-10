@@ -5,7 +5,7 @@ The local sender does not require internet access, port forwarding, or remote de
 
 For the browser UI that works from outside the home network, use the main Home Control panel and see `WEB.md`.
 For Android/Termux phone usage, see `PHONE.md`.
-The current PC MAC address is already written to `phone/config.env`; on the phone, `sh phone/wake-pc.sh` is enough.
+Copy `phone/config.example.env` to the local-only `phone/config.env`, set the target MAC address, then run `sh phone/wake-pc.sh` on the phone.
 
 ## Usage
 

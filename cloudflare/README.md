@@ -6,13 +6,13 @@ Serverless home control panel for the TCL AC and Wake-on-LAN PC wake commands.
 
 - Static panel from `public/`.
 - API from `src/worker.js`.
-- Cycle state in Cloudflare D1.
-- Wake-on-LAN command and relay heartbeat state in Cloudflare KV.
+- AC controller, login-rate, Wake-on-LAN command, and relay heartbeat state in Cloudflare D1.
+- `WOL_STATE` KV is a legacy read fallback; production writes WOL state to D1 when `DB` is bound.
 - Minute cron trigger for phase changes.
 - Device commands are sent with AWS IoT MQTT-over-WebSocket publish to the device shadow update topic.
 - PC wake commands are queued for the Android/Termux relay. The Worker does not send UDP packets directly.
-- The WOL relay polls for commands every few seconds, but heartbeat writes are throttled to avoid exhausting the KV free-tier write limit.
-- The panel probes online status on load/login. If AWS connectivity is unavailable but the shadow has usable reported state, the panel shows `Last Known`; controls are disabled only when the device is definitely offline or status cannot be read.
+- The WOL relay polls for commands every few seconds; persisted heartbeat writes are throttled.
+- The panel loads stored state before it appears, then probes AC status once. If AWS connectivity is unavailable but the shadow has usable reported state, the panel shows `Last Known`; controls are disabled only when the device is definitely offline or status cannot be read.
 - Secrets in Cloudflare Worker secrets, not in git.
 
 ## Required Secrets
@@ -27,8 +27,6 @@ Serverless home control panel for the TCL AC and Wake-on-LAN PC wake commands.
 ```powershell
 npm install
 npx wrangler login
-npx wrangler d1 create tcl-ac-state
-npx wrangler kv namespace create WOL_STATE
 npx wrangler d1 migrations apply tcl-ac-state --remote
 npx wrangler secret put TCL_SSO_TOKEN
 npx wrangler secret put PANEL_PASSWORD
@@ -39,7 +37,7 @@ npx wrangler deploy
 
 ## Safety
 
-- Visiting the panel only checks login/session.
+- Authenticated initial load reads stored state, then performs a read-only device probe.
 - `GET /api/state` reads D1 state only.
 - `GET /api/device-status` reads the real device shadow.
 - `POST /api/device-probe` is read-only for the AC: it tries AWS IoT SearchIndex connectivity, then falls back to reading shadow reported values. It does not change setpoints or publish desired state.

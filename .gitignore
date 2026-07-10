@@ -10,3 +10,7 @@ dist/
 
 opencode.json
 /package-lock.json
+/WakeOnLan/relay/web-config.env
+/WakeOnLan/phone/config.env
+__pycache__/
+*.py[cod]

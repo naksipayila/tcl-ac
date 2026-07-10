@@ -66,8 +66,7 @@
   }
 
   button:focus-visible,
-  input:focus-visible,
-  .power-slider:focus-visible {
+  input:focus-visible {
     outline: 2px solid var(--phase, var(--cool));
     outline-offset: 3px;
   }
@@ -138,37 +137,13 @@
       0 14px 38px rgba(0, 0, 0, 0.22);
   }
 
-  .panel-header,
   .status-topline,
-  .section-heading,
-  .control-row,
-  .footer-row {
+  .control-row {
     display: flex;
     align-items: center;
     justify-content: space-between;
   }
 
-  .panel-header {
-    grid-column: 1 / -1;
-    gap: 10px;
-    padding: 2px 2px 4px;
-  }
-
-  .panel-header h1 {
-    margin: 3px 0 0;
-    font-size: clamp(22px, 5vw, 32px);
-    line-height: 0.94;
-    letter-spacing: -0.05em;
-  }
-
-  .header-meta {
-    display: grid;
-    justify-items: end;
-    gap: 5px;
-    flex: 0 0 auto;
-  }
-
-  .environment-badge,
   .phase-chip {
     display: inline-flex;
     align-items: center;
@@ -183,7 +158,6 @@
     font-weight: 760;
   }
 
-  .environment-badge::before,
   .phase-dot {
     content: '';
     width: 6px;
@@ -191,14 +165,6 @@
     border-radius: 999px;
     background: var(--phase, #aeb6c2);
     box-shadow: 0 0 12px var(--phase, rgba(120, 132, 147, 0.3));
-  }
-
-  .environment-badge.is-local::before { background: var(--rest); }
-
-  .last-updated {
-    color: var(--text-muted);
-    font-size: 10px;
-    font-weight: 650;
   }
 
   .status-card {
@@ -252,13 +218,6 @@
     font-weight: 820;
     line-height: 0.9;
     letter-spacing: -0.065em;
-  }
-
-  .status-subtitle {
-    margin: 8px 0 0;
-    color: var(--text-soft);
-    font-size: 12px;
-    font-weight: 620;
   }
 
   .readout-grid {
@@ -332,8 +291,7 @@
 
   .action-button:not(:disabled):hover,
   .login-button:not(:disabled):hover,
-  .control-row:not(:disabled):hover,
-  .power-slider:not(.is-busy):not(.is-dragging):hover {
+  .control-row:not(:disabled):hover {
     transform: translateY(-1px);
   }
 
@@ -367,17 +325,6 @@
     align-self: stretch;
     display: flex;
     flex-direction: column;
-  }
-
-  .section-heading {
-    gap: 8px;
-    margin: 0 2px 7px;
-  }
-
-  .section-note {
-    color: var(--text-muted);
-    font-size: 10px;
-    font-weight: 680;
   }
 
   .control-list {
@@ -501,111 +448,11 @@
 
   .switch input:checked + span::after { transform: translateX(16px); }
 
-  .power-slider {
-    --power-knob-inset: 5px;
-    --power-knob-size: 38px;
-    --power-progress: 0;
-    position: relative;
-    width: 100%;
-    min-height: 54px;
-    display: flex;
-    align-items: center;
-    justify-content: flex-start;
-    overflow: hidden;
-    padding: 8px 12px 8px 52px;
-    border: 1px solid var(--card-border);
-    border-radius: 5px;
-    background: rgba(15, 18, 23, 0.84);
-    user-select: none;
-    touch-action: pan-y;
-    transition: transform 0.18s var(--ease), background 0.18s var(--ease), border-color 0.18s var(--ease);
-  }
-
-  .power-slider::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(135deg, var(--phase-soft), rgba(53, 64, 78, 0.22));
-    opacity: 0.9;
-    transform: scaleX(var(--power-progress));
-    transform-origin: left center;
-    transition: transform 0.2s var(--ease);
-  }
-
-  .power-slider-knob {
-    position: absolute;
-    left: var(--power-knob-inset);
-    top: 50%;
-    z-index: 2;
-    width: var(--power-knob-size);
-    height: var(--power-knob-size);
-    display: grid;
-    place-items: center;
-    border: 1px solid color-mix(in srgb, var(--phase) 36%, rgba(103, 118, 137, 0.28));
-    border-radius: 4px;
-    color: var(--phase-contrast);
-    background: linear-gradient(135deg, color-mix(in srgb, var(--phase) 34%, #151d26), #0b0d10);
-    box-shadow: 0 9px 22px rgba(0, 0, 0, 0.26), inset 0 1px 0 rgba(255, 255, 255, 0.5);
-    cursor: grab;
-    transform: translateY(-50%);
-    transition: transform 0.2s var(--ease), background 0.18s var(--ease), color 0.18s var(--ease);
-  }
-
-  .power-slider:active .power-slider-knob { cursor: grabbing; }
-
-  .power-slider-copy {
-    position: relative;
-    z-index: 1;
-    display: grid;
-    gap: 2px;
-    min-width: 0;
-  }
-
-  .power-slider-label {
-    overflow: hidden;
-    color: var(--text-main);
-    font-size: 12px;
-    font-weight: 820;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .power-slider-hint {
-    overflow: hidden;
-    color: var(--text-muted);
-    font-size: 10px;
-    font-weight: 650;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .power-slider.power-on {
-    border-color: color-mix(in srgb, var(--phase) 42%, rgba(103, 118, 137, 0.24));
-    background: linear-gradient(135deg, var(--phase-soft), rgba(15, 18, 23, 0.88));
-  }
-
-  .power-slider.is-dragging::before,
-  .power-slider.is-dragging .power-slider-knob { transition: none; }
-
-  .footer-row {
-    gap: 8px;
-    margin-top: 8px;
-    color: var(--text-muted);
-    font-size: 10px;
-  }
-
   .login-title {
     margin: 6px 0 0;
     font-size: clamp(28px, 8vw, 40px);
     line-height: 0.9;
     letter-spacing: -0.06em;
-  }
-
-  .login-copy {
-    margin: 9px 0 0;
-    color: var(--text-soft);
-    font-size: 12px;
-    line-height: 1.55;
   }
 
   .login-form {
@@ -625,20 +472,11 @@
     outline: none;
   }
 
-  .status-line {
-    min-height: 18px;
-    margin-top: 8px;
-    color: var(--text-muted);
-    font-size: 10px;
-  }
-
   .hidden { display: none !important; }
 
   @supports not (color: color-mix(in srgb, red, white)) {
-    .control-row.is-active,
-    .power-slider.power-on { border-color: rgba(103, 118, 137, 0.42); }
+    .control-row.is-active { border-color: rgba(103, 118, 137, 0.42); }
     .switch input:checked + span { border-color: rgba(103, 118, 137, 0.42); }
-    .power-slider-knob { background: linear-gradient(135deg, #17202a, #090b0e); }
   }
 
   @media (max-width: 760px) {
@@ -652,9 +490,6 @@
     body { padding: 10px; }
     .app-shell,
     .login-shell { padding: 12px; border-radius: 8px; }
-    .panel-header { align-items: flex-start; }
-    .header-meta { gap: 6px; }
-    .last-updated { font-size: 10px; }
     .card { padding: 10px; border-radius: 6px; }
     .status-card { padding: 12px; }
     .status-title { font-size: clamp(30px, 10vw, 42px); }
@@ -664,7 +499,6 @@
     .action-button { min-height: 46px; }
     .control-row { min-height: 52px; padding: 9px 10px; border-radius: 5px; }
     .control-icon { width: 28px; height: 28px; border-radius: 4px; }
-    .power-slider { --power-knob-size: 38px; min-height: 56px; padding: 8px 11px 8px 52px; border-radius: 5px; }
   }
 
   :root {
@@ -722,8 +556,7 @@
     --phase-contrast: #edf3f7;
   }
 
-  .card,
-  .panel-header {
+  .card {
     border: 1px solid var(--card-border);
     border-radius: 3px;
     background: var(--card-bg);
@@ -732,32 +565,14 @@
 
   .card { padding: 12px; }
 
-  .panel-header {
-    padding: 11px 12px;
-    background: #0b1016;
-  }
-
-  .panel-header h1 {
-    margin-top: 3px;
-    font-size: clamp(17px, 3vw, 21px);
-    font-weight: 780;
-    letter-spacing: 0.015em;
-    line-height: 1.05;
-    text-transform: uppercase;
-  }
-
   .metric-label,
   .section-label,
   .login-label,
   .eyebrow,
-  .environment-badge,
-  .phase-chip,
-  .section-note,
-  .last-updated {
+  .phase-chip {
     font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
   }
 
-  .environment-badge,
   .phase-chip {
     min-height: 24px;
     border-color: #2a3743;
@@ -769,7 +584,6 @@
     text-transform: uppercase;
   }
 
-  .environment-badge::before,
   .phase-dot {
     width: 6px;
     height: 6px;
@@ -814,12 +628,6 @@
     letter-spacing: -0.035em;
     line-height: 1;
     text-transform: uppercase;
-  }
-
-  .status-subtitle {
-    margin-top: 7px;
-    color: #98a2af;
-    font-size: 11px;
   }
 
   .readout-grid {
@@ -884,7 +692,6 @@
   .action-button:not(:disabled):hover,
   .login-button:not(:disabled):hover,
   .control-row:not(:disabled):hover,
-  .power-slider:not(.is-busy):not(.is-dragging):hover,
   .logout-button:hover {
     transform: none;
     border-color: #405161;
@@ -912,19 +719,6 @@
   .controls-card {
     padding: 11px;
     background: #0c1117;
-  }
-
-  .section-heading {
-    margin-bottom: 8px;
-    padding-bottom: 8px;
-    border-bottom: 1px solid #202a34;
-  }
-
-  .section-note {
-    color: #7b8794;
-    font-size: 9px;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
   }
 
   .control-list { gap: 6px; }
@@ -1003,48 +797,6 @@
     transform: translateX(16px);
   }
 
-  .power-slider {
-    --power-knob-inset: 5px;
-    --power-knob-size: 36px;
-    min-height: 50px;
-    padding: 7px 10px 7px 49px;
-    border-color: #202a34;
-    border-radius: 2px;
-    background: #090e13;
-  }
-
-  .power-slider::before {
-    background: linear-gradient(90deg, var(--phase-soft), rgba(74, 89, 106, 0.14));
-  }
-
-  .power-slider-knob {
-    border-color: #33404c;
-    border-radius: 2px;
-    background: #121a23;
-    box-shadow: none;
-    color: #cad3dd;
-  }
-
-  .power-slider-label {
-    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
-    font-size: 11px;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-  }
-
-  .power-slider-hint {
-    color: #75818f;
-    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
-    font-size: 9px;
-  }
-
-  .footer-row {
-    margin-top: 8px;
-    padding-top: 8px;
-    border-top: 1px solid #202a34;
-    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
-  }
-
   .password-input {
     border-color: #2a3743;
     border-radius: 2px;
@@ -1077,21 +829,7 @@
 
     .app-shell { gap: 6px; }
 
-    .panel-header {
-      align-items: center;
-      padding: 7px 8px;
-    }
-
-    .panel-header h1 {
-      margin-top: 2px;
-      font-size: clamp(14px, 4.6vw, 17px);
-      line-height: 1;
-    }
-
-    .header-meta { gap: 3px; }
-    .environment-badge,
     .phase-chip { min-height: 20px; padding: 0 7px; font-size: 8px; }
-    .last-updated { font-size: 8px; }
 
     .card {
       padding: 8px;
@@ -1107,7 +845,6 @@
 
     .hero-status { margin: 7px 0 6px; }
     .status-title { font-size: clamp(21px, 7.2vw, 27px); }
-    .status-subtitle { margin-top: 4px; font-size: 9px; line-height: 1.25; }
 
     .readout-grid {
       grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1137,8 +874,6 @@
     }
 
     .controls-card { padding: 8px; }
-    .section-heading { margin-bottom: 5px; padding-bottom: 5px; }
-    .section-note { font-size: 8px; }
     .control-list { gap: 5px; }
 
     .control-row {
@@ -1157,32 +892,12 @@
     .switch span::after { width: 8px; height: 8px; }
     .switch input:checked + span::after { transform: translateX(14px); }
 
-    .power-slider {
-      --power-knob-size: 30px;
-      min-height: 40px;
-      padding: 5px 8px 5px 40px;
-      border-radius: 2px;
-    }
-
-    .power-slider-label { font-size: 9px; }
-    .power-slider-hint { font-size: 8px; }
-
-    .footer-row {
-      margin-top: 5px;
-      padding-top: 5px;
-      font-size: 8px;
-    }
-
     .logout-button { min-height: 22px; padding: 0 7px; font-size: 8px; }
   }
 
   @media (max-width: 560px) and (max-height: 700px) {
-    .last-updated,
-    .status-subtitle { display: none; }
-    .panel-header { padding-block: 6px; }
     .hero-status { margin: 6px 0; }
     .control-row { min-height: 36px; }
-    .power-slider { min-height: 38px; }
   }
 
   :root {
@@ -1220,8 +935,7 @@
   }
 
   button:focus-visible,
-  input:focus-visible,
-  .power-slider:focus-visible {
+  input:focus-visible {
     outline: 2px solid var(--phase, var(--cool));
     outline-offset: 3px;
   }
@@ -1261,40 +975,15 @@
     --phase-soft: var(--danger-soft);
   }
 
-  .panel-header {
-    padding: 2px 4px 0;
-    border: 0;
-    border-radius: 0;
-    background: transparent;
-    box-shadow: none;
-  }
-
-  .panel-header h1 {
-    margin-top: 4px;
-    color: #101928;
-    font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    font-size: clamp(26px, 4.8vw, 36px);
-    font-weight: 760;
-    line-height: 1;
-    letter-spacing: -0.045em;
-    text-transform: none;
-  }
-
   .metric-label,
   .section-label,
   .login-label,
   .eyebrow,
-  .environment-badge,
   .phase-chip,
-  .section-note,
-  .last-updated,
   .metric-value,
   .action-button,
   .login-button,
   .control-meta,
-  .power-slider-label,
-  .power-slider-hint,
-  .footer-row,
   .password-input {
     font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   }
@@ -1309,7 +998,6 @@
     letter-spacing: 0.12em;
   }
 
-  .environment-badge,
   .phase-chip {
     min-height: 30px;
     padding: 0 12px;
@@ -1323,21 +1011,12 @@
     text-transform: none;
   }
 
-  .environment-badge::before,
   .phase-dot {
     width: 7px;
     height: 7px;
     border-radius: 999px;
     background: var(--phase, var(--cool));
     box-shadow: 0 0 0 4px var(--phase-soft, rgba(10, 132, 255, 0.12));
-  }
-
-  .environment-badge.is-local::before { background: var(--cool); }
-
-  .last-updated {
-    color: var(--text-muted);
-    font-size: 11px;
-    font-weight: 650;
   }
 
   .card {
@@ -1396,15 +1075,6 @@
     line-height: 0.9;
     letter-spacing: -0.07em;
     text-transform: none;
-  }
-
-  .status-subtitle {
-    max-width: 280px;
-    margin-top: 12px;
-    color: var(--text-soft);
-    font-size: 14px;
-    font-weight: 620;
-    line-height: 1.35;
   }
 
   .readout-grid {
@@ -1486,8 +1156,7 @@
 
   .action-button:not(:disabled):hover,
   .login-button:not(:disabled):hover,
-  .control-row:not(:disabled):hover,
-  .power-slider:not(.is-busy):not(.is-dragging):hover {
+  .control-row:not(:disabled):hover {
     transform: translateY(-1px);
   }
 
@@ -1511,20 +1180,6 @@
   .controls-card {
     padding: 18px;
     background: #ffffff;
-  }
-
-  .section-heading {
-    margin: 0 0 14px;
-    padding-bottom: 0;
-    border-bottom: 0;
-  }
-
-  .section-note {
-    color: var(--cool);
-    font-size: 11px;
-    font-weight: 760;
-    letter-spacing: -0.01em;
-    text-transform: none;
   }
 
   .control-list { gap: 10px; }
@@ -1611,64 +1266,10 @@
     transform: translateX(20px);
   }
 
-  .power-slider {
-    --power-knob-inset: 6px;
-    --power-knob-size: 46px;
-    min-height: 64px;
-    padding: 10px 16px 10px 62px;
-    border: 1px solid rgba(27, 72, 116, 0.07);
-    border-radius: 20px;
-    background: #f7f9fc;
-  }
-
-  .power-slider::before {
-    background: linear-gradient(90deg, rgba(10, 132, 255, 0.12), rgba(10, 132, 255, 0.03));
-  }
-
-  .power-slider.power-on {
-    border-color: rgba(10, 132, 255, 0.14);
-    background: rgba(10, 132, 255, 0.07);
-  }
-
-  .power-slider-knob {
-    border: 0;
-    border-radius: 16px;
-    color: #ffffff;
-    background: linear-gradient(135deg, #0a84ff, #35a9ff);
-    box-shadow: 0 10px 20px rgba(10, 132, 255, 0.24);
-  }
-
-  .power-slider-label {
-    color: #152033;
-    font-size: 13px;
-    font-weight: 780;
-    letter-spacing: -0.02em;
-    text-transform: none;
-  }
-
-  .power-slider-hint {
-    color: var(--text-muted);
-    font-size: 11px;
-    font-weight: 620;
-  }
-
-  .footer-row {
-    margin-top: 12px;
-    padding-top: 0;
-    border-top: 0;
-    color: var(--text-muted);
-    font-size: 12px;
-  }
-
   .login-title {
     color: #101928;
     font-size: clamp(36px, 9vw, 52px);
     letter-spacing: -0.06em;
-  }
-
-  .login-copy {
-    color: var(--text-soft);
-    font-size: 14px;
   }
 
   .password-input {
@@ -1678,11 +1279,6 @@
     color: var(--text-main);
     background: #f7f9fc;
     font-size: 14px;
-  }
-
-  .status-line {
-    color: var(--text-muted);
-    font-size: 12px;
   }
 
   @media (max-width: 760px) {
@@ -1708,23 +1304,11 @@
       border-radius: 24px;
     }
 
-    .panel-header {
-      align-items: center;
-      padding: 2px 2px 0;
-    }
-
-    .panel-header h1 {
-      font-size: clamp(24px, 7vw, 30px);
-    }
-
-    .environment-badge,
     .phase-chip {
       min-height: 26px;
       padding: 0 10px;
       font-size: 10px;
     }
-
-    .last-updated { font-size: 10px; }
 
     .card {
       padding: 14px;
@@ -1735,7 +1319,6 @@
     .status-card::before { width: 118px; height: 118px; border-width: 28px; }
     .hero-status { margin: 20px 0 16px; }
     .status-title { font-size: clamp(38px, 12vw, 52px); }
-    .status-subtitle { margin-top: 9px; font-size: 13px; }
 
     .readout-grid {
       grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1768,7 +1351,6 @@
     }
 
     .controls-card { padding: 14px; }
-    .section-heading { margin-bottom: 10px; }
     .control-list { gap: 8px; }
     .control-row { min-height: 56px; padding: 10px 12px; border-radius: 18px; }
     .control-icon { width: 32px; height: 32px; }
@@ -1778,22 +1360,10 @@
     .switch span::after { width: 18px; height: 18px; }
     .switch input:checked + span::after { transform: translateX(18px); }
 
-    .power-slider {
-      --power-knob-size: 42px;
-      min-height: 58px;
-      padding: 8px 13px 8px 56px;
-      border-radius: 18px;
-    }
-
-    .power-slider-knob { border-radius: 14px; }
-    .power-slider-label { font-size: 12px; }
-    .power-slider-hint { font-size: 10px; }
     .logout-button { min-height: 30px; padding: 0 11px; font-size: 11px; }
   }
 
   @media (max-width: 560px) and (max-height: 700px) {
-    .last-updated,
-    .status-subtitle { display: none; }
     .app-shell { gap: 8px; }
     .card { padding: 12px; }
     .status-card { padding: 15px; }
@@ -1801,7 +1371,6 @@
     .status-title { font-size: clamp(32px, 10vw, 44px); }
     .readout { min-height: 48px; padding: 7px; }
     .control-row { min-height: 50px; }
-    .power-slider { min-height: 52px; }
   }
 
   .action-button:not(:disabled):hover {
@@ -1838,31 +1407,6 @@
     background-color: #edf7ff;
   }
 
-  .power-slider:not(.is-busy):not(.is-dragging):hover {
-    border-color: rgba(10, 132, 255, 0.12);
-    background: #f1f7fd;
-    background-color: #f1f7fd;
-  }
-
-  .power-slider.power-on:not(.is-busy):not(.is-dragging):hover {
-    border-color: rgba(10, 132, 255, 0.18);
-    background: rgba(10, 132, 255, 0.09);
-    background-color: #edf7ff;
-  }
-
-  .header-meta {
-    grid-template-columns: auto 38px;
-    align-items: center;
-    column-gap: 9px;
-    row-gap: 4px;
-  }
-
-  .environment-badge,
-  .last-updated {
-    grid-column: 1;
-    justify-self: end;
-  }
-
   .logout-icon-button {
     grid-column: 2;
     grid-row: 1 / 3;
@@ -1897,36 +1441,7 @@
     color: #0a84ff;
   }
 
-  .panel-actions {
-    min-height: 38px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    padding: 0 2px;
-  }
-
-  .device-model {
-    display: inline-flex;
-    align-items: center;
-    min-height: 34px;
-    padding: 0 13px;
-    border: 1px solid rgba(27, 72, 116, 0.08);
-    border-radius: 999px;
-    background: rgba(255, 255, 255, 0.72);
-    color: #526176;
-    font-size: 12px;
-    font-weight: 780;
-    letter-spacing: -0.01em;
-    box-shadow: 0 10px 22px rgba(63, 93, 127, 0.08);
-  }
-
   @media (max-width: 560px) {
-    .header-meta {
-      grid-template-columns: auto 34px;
-      column-gap: 7px;
-    }
-
     .logout-icon-button {
       width: 34px;
       height: 34px;
@@ -1938,16 +1453,6 @@
       height: 16px;
     }
 
-    .panel-actions {
-      min-height: 34px;
-      padding: 0 2px;
-    }
-
-    .device-model {
-      min-height: 30px;
-      padding: 0 11px;
-      font-size: 11px;
-    }
   }
 
   @media (max-width: 560px) {
@@ -1966,33 +1471,6 @@
       border-radius: 0;
       background: transparent;
       box-shadow: none;
-    }
-
-    .panel-actions {
-      min-height: 40px;
-      padding: 0 2px 2px;
-    }
-
-    .device-model {
-      position: relative;
-      min-height: 34px;
-      padding: 0 13px 0 31px;
-      border: 1px solid rgba(10, 132, 255, 0.08);
-      background: rgba(255, 255, 255, 0.82);
-      color: #3f5369;
-      font-size: 11px;
-      box-shadow: 0 10px 28px rgba(63, 93, 127, 0.1);
-    }
-
-    .device-model::before {
-      content: '';
-      position: absolute;
-      left: 12px;
-      width: 8px;
-      height: 8px;
-      border-radius: 999px;
-      background: var(--phase, var(--cool));
-      box-shadow: 0 0 0 5px var(--phase-soft, rgba(10, 132, 255, 0.12));
     }
 
     .logout-icon-button {
@@ -2046,11 +1524,6 @@
       letter-spacing: -0.075em;
     }
 
-    .status-subtitle {
-      max-width: 230px;
-      font-size: 13px;
-    }
-
     .readout-grid {
       gap: 7px;
     }
@@ -2086,21 +1559,9 @@
       padding: 15px;
     }
 
-    .section-heading {
-      margin-bottom: 12px;
-    }
-
     .section-label {
       color: #64748b;
       font-size: 9px;
-    }
-
-    .section-note {
-      padding: 4px 9px;
-      border-radius: 999px;
-      background: var(--phase-soft, rgba(10, 132, 255, 0.1));
-      color: var(--phase, var(--cool));
-      font-size: 10px;
     }
 
     .control-list {
@@ -2127,19 +1588,6 @@
       font-size: 11px;
     }
 
-    .power-slider {
-      --power-knob-size: 42px;
-      min-height: 60px;
-      margin-top: 1px;
-      border-radius: 20px;
-      background: #f8fbff;
-    }
-
-    .footer-row {
-      justify-content: center;
-      margin-top: 10px;
-      font-size: 11px;
-    }
   }
 
   @media (max-width: 380px) {
@@ -2151,13 +1599,10 @@
     .readout { min-height: 52px; padding: 8px 6px; }
     .action-button { min-height: 44px; }
     .control-row { min-height: 54px; }
-    .power-slider { min-height: 56px; }
   }
 
   @media (max-width: 560px) and (max-height: 700px) {
     .app-shell { gap: 8px; }
-    .panel-actions { min-height: 36px; }
-    .device-model { min-height: 31px; }
     .logout-icon-button { width: 33px; height: 33px; min-height: 33px; }
     .status-card { padding: 15px; }
     .hero-status { margin: 15px 0 12px; }
@@ -2166,7 +1611,6 @@
     .action-button { min-height: 42px; }
     .controls-card { padding: 13px; }
     .control-row { min-height: 50px; }
-    .power-slider { min-height: 52px; }
   }
 
   .status-card::before {
@@ -2239,25 +1683,6 @@
     cursor: wait;
   }
 
-  .control-actions {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-  }
-
-  .section-heading .power-button {
-    width: 42px;
-    height: 42px;
-    min-height: 42px;
-    border-radius: 15px;
-    box-shadow: 0 10px 22px rgba(63, 93, 127, 0.1);
-  }
-
-  .section-heading .power-button svg {
-    width: 20px;
-    height: 20px;
-  }
-
   @media (max-width: 560px) {
     .power-button {
       width: 54px;
@@ -2266,16 +1691,6 @@
       border-radius: 19px;
     }
 
-    .control-actions {
-      gap: 7px;
-    }
-
-    .section-heading .power-button {
-      width: 40px;
-      height: 40px;
-      min-height: 40px;
-      border-radius: 14px;
-    }
   }
 
   @media (max-width: 560px) and (max-height: 700px) {
@@ -2286,21 +1701,11 @@
       border-radius: 17px;
     }
 
-    .section-heading .power-button {
-      width: 38px;
-      height: 38px;
-      min-height: 38px;
-      border-radius: 13px;
-    }
   }
 
   .app-shell {
     gap: 10px;
     padding: 14px;
-  }
-
-  .panel-actions {
-    min-height: 34px;
   }
 
   .card {
@@ -2317,11 +1722,6 @@
 
   .status-title {
     font-size: clamp(36px, 6.8vw, 54px);
-  }
-
-  .status-subtitle {
-    margin-top: 8px;
-    font-size: 13px;
   }
 
   .readout-grid {
@@ -2352,10 +1752,6 @@
     padding: 14px;
   }
 
-  .section-heading {
-    margin-bottom: 9px;
-  }
-
   .control-list {
     gap: 7px;
   }
@@ -2370,10 +1766,6 @@
     height: 32px;
   }
 
-  .footer-row {
-    margin-top: 7px;
-  }
-
   @media (max-width: 560px) {
     body {
       padding: 8px;
@@ -2383,11 +1775,6 @@
       width: min(100%, 378px);
       gap: 8px;
       padding: 0;
-    }
-
-    .panel-actions {
-      min-height: 36px;
-      padding-bottom: 0;
     }
 
     .card {
@@ -2405,10 +1792,6 @@
 
     .status-title {
       font-size: clamp(32px, 10vw, 44px);
-    }
-
-    .status-subtitle {
-      display: none;
     }
 
     .readout-grid {
@@ -2440,10 +1823,6 @@
       padding: 12px;
     }
 
-    .section-heading {
-      margin-bottom: 8px;
-    }
-
     .control-list {
       gap: 6px;
     }
@@ -2459,17 +1838,6 @@
       height: 30px;
     }
 
-    .section-heading .power-button {
-      width: 36px;
-      height: 36px;
-      min-height: 36px;
-      border-radius: 13px;
-    }
-
-    .footer-row {
-      margin-top: 6px;
-      font-size: 10px;
-    }
   }
 
   @media (max-width: 560px) and (max-height: 700px) {
@@ -2505,16 +1873,6 @@
     padding: 12px;
   }
 
-  .panel-actions {
-    min-height: 32px;
-  }
-
-  .device-model {
-    min-height: 31px;
-    padding-inline: 12px;
-    font-size: 11px;
-  }
-
   .logout-icon-button {
     width: 34px;
     height: 34px;
@@ -2542,11 +1900,6 @@
     font-size: clamp(32px, 6vw, 48px);
   }
 
-  .status-subtitle {
-    margin-top: 6px;
-    font-size: 12px;
-  }
-
   .readout {
     min-height: 48px;
     padding: 8px 9px;
@@ -2565,10 +1918,6 @@
     padding: 12px;
   }
 
-  .section-heading {
-    margin-bottom: 7px;
-  }
-
   .control-list {
     gap: 6px;
   }
@@ -2583,11 +1932,6 @@
     height: 30px;
   }
 
-  .footer-row {
-    margin-top: 5px;
-    font-size: 11px;
-  }
-
   @media (max-width: 560px) {
     body {
       padding: 6px;
@@ -2597,10 +1941,6 @@
       width: min(100%, 372px);
       gap: 6px;
       padding: 0;
-    }
-
-    .panel-actions {
-      min-height: 34px;
     }
 
     .card {
@@ -2646,17 +1986,6 @@
       padding: 10px;
     }
 
-    .section-heading {
-      margin-bottom: 6px;
-    }
-
-    .section-heading .power-button {
-      width: 34px;
-      height: 34px;
-      min-height: 34px;
-      border-radius: 12px;
-    }
-
     .control-row {
       min-height: 42px;
       padding: 7px 9px;
@@ -2672,10 +2001,6 @@
       font-size: 13px;
     }
 
-    .footer-row {
-      margin-top: 4px;
-      font-size: 10px;
-    }
   }
 
   @media (max-width: 560px) and (max-height: 700px) {
@@ -2717,28 +2042,6 @@
       border: 0;
       background: transparent;
       box-shadow: none;
-    }
-
-    .panel-actions {
-      min-height: 38px;
-      padding: 0 2px;
-    }
-
-    .device-model {
-      min-height: 34px;
-      padding: 0 13px 0 31px;
-      border: 1px solid rgba(10, 132, 255, 0.1);
-      background: rgba(255, 255, 255, 0.88);
-      color: #40566d;
-      font-size: 11px;
-      box-shadow: 0 10px 26px rgba(64, 93, 124, 0.09);
-    }
-
-    .device-model::before {
-      left: 12px;
-      width: 8px;
-      height: 8px;
-      box-shadow: 0 0 0 5px var(--phase-soft, rgba(10, 132, 255, 0.12));
     }
 
     .logout-icon-button {
@@ -2787,15 +2090,6 @@
       letter-spacing: -0.07em;
     }
 
-    .status-subtitle {
-      display: block;
-      max-width: 240px;
-      margin: 7px auto 0;
-      color: #64748b;
-      font-size: 12px;
-      line-height: 1.28;
-    }
-
     .readout-grid {
       gap: 7px;
       text-align: left;
@@ -2840,39 +2134,9 @@
       padding: 14px;
     }
 
-    .section-heading {
-      margin-bottom: 10px;
-    }
-
     .section-label {
       color: #64748b;
       font-size: 9px;
-    }
-
-    .control-actions {
-      gap: 7px;
-    }
-
-    .section-note {
-      padding: 4px 9px;
-      border-radius: 999px;
-      background: var(--phase-soft, rgba(10, 132, 255, 0.1));
-      color: var(--phase, var(--cool));
-      font-size: 10px;
-      line-height: 1;
-    }
-
-    .section-heading .power-button {
-      width: 38px;
-      height: 38px;
-      min-height: 38px;
-      border-radius: 14px;
-      box-shadow: 0 10px 20px rgba(64, 93, 124, 0.1);
-    }
-
-    .section-heading .power-button svg {
-      width: 18px;
-      height: 18px;
     }
 
     .control-list {
@@ -2914,12 +2178,6 @@
       transform: translateX(18px);
     }
 
-    .footer-row {
-      justify-content: center;
-      margin-top: 8px;
-      color: #94a3b8;
-      font-size: 10px;
-    }
   }
 
   @media (max-width: 390px) {
@@ -2929,7 +2187,6 @@
     .status-card { padding: 14px; }
     .hero-status { margin: 11px 0 9px; }
     .status-title { font-size: clamp(31px, 9.7vw, 41px); }
-    .status-subtitle { display: none; }
     .readout { min-height: 43px; padding: 7px 6px; border-radius: 15px; }
     .action-grid { margin-top: 8px; gap: 6px; }
     .action-button { min-height: 38px; border-radius: 15px; font-size: 10px; }
@@ -2937,23 +2194,18 @@
     .control-row { min-height: 46px; padding: 8px 10px; border-radius: 17px; }
     .control-icon { width: 28px; height: 28px; }
     .control-title { font-size: 13px; }
-    .section-heading .power-button { width: 34px; height: 34px; min-height: 34px; border-radius: 12px; }
   }
 
   @media (max-width: 560px) and (max-height: 700px) {
     body { padding-block: 7px; }
     .app-shell { gap: 7px; }
-    .panel-actions { min-height: 34px; }
-    .device-model { min-height: 31px; }
     .logout-icon-button { width: 33px; height: 33px; min-height: 33px; }
     .status-card,
     .controls-card { padding: 11px; }
     .hero-status { margin: 9px 0 7px; }
     .readout { min-height: 40px; }
     .action-button { min-height: 36px; }
-    .section-heading { margin-bottom: 7px; }
     .control-row { min-height: 42px; }
-    .footer-row { margin-top: 5px; }
   }
 
   :root {
@@ -3058,30 +2310,22 @@
   .status-title,
   .metric-value,
   .control-title,
-  .power-slider-label,
   .login-title {
     color: var(--text-main);
   }
 
-  .status-subtitle,
-  .login-copy,
-  .control-meta,
-  .power-slider-hint,
-  .footer-row,
-  .status-line {
+  .control-meta {
     color: var(--text-soft);
   }
 
   .metric-label,
   .section-label,
   .login-label,
-  .eyebrow,
-  .last-updated {
+  .eyebrow {
     color: var(--text-muted);
   }
 
-  .phase-chip,
-  .section-note {
+  .phase-chip {
     border: 1px solid color-mix(in srgb, var(--phase) 22%, rgba(113, 130, 151, 0.16));
     background: color-mix(in srgb, var(--phase) 10%, rgba(10, 16, 25, 0.92));
     color: var(--phase);
@@ -3089,7 +2333,6 @@
 
   .readout,
   .control-row,
-  .power-slider,
   .password-input {
     border-color: rgba(124, 154, 188, 0.14);
     background: rgba(8, 13, 21, 0.82);
@@ -3108,8 +2351,6 @@
     color: var(--text-muted);
   }
 
-  .device-model,
-  .refresh-icon-button,
   .logout-button,
   .logout-icon-button {
     border-color: rgba(124, 154, 188, 0.16);
@@ -3118,13 +2359,7 @@
     box-shadow: 0 12px 26px rgba(0, 0, 0, 0.28);
   }
 
-  .device-model::before {
-    background: var(--phase, var(--cool));
-    box-shadow: 0 0 0 5px var(--phase-soft, rgba(143, 183, 232, 0.12));
-  }
-
   .logout-button:hover,
-  .refresh-icon-button:hover,
   .logout-icon-button:hover {
     border-color: rgba(143, 183, 232, 0.24);
     background: rgba(16, 27, 42, 0.96);
@@ -3153,8 +2388,7 @@
   }
 
   .action-button:not(:disabled):hover,
-  .control-row:not(:disabled):hover,
-  .power-slider:not(.is-busy):not(.is-dragging):hover {
+  .control-row:not(:disabled):hover {
     border-color: rgba(143, 183, 232, 0.2);
     background: rgba(18, 29, 44, 0.98);
     color: var(--text-main);
@@ -3178,8 +2412,7 @@
     background: color-mix(in srgb, var(--phase) 12%, rgba(9, 15, 24, 0.9));
   }
 
-  .control-row.is-active:not(:disabled):hover,
-  .power-slider.power-on:not(.is-busy):not(.is-dragging):hover {
+  .control-row.is-active:not(:disabled):hover {
     border-color: color-mix(in srgb, var(--phase) 42%, transparent);
     background: color-mix(in srgb, var(--phase) 16%, rgba(10, 17, 27, 0.94));
   }
@@ -3236,16 +2469,6 @@
     color: #f7fbff;
   }
 
-  .refresh-icon-button {
-    width: 34px;
-    height: 34px;
-    min-height: 34px;
-    display: grid;
-    place-items: center;
-    padding: 0;
-    border-radius: 13px;
-  }
-
   .action-button:disabled,
   .control-row.is-disabled {
     opacity: 0.42;
@@ -3259,7 +2482,7 @@
 
   .app-shell[data-device-online="false"] .ac-panel .phase-chip,
   .app-shell[data-device-online="false"] .ac-panel .readout,
-  .app-shell[data-device-online="false"] .ac-panel .action-button,
+  .app-shell[data-device-online="false"] .ac-panel .action-button:not(.action-danger),
   .app-shell[data-device-online="false"] .ac-panel .control-row,
   .app-shell[data-device-online="false"] .ac-panel .power-button {
     border-color: rgba(116, 126, 140, 0.12) !important;
@@ -3267,7 +2490,7 @@
     box-shadow: none !important;
   }
 
-  .app-shell[data-device-online="false"] .ac-panel .action-button,
+  .app-shell[data-device-online="false"] .ac-panel .action-button:not(.action-danger),
   .app-shell[data-device-online="false"] .ac-panel .control-row,
   .app-shell[data-device-online="false"] .ac-panel .power-button {
     color: rgba(178, 188, 202, 0.44) !important;
@@ -3276,7 +2499,6 @@
   }
 
   .app-shell[data-device-online="false"] .ac-panel .action-primary,
-  .app-shell[data-device-online="false"] .ac-panel .action-danger,
   .app-shell[data-device-online="false"] .ac-panel .control-row.is-active,
   .app-shell[data-device-online="false"] .ac-panel .power-button.power-on {
     background: rgba(9, 13, 19, 0.64) !important;
@@ -3313,8 +2535,7 @@
     justify-content: space-between;
   }
 
-  .status-topline .power-button,
-  .hero-logout-button {
+  .status-topline .power-button {
     width: 34px;
     height: 34px;
     min-height: 34px;
@@ -3325,8 +2546,7 @@
     justify-self: auto;
   }
 
-  .status-topline .power-button svg,
-  .hero-logout-button svg {
+  .status-topline .power-button svg {
     width: 17px;
     height: 17px;
   }
@@ -3440,12 +2660,6 @@
     box-shadow: 0 12px 24px rgba(143, 183, 232, 0.1);
   }
 
-  .login-card .status-line {
-    min-height: 16px;
-    margin-top: 10px;
-    font-size: 11px;
-  }
-
   @media (max-width: 560px) {
     body {
       background: #000 !important;
@@ -3497,8 +2711,7 @@
       border-radius: 24px;
     }
 
-    .status-topline .power-button,
-    .hero-logout-button {
+    .status-topline .power-button {
       width: 34px;
       height: 34px;
       min-height: 34px;
@@ -3676,7 +2889,7 @@
   }
 
   .status-card.ac-panel,
-  .status-card.pc-status-card,
+  .status-card#pcCard,
   .controls-card.ac-panel {
     border: 0;
     border-radius: 30px;
@@ -3742,34 +2955,6 @@
     background: #101216 !important;
   }
 
-  .pc-panel {
-    display: grid;
-    grid-template-rows: minmax(160px, auto) auto;
-    gap: 10px;
-    min-height: 457px;
-    align-content: start;
-  }
-
-  .pc-status-card {
-    display: grid;
-    align-content: center;
-    gap: 28px;
-  }
-
-  .pc-status-card .hero-status {
-    margin: 0;
-    display: grid;
-    justify-items: center;
-    gap: 10px;
-  }
-
-  .pc-relay-chip {
-    margin-bottom: 0;
-    border-color: rgba(154, 165, 180, 0.22);
-    color: #c5ccd6;
-    background: rgba(24, 27, 31, 0.78);
-  }
-
   .pc-dot {
     width: 10px;
     height: 10px;
@@ -3783,52 +2968,26 @@
     box-shadow: 0 0 0 7px rgba(155, 216, 208, 0.1);
   }
 
-  .pc-status-title {
-    margin: 0;
+  #pcCard .status-topline {
+    min-height: 34px;
+  }
+
+  #pcCard .status-title {
     color: #d9dee6;
   }
 
-  .pc-status-heading {
-    display: inline-grid;
-    grid-template-columns: auto;
-    align-items: center;
-    justify-items: center;
-    justify-content: center;
+  #pcCard .status-title.is-online {
+    color: #effbf9;
   }
 
-  .pc-relay-chip.hidden + .pc-status-heading {
-    margin-top: 48px;
-  }
-
-  .pc-relay-chip.hidden + .pc-status-heading .pc-status-title {
+  #relayChip.hidden + .metric-label.hidden + #relayText {
     color: var(--text-main);
     font-size: clamp(24px, 6vw, 30px);
     letter-spacing: -0.04em;
   }
 
-  .pc-status-title.is-online {
-    color: #effbf9;
-  }
-
-  .pc-status-card .pc-wake-row {
-    min-height: 40px;
-    padding-block: 6px;
-  }
-
-  .pc-button-row {
-    width: 100%;
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    gap: 8px;
-  }
-
-  .pc-wake-row:disabled {
-    opacity: 0.46;
-    cursor: not-allowed;
-  }
-
   .pc-status-detail {
-    margin: 0 12px;
+    margin: 8px 12px 0;
     min-height: 15px;
     color: #9fa8b4;
     font-size: 11px;
@@ -3886,8 +3045,7 @@
     background: rgba(255, 255, 255, 0.34);
   }
 
-  .control-row.is-active .control-icon::before,
-  .pc-wake-row:not(:disabled) .control-icon::before {
+  .control-row.is-active .control-icon::before {
     background: #4a4f58;
     box-shadow: none;
   }
@@ -3922,9 +3080,6 @@
     .view-tabs { gap: 1.25rem; }
     .view-tab { padding: 0.9rem 1.35rem; font-size: 0.95rem; }
     .app-logout-button { top: 64px; right: 14px; }
-    .pc-panel { grid-template-rows: minmax(160px, auto) auto; gap: 8px; min-height: 425px; }
-    .pc-button-row { grid-template-columns: minmax(0, 1fr); gap: 7px; }
-    .pc-status-card .pc-wake-row { min-height: 38px; padding-block: 5px; }
   }
 </style>
 </head>
@@ -3934,8 +3089,8 @@
     <section class="card login-card">
       <h1 class="login-title">Login</h1>
       <form id="loginForm" class="login-form">
-        <input id="passwordInput" class="password-input" type="password" autocomplete="current-password" placeholder="Password" required>
-        <button id="loginBtn" class="login-button" type="submit">Login</button>
+        <input id="passwordInput" class="password-input" type="password" autocomplete="current-password" placeholder="Password" aria-label="Password" required>
+        <button class="login-button" type="submit">Login</button>
       </form>
     </section>
   </main>
@@ -3957,7 +3112,7 @@
     <section class="card status-card ac-panel" aria-label="AC status">
       <div class="status-topline">
         <button id="powerButton" class="power-button power-off" type="button" aria-label="Toggle AC power" title="Toggle AC power">
-          <svg id="powerButtonIcon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
             <path d="M12 3v8" />
             <path d="M7.05 7.05a7 7 0 1 0 9.9 0" />
           </svg>
@@ -3982,20 +3137,18 @@
         <button id="cycleBtn" class="action-button action-primary" type="button">Start Cycle</button>
       </div>
       <div class="control-list ac-control-list" role="group" aria-label="AC controls">
-        <button id="compressorControl" class="control-row" type="button">
+        <button id="compressorControl" class="control-row" type="button" aria-pressed="false">
           <span class="control-main">
             <span class="control-copy">
               <span class="control-title">Compressor</span>
-              <span class="control-meta" id="compressorState"></span>
             </span>
           </span>
           <span class="switch" aria-hidden="true"><input id="compressorToggle" type="checkbox" tabindex="-1"><span></span></span>
         </button>
-        <button id="swingControl" class="control-row" type="button">
+        <button id="swingControl" class="control-row" type="button" aria-pressed="false">
           <span class="control-main">
             <span class="control-copy">
               <span class="control-title">Swing</span>
-              <span class="control-meta" id="swingState"></span>
             </span>
           </span>
           <span class="switch" aria-hidden="true"><input id="swingToggle" type="checkbox" tabindex="-1"><span></span></span>
@@ -4003,24 +3156,16 @@
       </div>
     </section>
 
-    <section id="pcPanel" class="pc-panel hidden" aria-label="PC controls">
-      <section class="card status-card pc-status-card" aria-label="PC status">
-        <div class="hero-status">
-          <span id="relayChip" class="phase-chip hero-phase-chip pc-relay-chip"><span id="relayDot" class="phase-dot pc-dot" aria-hidden="true"></span><span>Relay</span></span>
-          <div class="pc-status-heading">
-            <h2 id="relayText" class="status-title pc-status-title">Checking</h2>
-          </div>
-        </div>
-        <div class="pc-button-row" aria-label="PC actions">
-          <button id="wakePcBtn" class="control-row pc-wake-row" type="button">
-            <span class="control-main">
-              <span class="control-copy">
-                <span id="wakePcLabel" class="control-title">Wake</span>
-              </span>
-            </span>
-          </button>
-        </div>
-      </section>
+    <section id="pcCard" class="card status-card hidden" aria-label="PC controls">
+      <div class="status-topline"></div>
+      <div class="hero-status">
+        <span id="relayChip" class="phase-chip hero-phase-chip"><span id="relayDot" class="phase-dot pc-dot" aria-hidden="true"></span><span>Relay</span></span>
+        <p class="metric-label">Relay Status</p>
+        <h2 id="relayText" class="status-title">Checking</h2>
+      </div>
+      <div class="action-grid" aria-label="PC actions">
+        <button id="wakePcBtn" class="action-button action-primary" type="button" disabled>Wake</button>
+      </div>
       <p id="pcStatusDetail" class="pc-status-detail" role="status" aria-live="polite">Status not checked.</p>
     </section>
   </main>
@@ -4029,10 +3174,8 @@
   </div>
 
 <script>
-  const POWER_SLIDE_THRESHOLD = 0.95;
   const STATE_REFRESH_MS = 1000;
   const WOL_REFRESH_MS = 3000;
-  const PC_DETAIL_HIDE_MS = 2600;
   const TAB_SWIPE_MIN_DISTANCE = 64;
   const TAB_SWIPE_MAX_VERTICAL = 72;
   const TAB_SWIPE_DIRECTION_RATIO = 1.35;
@@ -4042,12 +3185,9 @@
   let refreshTimer = null;
   let wolRefreshTimer = null;
   let statusToastTimer = null;
-  let pcStatusDetailTimer = null;
-  let pcStatusDetailHoldUntil = 0;
   let wolWakeBusy = false;
-  let wolCheckBusy = false;
   let deviceProbeBusy = false;
-  const powerSliderState = { dragging: false, pointerId: null, startX: 0, progress: 0, busy: false };
+  let powerButtonBusy = false;
   const tabSwipeState = { active: false, pointerId: null, startX: 0, startY: 0, lastX: 0, lastY: 0, suppressClickUntil: 0 };
 
   const loginShell = document.getElementById('loginShell');
@@ -4057,9 +3197,10 @@
   const statusToast = document.getElementById('statusToast');
   const acTab = document.getElementById('acTab');
   const pcTab = document.getElementById('pcTab');
-  const pcPanel = document.getElementById('pcPanel');
+  const pcCard = document.getElementById('pcCard');
 
   function showLogin(message) {
+    currentView = 'ac';
     appShell.classList.add('hidden');
     loginShell.classList.remove('hidden');
     document.body.removeAttribute('data-phase');
@@ -4080,7 +3221,7 @@
     const showPc = currentView === 'pc';
     appShell.dataset.view = showPc ? 'pc' : 'ac';
     document.querySelectorAll('.ac-panel').forEach((panel) => panel.classList.toggle('hidden', showPc));
-    if (pcPanel) pcPanel.classList.toggle('hidden', !showPc);
+    if (pcCard) pcCard.classList.toggle('hidden', !showPc);
     if (acTab) {
       acTab.classList.toggle('is-active', !showPc);
       acTab.setAttribute('aria-pressed', showPc ? 'false' : 'true');
@@ -4206,30 +3347,16 @@
     wolRefreshTimer = null;
   }
 
-  function applyPcStatusDetail(detail, autoHide) {
+  function applyPcStatusDetail(detail) {
     const pcStatusDetailEl = document.getElementById('pcStatusDetail');
     if (!pcStatusDetailEl) return;
-    if (!detail.text && pcStatusDetailHoldUntil > Date.now()) return;
-    if (pcStatusDetailTimer) clearTimeout(pcStatusDetailTimer);
-    pcStatusDetailTimer = null;
     pcStatusDetailEl.textContent = detail.text;
     pcStatusDetailEl.classList.toggle('is-good', detail.tone === 'is-good');
     pcStatusDetailEl.classList.toggle('is-warn', detail.tone === 'is-warn');
     pcStatusDetailEl.classList.toggle('is-error', detail.tone === 'is-error');
-    if (!autoHide || !detail.text) {
-      pcStatusDetailHoldUntil = 0;
-      return;
-    }
-    pcStatusDetailHoldUntil = Date.now() + PC_DETAIL_HIDE_MS;
-    pcStatusDetailTimer = setTimeout(() => {
-      pcStatusDetailHoldUntil = 0;
-      pcStatusDetailEl.textContent = '';
-      pcStatusDetailEl.classList.remove('is-good', 'is-warn', 'is-error');
-      pcStatusDetailTimer = null;
-    }, PC_DETAIL_HIDE_MS);
   }
 
-  function pcStatusDetail(status, showIdleOffline) {
+  function pcStatusDetail(status) {
     if (!status) return { text: 'Status not checked.', tone: '' };
     const relayOnline = Boolean(status.relay && status.relay.online);
     const command = status.command;
@@ -4239,10 +3366,10 @@
     if (commandStatus === 'claimed') return { text: 'Wake picked up by relay.', tone: 'is-warn' };
     if (commandStatus === 'pending') return { text: 'Wake queued. Waiting for relay.', tone: 'is-warn' };
     if (relayOnline) return { text: 'Relay online. Ready to wake.', tone: 'is-good' };
-    return showIdleOffline ? { text: 'Relay offline.', tone: 'is-error', autoHide: true } : { text: '', tone: '' };
+    return { text: '', tone: '' };
   }
 
-  function renderWolStatus(data, options = {}) {
+  function renderWolStatus(data) {
     latestWolStatus = data || latestWolStatus;
     if (!latestWolStatus) return;
     const relayOnline = Boolean(latestWolStatus.relay && latestWolStatus.relay.online);
@@ -4250,8 +3377,6 @@
     const relayDot = document.getElementById('relayDot');
     const relayText = document.getElementById('relayText');
     const wakePcBtn = document.getElementById('wakePcBtn');
-    const wakePcLabel = document.getElementById('wakePcLabel');
-    const checkPcBtn = document.getElementById('checkPcBtn');
     const pcStatusDetailEl = document.getElementById('pcStatusDetail');
 
     if (relayChip) relayChip.classList.toggle('hidden', !relayOnline);
@@ -4260,54 +3385,21 @@
       relayText.textContent = relayOnline ? 'Online' : 'Offline';
       relayText.classList.toggle('is-online', relayOnline);
     }
+    const metricLabel = document.querySelector('#pcCard .metric-label');
+    if (metricLabel) metricLabel.classList.toggle('hidden', !relayOnline);
     if (wakePcBtn) {
       wakePcBtn.disabled = wolWakeBusy || !relayOnline;
-      if (!wakePcLabel) wakePcBtn.textContent = wolWakeBusy ? 'Sending...' : 'Wake';
-    }
-    if (wakePcLabel) wakePcLabel.textContent = wolWakeBusy ? 'Sending...' : 'Wake';
-    if (checkPcBtn) {
-      checkPcBtn.disabled = wolCheckBusy;
-      checkPcBtn.setAttribute('aria-busy', wolCheckBusy ? 'true' : 'false');
-      checkPcBtn.setAttribute('aria-label', wolCheckBusy ? 'Checking PC relay' : 'Check PC relay');
-      checkPcBtn.title = wolCheckBusy ? 'Checking PC relay' : 'Check PC relay';
+      wakePcBtn.textContent = wolWakeBusy ? 'Sending...' : 'Wake';
     }
     if (pcStatusDetailEl) {
-      const detail = pcStatusDetail(latestWolStatus, options.showIdleOffline);
-      applyPcStatusDetail(detail, detail.autoHide);
+      applyPcStatusDetail(pcStatusDetail(latestWolStatus));
     }
   }
 
-  async function loadWolStatus(options) {
+  async function loadWolStatus() {
     const data = await requestJson('/api/wol/status');
-    renderWolStatus(data, options);
+    renderWolStatus(data);
     return data;
-  }
-
-  async function checkPcStatus() {
-    if (wolCheckBusy) return;
-    wolCheckBusy = true;
-    renderWolStatus();
-    const pcStatusDetailEl = document.getElementById('pcStatusDetail');
-    if (pcStatusDetailEl) {
-      if (pcStatusDetailTimer) clearTimeout(pcStatusDetailTimer);
-      pcStatusDetailTimer = null;
-      pcStatusDetailHoldUntil = 0;
-      pcStatusDetailEl.textContent = 'Checking status...';
-      pcStatusDetailEl.classList.remove('is-good', 'is-warn', 'is-error');
-    }
-    try {
-      await loadWolStatus({ showIdleOffline: true });
-    } catch (error) {
-      if (pcStatusDetailEl) {
-        pcStatusDetailEl.textContent = 'Status check failed.';
-        pcStatusDetailEl.classList.remove('is-good', 'is-warn');
-        pcStatusDetailEl.classList.add('is-error');
-      }
-    } finally {
-      wolCheckBusy = false;
-      const checkPcBtn = document.getElementById('checkPcBtn');
-      if (checkPcBtn) checkPcBtn.disabled = false;
-    }
   }
 
   async function wakePc() {
@@ -4355,16 +3447,6 @@
     return 'Stopped';
   }
 
-  function updateLastUpdated() {
-    const lastUpdated = document.getElementById('lastUpdated');
-    if (!lastUpdated) return;
-    lastUpdated.textContent = new Date().toLocaleTimeString([], {
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-    });
-  }
-
   function renderTemperature(temp, powered) {
     const activeTempValue = document.getElementById('activeTempValue');
     if (activeTempValue) activeTempValue.textContent = powered ? formatTemperature(temp) : '--';
@@ -4410,13 +3492,12 @@
     const compressorOn = Number.isFinite(activeTempF) && Number.isFinite(coolingSetpointF) && Math.abs(activeTempF - coolingSetpointF) < 0.5;
     const compressorControl = document.getElementById('compressorControl');
     const compressorToggle = document.getElementById('compressorToggle');
-    const compressorState = document.getElementById('compressorState');
     compressorToggle.checked = powered && compressorOn;
     compressorControl.classList.toggle('is-active', powered && compressorOn);
     compressorControl.classList.toggle('is-disabled', !deviceOnline || !powered);
     compressorControl.disabled = !deviceOnline || !powered;
+    compressorControl.setAttribute('aria-pressed', powered && compressorOn ? 'true' : 'false');
     compressorControl.title = deviceOnline ? (powered ? (compressorOn ? 'Set to ' + formatFahrenheit(restingSetpointF) + '.' : 'Set to ' + formatFahrenheit(coolingSetpointF) + '.') : 'Turn AC on first.') : 'Device is offline.';
-    compressorState.textContent = '';
 
     const swingToggle = document.getElementById('swingToggle');
     const swingControl = document.getElementById('swingControl');
@@ -4424,10 +3505,9 @@
     swingControl.classList.toggle('is-active', powered && Boolean(state.swing_wind));
     swingControl.classList.toggle('is-disabled', !deviceOnline || !powered);
     swingControl.disabled = !deviceOnline || !powered;
-    document.getElementById('swingState').textContent = '';
+    swingControl.setAttribute('aria-pressed', powered && Boolean(state.swing_wind) ? 'true' : 'false');
 
-    renderPowerSlider();
-    updateLastUpdated();
+    renderPowerButton();
     if (deviceOnline && state.last_error) setStatus(state.last_error, true);
   }
 
@@ -4485,125 +3565,39 @@
   }
 
   async function togglePower() {
-    if (powerSliderState.busy || !isDeviceOnlineState(latestState)) return;
-    powerSliderState.busy = true;
-    renderPowerSlider();
+    if (powerButtonBusy || !isDeviceOnlineState(latestState)) return;
+    powerButtonBusy = true;
+    renderPowerButton();
     try {
       await postAction('/api/power', { enabled: !(latestState && latestState.power_switch) });
     } finally {
-      powerSliderState.busy = false;
-      resetPowerSlider();
-      renderPowerSlider();
+      powerButtonBusy = false;
+      renderPowerButton();
     }
   }
 
   function toggleCycle() {
-    if (!isDeviceOnlineState(latestState)) return;
-    const running = latestState && latestState.running;
-    return postAction(running ? '/api/stop' : '/api/start');
+    const running = Boolean(latestState && latestState.running);
+    if (running) return postAction('/api/stop');
+    if (!isDeviceOnlineState(latestState) || !latestState.power_switch) return;
+    return postAction('/api/start');
   }
 
-  function powerSliderElements() {
-    return { slider: document.getElementById('powerButton'), knob: document.getElementById('powerButtonIcon') };
-  }
-
-  function powerSliderMaxTravel(slider, knob) {
-    return Math.max(1, slider.clientWidth - knob.clientWidth - 10);
-  }
-
-  function setPowerSliderProgress(progress) {
-    const clamped = Math.max(0, Math.min(1, progress));
-    powerSliderState.progress = clamped;
-    updatePowerSliderLabel();
-  }
-
-  function resetPowerSlider() {
-    setPowerSliderProgress(0);
-  }
-
-  function updatePowerSliderLabel() {
-    const label = document.getElementById('powerLabel');
-    const hint = document.getElementById('powerHint');
+  function renderPowerButton() {
+    const button = document.getElementById('powerButton');
+    if (!button) return;
     const deviceOnline = isDeviceOnlineState(latestState);
     const on = deviceOnline && latestState && latestState.power_switch;
-    const { slider } = powerSliderElements();
-    if (!label || !hint) {
-      if (slider) slider.title = deviceOnline ? (on ? 'Turn AC power off' : 'Turn AC power on') : 'Device is offline.';
-      return;
-    }
-    if (!deviceOnline) {
-      label.textContent = 'Device offline';
-      hint.textContent = 'Reconnect WiFi to enable controls.';
-      return;
-    }
-    if (powerSliderState.busy) {
-      label.textContent = 'Sending...';
-      hint.textContent = 'Waiting for device confirmation.';
-      return;
-    }
-    if (powerSliderState.dragging) {
-      label.textContent = powerSliderState.progress >= POWER_SLIDE_THRESHOLD ? 'Release to confirm' : 'Keep sliding';
-      hint.textContent = on ? 'Confirm power off.' : 'Confirm power on.';
-      return;
-    }
-    label.textContent = on ? 'Slide to power off' : 'Slide to power on';
-    hint.textContent = on ? 'Power is on.' : 'Power is off.';
-  }
-
-  function renderPowerSlider() {
-    const { slider } = powerSliderElements();
-    if (!slider) return;
-    const deviceOnline = isDeviceOnlineState(latestState);
-    const on = deviceOnline && latestState && latestState.power_switch;
-    slider.classList.toggle('power-on', Boolean(on));
-    slider.classList.toggle('power-off', !on);
-    slider.classList.toggle('is-busy', powerSliderState.busy);
-    slider.disabled = powerSliderState.busy || !deviceOnline;
-    slider.setAttribute('aria-label', deviceOnline ? (on ? 'Turn AC power off' : 'Turn AC power on') : 'Device offline');
-    slider.setAttribute('aria-pressed', on ? 'true' : 'false');
-    slider.title = deviceOnline ? (on ? 'Turn AC power off' : 'Turn AC power on') : 'Device is offline.';
-    updatePowerSliderLabel();
-  }
-
-  function beginPowerDrag(event) {
-    if (powerSliderState.busy || !isDeviceOnlineState(latestState) || (event.button !== undefined && event.button !== 0)) return;
-    const { slider } = powerSliderElements();
-    if (!slider || !(event.target instanceof Element) || !event.target.closest('.power-slider-knob')) return;
-    powerSliderState.dragging = true;
-    powerSliderState.pointerId = event.pointerId;
-    powerSliderState.startX = event.clientX;
-    slider.classList.add('is-dragging');
-    slider.setPointerCapture(event.pointerId);
-    setPowerSliderProgress(0);
-    event.preventDefault();
-  }
-
-  function movePowerDrag(event) {
-    if (!powerSliderState.dragging || event.pointerId !== powerSliderState.pointerId) return;
-    const { slider, knob } = powerSliderElements();
-    const distance = Math.max(0, event.clientX - powerSliderState.startX);
-    setPowerSliderProgress(distance / powerSliderMaxTravel(slider, knob));
-  }
-
-  function finishPowerDrag(event, cancelled) {
-    if (!powerSliderState.dragging || event.pointerId !== powerSliderState.pointerId) return;
-    const { slider } = powerSliderElements();
-    powerSliderState.dragging = false;
-    powerSliderState.pointerId = null;
-    if (slider) {
-      slider.classList.remove('is-dragging');
-      if (slider.hasPointerCapture(event.pointerId)) slider.releasePointerCapture(event.pointerId);
-    }
-    if (!cancelled && powerSliderState.progress >= POWER_SLIDE_THRESHOLD) {
-      setPowerSliderProgress(1);
-      togglePower();
-      return;
-    }
-    resetPowerSlider();
+    button.classList.toggle('power-on', Boolean(on));
+    button.classList.toggle('power-off', !on);
+    button.classList.toggle('is-busy', powerButtonBusy);
+    button.disabled = powerButtonBusy || !deviceOnline;
+    button.setAttribute('aria-label', deviceOnline ? (on ? 'Turn AC power off' : 'Turn AC power on') : 'Device offline');
+    button.setAttribute('aria-pressed', on ? 'true' : 'false');
+    button.title = deviceOnline ? (on ? 'Turn AC power off' : 'Turn AC power on') : 'Device is offline.';
   }
 
   async function init() {
-    setEnvironmentBadge();
     const session = await fetch('/api/session', { credentials: 'same-origin' }).then((r) => r.json()).catch(() => ({ authenticated: false }));
     if (!session.authenticated) {
       showLogin();
@@ -4613,15 +3607,6 @@
     showApp();
     await probeDeviceStatus().catch(() => {});
     startStateRefresh();
-  }
-
-  function setEnvironmentBadge() {
-    const badge = document.getElementById('environmentBadge');
-    if (!badge) return;
-    const host = window.location.hostname;
-    const local = host === 'localhost' || host === '127.0.0.1' || host === '';
-    badge.textContent = local ? 'Local Preview' : 'Online';
-    badge.classList.toggle('is-local', local);
   }
 
   loginForm.addEventListener('submit', async (event) => {
@@ -4652,8 +3637,6 @@
   acTab.addEventListener('click', () => setPanelView('ac'));
   pcTab.addEventListener('click', () => setPanelView('pc'));
   document.getElementById('wakePcBtn').addEventListener('click', wakePc);
-  const checkPcBtn = document.getElementById('checkPcBtn');
-  if (checkPcBtn) checkPcBtn.addEventListener('click', checkPcStatus);
   document.getElementById('cycleBtn').addEventListener('click', toggleCycle);
   document.getElementById('compressorControl').addEventListener('click', toggleCompressor);
   document.getElementById('swingControl').addEventListener('click', toggleSwing);
@@ -4663,8 +3646,7 @@
   appShell.addEventListener('pointercancel', cancelTabSwipe, { passive: true });
   appShell.addEventListener('click', suppressClickAfterTabSwipe, true);
 
-  const { slider } = powerSliderElements();
-  if (slider) slider.addEventListener('click', togglePower);
+  document.getElementById('powerButton').addEventListener('click', togglePower);
 
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
@@ -4672,7 +3654,7 @@
     });
   }
 
-  init();
+  init().catch((error) => showLogin(error.message || 'Could not load control state.'));
 </script>
 </body>
 </html>

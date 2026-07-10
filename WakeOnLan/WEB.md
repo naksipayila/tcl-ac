@@ -26,13 +26,14 @@ Cloudflare and the browser cannot send Wake-on-LAN UDP broadcast packets directl
 - `relay/install-termux-boot-web.sh`: optional Termux:Boot startup installer.
 - `relay/web-config.example.env`: relay config template.
 
-The old `web/worker.js` remains as the standalone prototype/reference, but the active app is under `../cloudflare/`.
+`web/` is an old standalone prototype/reference; the active app is under `../cloudflare/`.
 
 ## Cloudflare Requirements
 
 The active Worker needs:
 
-- `WOL_STATE` KV binding in `cloudflare/wrangler.toml`.
+- Cloudflare D1 binding for command and relay heartbeat state.
+- `WOL_STATE` KV is only a legacy read fallback while it remains configured.
 - `RELAY_TOKEN` Cloudflare secret for the Android relay.
 - Existing panel auth secrets: `PANEL_PASSWORD` and `PANEL_SESSION_SECRET`.
 

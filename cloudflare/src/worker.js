@@ -46,7 +46,6 @@ export default {
       try {
         const state = await loadState(env);
         state.last_error = safeErrorMessage(error);
-        state.updated_at = nowSeconds();
         await saveState(env, state);
       } catch (saveError) {
         console.error("Could not persist scheduled error", saveError && saveError.message ? saveError.message : saveError);
@@ -175,9 +174,8 @@ async function handleLogin(request, env) {
 
   await clearLoginRateLimit(env, rateKey);
 
-  const issuedAt = nowSeconds();
-  const expiresAt = issuedAt + SESSION_TTL_SECONDS;
-  const payload = base64UrlEncodeText(JSON.stringify({ iat: issuedAt, exp: expiresAt }));
+  const expiresAt = nowSeconds() + SESSION_TTL_SECONDS;
+  const payload = base64UrlEncodeText(JSON.stringify({ exp: expiresAt }));
   const signature = await hmacBase64Url(env.PANEL_SESSION_SECRET, payload);
   const cookie = `${SESSION_COOKIE}=${payload}.${signature}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${SESSION_TTL_SECONDS}`;
   return jsonResponse({ ok: true, authenticated: true }, 200, { "Set-Cookie": cookie });
@@ -384,7 +382,6 @@ async function createWolWakeCommand(env) {
     message: "Waiting for relay.",
   };
   await putWolJson(env, WOL_COMMAND_KEY, command);
-  return command;
 }
 
 async function nextWolRelayCommand(env) {
@@ -442,7 +439,7 @@ async function startCycle(env) {
   if (state.running) {
     return { ok: true, message: "Cycle is already running.", state: snapshot(state) };
   }
-  await assertDeviceReady(env, state, { requirePower: true });
+  await assertDeviceReady(state, { requirePower: true });
 
   const now = nowSeconds();
   const setpoint = config(env).cycle.cooling_setpoint_f;
@@ -454,7 +451,6 @@ async function startCycle(env) {
   state.phase = "cooling";
   state.cycle_number = Number(state.cycle_number || 0) + 1;
   bumpCycleVersion(state);
-  state.phase_started_at = now;
   state.phase_end_at = now + config(env).cycle.cooling_minutes * 60;
   state.active_temperature = temperatureState(config(env).cycle.cooling_setpoint_f, "cycle.cooling");
   state.last_error = null;
@@ -467,7 +463,6 @@ async function stopCycle(env) {
   state.running = false;
   state.phase = "stopped";
   bumpCycleVersion(state);
-  state.phase_started_at = null;
   state.phase_end_at = null;
   state.last_error = null;
   await saveState(env, state);
@@ -486,12 +481,11 @@ async function sendPhase(env, phase) {
   }
 
   const state = await loadState(env);
-  await assertDeviceReady(env, state, { requirePower: true });
+  await assertDeviceReady(state, { requirePower: true });
   await sendDesiredWithSafety(env, state, buildSetpointDesired(setpoint), `cf_${phase}`, confirmTemperature(setpoint));
   state.running = false;
   state.phase = "stopped";
   bumpCycleVersion(state);
-  state.phase_started_at = null;
   state.phase_end_at = null;
   state.active_temperature = temperatureState(setpoint, `manual.${phase}`);
   state.last_error = null;
@@ -501,13 +495,12 @@ async function sendPhase(env, phase) {
 
 async function setPower(env, enabled) {
   const state = await loadState(env);
-  await assertDeviceReady(env, state);
+  await assertDeviceReady(state);
   await sendDesiredWithSafety(env, state, { powerSwitch: enabled ? 1 : 0 }, "cf_power", [confirmBoolean("powerSwitch", enabled)]);
   if (!enabled) {
     state.running = false;
     state.phase = "stopped";
     bumpCycleVersion(state);
-    state.phase_started_at = null;
     state.phase_end_at = null;
   }
   state.power_switch = enabled;
@@ -518,7 +511,7 @@ async function setPower(env, enabled) {
 
 async function setSwing(env, enabled) {
   const state = await loadState(env);
-  await assertDeviceReady(env, state, { requirePower: true });
+  await assertDeviceReady(state, { requirePower: true });
   await sendDesiredWithSafety(env, state, { swingWind: enabled ? 1 : 0 }, "cf_swing", [confirmBoolean("swingWind", enabled)]);
   state.swing_wind = enabled;
   state.last_error = null;
@@ -538,7 +531,7 @@ async function runScheduledCycle(env) {
   const now = nowSeconds();
 
   try {
-    await assertDeviceReady(env, state, { requirePower: true });
+    await assertDeviceReady(state, { requirePower: true });
     await sendDesiredWithSafety(env, state, buildSetpointDesired(setpoint), `cf_cron_${nextPhase}`, confirmTemperature(setpoint));
   } catch (error) {
     await deferCycleRetry(env, expected, error);
@@ -550,7 +543,6 @@ async function runScheduledCycle(env) {
   copyDeviceObservations(latest, state);
   latest.phase = nextPhase;
   bumpCycleVersion(latest);
-  latest.phase_started_at = now;
   latest.phase_end_at = now + minutes * 60;
   latest.active_temperature = temperatureState(setpoint, `cycle.${nextPhase}`);
   latest.last_command_at = state.last_command_at;
@@ -651,7 +643,7 @@ async function probeDevice(env) {
   return { ok: true, message: "Device offline.", state: snapshot(state) };
 }
 
-async function assertDeviceReady(env, state, options = {}) {
+async function assertDeviceReady(state, options = {}) {
   if (!state.device_online) {
     throw new HttpError(409, "Device is offline.", { silent: true });
   }
@@ -669,7 +661,7 @@ async function sendDesiredWithSafety(env, state, desired, tokenPrefix, confirmat
   try {
     await sendDesiredState(env, desired, tokenPrefix);
     state.last_command_at = nowSeconds();
-    await waitForDeviceConfirmation(env, state, desired, confirmation, tokenPrefix);
+    await waitForDeviceConfirmation(env, state, confirmation);
   } catch (error) {
     state.last_error = error instanceof HttpError && error.silent ? null : safeErrorMessage(error);
     await saveState(env, state).catch(() => null);
@@ -687,7 +679,7 @@ async function sendDesiredState(env, desired, tokenPrefix) {
   return mqttWsPublish(env, topic, payload);
 }
 
-async function waitForDeviceConfirmation(env, state, desired, confirmation, tokenPrefix) {
+async function waitForDeviceConfirmation(env, state, confirmation) {
   const checks = Array.isArray(confirmation) ? confirmation : [];
   if (!checks.length) return;
 
@@ -699,7 +691,7 @@ async function waitForDeviceConfirmation(env, state, desired, confirmation, toke
       markDeviceUnverified(state, "Device status could not be verified.", { source: "shadow" });
       throw new HttpError(504, "Device status could not be verified.", { silent: true });
     }
-    applyDeviceStatus(env, state, status);
+    applyDeviceStatus(state, status);
     if (confirmationMatches(status, checks)) {
       markDeviceOnline(state, status);
       return;
@@ -764,11 +756,7 @@ async function readThingConnectivity(env) {
   const thing = things.find((item) => item && item.thingName === cfg.device_id) || things[0];
   const connectivity = thing && typeof thing === "object" ? thing.connectivity : null;
   if (!connectivity || typeof connectivity.connected !== "boolean") return null;
-  return {
-    connected: connectivity.connected,
-    timestamp: connectivityTimestamp(connectivity.timestamp),
-    disconnect_reason: typeof connectivity.disconnectReason === "string" ? connectivity.disconnectReason : null,
-  };
+  return { connected: connectivity.connected };
 }
 
 async function mqttWsPublish(env, topic, payload) {
@@ -807,7 +795,6 @@ async function mqttWsPublish(env, topic, payload) {
       ws.close(1000, "done");
     }
   }
-  return null;
 }
 
 async function awsPresignedMqttUrl(env) {
@@ -1102,7 +1089,6 @@ async function saveState(env, state) {
       .run(),
   );
   Object.assign(state, normalized);
-  return normalized;
 }
 
 async function runD1Operation(operation) {
@@ -1128,7 +1114,6 @@ function defaultState(env) {
     phase: "stopped",
     cycle_number: 0,
     cycle_version: 0,
-    phase_started_at: null,
     phase_end_at: null,
     last_command_at: 0,
     power_switch: false,
@@ -1152,7 +1137,6 @@ function normalizeState(state) {
     phase: typeof state.phase === "string" ? state.phase : "stopped",
     cycle_number: Number(state.cycle_number || 0),
     cycle_version: Number(state.cycle_version || 0),
-    phase_started_at: nullableNumber(state.phase_started_at),
     phase_end_at: nullableNumber(state.phase_end_at),
     last_command_at: Number(state.last_command_at || 0),
     power_switch: Boolean(state.power_switch),
@@ -1197,7 +1181,7 @@ async function refreshDeviceStatus(env, state) {
   state.device_checked_at = nowSeconds();
   try {
     const status = await readDeviceStatus(env);
-    applyDeviceStatus(env, state, status);
+    applyDeviceStatus(state, status);
     if (state.device_online) {
       state.device_status_error = null;
     }
@@ -1209,7 +1193,7 @@ async function refreshDeviceStatus(env, state) {
   }
 }
 
-function applyDeviceStatus(env, state, status) {
+function applyDeviceStatus(state, status) {
   applyReportedDeviceState(state, status);
 
   const connection = inferDeviceConnection(status);
@@ -1234,7 +1218,6 @@ function applyReportedDeviceState(state, status) {
       state.running = false;
       state.phase = "stopped";
       bumpCycleVersion(state);
-      state.phase_started_at = null;
       state.phase_end_at = null;
     }
   }
@@ -1352,7 +1335,7 @@ function findOnlineStatusValue(value, depth) {
   for (const [key, child] of Object.entries(value)) {
     const keyKind = onlineStatusKeyKind(key);
     if (keyKind) {
-      const parsed = onlineStatusValue(child, keyKind === "generic");
+      const parsed = onlineStatusValue(child);
       if (parsed !== null) return parsed;
     }
     if (child && typeof child === "object") {
@@ -1385,8 +1368,7 @@ function onlineStatusKeyKind(key) {
   return null;
 }
 
-function onlineStatusValue(value, genericStatus = false) {
-  if (genericStatus && typeof value !== "string") return null;
+function onlineStatusValue(value) {
   if (typeof value === "boolean") return value;
   if (typeof value === "number") return Number.isFinite(value) ? value !== 0 : null;
   if (typeof value !== "string") return null;
@@ -1394,7 +1376,6 @@ function onlineStatusValue(value, genericStatus = false) {
   if (!normalized) return null;
   if (["online", "connected", "connect", "wifi_connected", "network_connected", "reachable", "available", "active"].includes(normalized)) return true;
   if (["offline", "disconnected", "disconnect", "wifi_disconnected", "network_disconnected", "unreachable", "unavailable", "inactive"].includes(normalized)) return false;
-  if (genericStatus) return null;
   if (["1", "true", "yes", "on"].includes(normalized)) return true;
   if (["0", "false", "no", "off"].includes(normalized)) return false;
   return null;
@@ -1453,12 +1434,6 @@ function booleanValue(value) {
     return Number.isFinite(parsed) ? parsed !== 0 : null;
   }
   return null;
-}
-
-function connectivityTimestamp(value) {
-  const timestamp = numericValue(value);
-  if (timestamp === null || timestamp <= 0) return null;
-  return timestamp > 10_000_000_000 ? Math.floor(timestamp / 1000) : Math.floor(timestamp);
 }
 
 function emptyTemperature() {

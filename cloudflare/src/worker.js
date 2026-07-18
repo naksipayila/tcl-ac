@@ -1,4 +1,6 @@
 const STATE_KEY = "controller";
+const DEVICE_COMMAND_LOCK_KEY = "lock:device_command";
+const DEVICE_COMMAND_LOCK_SECONDS = 45;
 const WOL_COMMAND_KEY = "command:current";
 const WOL_RELAY_KEY = "relay:last_seen";
 const SESSION_COOKIE = "tcl_ac_session";
@@ -19,6 +21,7 @@ class HttpError extends Error {
     this.name = "HttpError";
     this.status = status;
     this.silent = Boolean(options.silent);
+    this.code = options.code || null;
   }
 }
 
@@ -435,27 +438,39 @@ async function reportWolRelayResult(env, body) {
 }
 
 async function startCycle(env) {
-  const state = await loadState(env);
-  if (state.running) {
-    return { ok: true, message: "Cycle is already running.", state: snapshot(state) };
-  }
-  await assertDeviceReady(state, { requirePower: true });
+  return withDeviceCommandLock(env, async () => {
+    const state = await loadState(env);
+    if (state.running) {
+      return { ok: true, message: "Cycle is already running.", state: snapshot(state) };
+    }
+    await assertDeviceReady(state, { requirePower: true });
 
-  const now = nowSeconds();
-  const setpoint = config(env).cycle.cooling_setpoint_f;
-  const desired = buildSetpointDesired(setpoint);
-  if (config(env).startup_swing) desired.swingWind = 1;
-  await sendDesiredWithSafety(env, state, desired, "cf_start", confirmTemperature(setpoint));
+    const cycleVersion = Number(state.cycle_version || 0);
+    const now = nowSeconds();
+    const setpoint = config(env).cycle.cooling_setpoint_f;
+    const desired = buildSetpointDesired(setpoint);
+    const confirmation = confirmTemperature(setpoint);
+    if (config(env).startup_swing) {
+      desired.swingWind = 1;
+      confirmation.push(confirmBoolean("swingWind", true));
+    }
+    await sendDesiredWithSafety(env, state, desired, "cf_start", confirmation);
 
-  state.running = true;
-  state.phase = "cooling";
-  state.cycle_number = Number(state.cycle_number || 0) + 1;
-  bumpCycleVersion(state);
-  state.phase_end_at = now + config(env).cycle.cooling_minutes * 60;
-  state.active_temperature = temperatureState(config(env).cycle.cooling_setpoint_f, "cycle.cooling");
-  state.last_error = null;
-  await saveState(env, state);
-  return { ok: true, message: "Cycle started.", state: snapshot(state) };
+    state.running = true;
+    state.phase = "cooling";
+    state.cycle_number = Number(state.cycle_number || 0) + 1;
+    bumpCycleVersion(state);
+    state.phase_end_at = now + config(env).cycle.cooling_minutes * 60;
+    state.active_temperature = temperatureState(config(env).cycle.cooling_setpoint_f, "cycle.cooling");
+    if (config(env).startup_swing) state.swing_wind = true;
+    state.last_error = null;
+    const committed = await saveCommandState(env, state, cycleVersion);
+    return {
+      ok: true,
+      message: committed ? "Cycle started." : "Cycle start confirmed, but a newer cycle state was preserved.",
+      state: snapshot(state),
+    };
+  });
 }
 
 async function stopCycle(env) {
@@ -470,53 +485,74 @@ async function stopCycle(env) {
 }
 
 async function sendPhase(env, phase) {
-  const cfg = config(env);
-  let setpoint;
-  if (phase === "cooling") {
-    setpoint = cfg.cycle.cooling_setpoint_f;
-  } else if (phase === "resting") {
-    setpoint = cfg.cycle.resting_setpoint_f;
-  } else {
-    throw new HttpError(400, "phase must be cooling or resting");
-  }
+  return withDeviceCommandLock(env, async () => {
+    const cfg = config(env);
+    let setpoint;
+    if (phase === "cooling") {
+      setpoint = cfg.cycle.cooling_setpoint_f;
+    } else if (phase === "resting") {
+      setpoint = cfg.cycle.resting_setpoint_f;
+    } else {
+      throw new HttpError(400, "phase must be cooling or resting");
+    }
 
-  const state = await loadState(env);
-  await assertDeviceReady(state, { requirePower: true });
-  await sendDesiredWithSafety(env, state, buildSetpointDesired(setpoint), `cf_${phase}`, confirmTemperature(setpoint));
-  state.running = false;
-  state.phase = "stopped";
-  bumpCycleVersion(state);
-  state.phase_end_at = null;
-  state.active_temperature = temperatureState(setpoint, `manual.${phase}`);
-  state.last_error = null;
-  await saveState(env, state);
-  return { ok: true, message: `${setpoint}F command sent.`, state: snapshot(state) };
-}
-
-async function setPower(env, enabled) {
-  const state = await loadState(env);
-  await assertDeviceReady(state);
-  await sendDesiredWithSafety(env, state, { powerSwitch: enabled ? 1 : 0 }, "cf_power", [confirmBoolean("powerSwitch", enabled)]);
-  if (!enabled) {
+    const state = await loadState(env);
+    const cycleVersion = Number(state.cycle_version || 0);
+    await assertDeviceReady(state, { requirePower: true });
+    await sendDesiredWithSafety(env, state, buildSetpointDesired(setpoint), `cf_${phase}`, confirmTemperature(setpoint));
     state.running = false;
     state.phase = "stopped";
     bumpCycleVersion(state);
     state.phase_end_at = null;
-  }
-  state.power_switch = enabled;
-  state.last_error = null;
-  await saveState(env, state);
-  return { ok: true, message: `AC power turned ${enabled ? "on" : "off"}.`, state: snapshot(state) };
+    state.active_temperature = temperatureState(setpoint, `manual.${phase}`);
+    state.last_error = null;
+    const committed = await saveCommandState(env, state, cycleVersion);
+    return {
+      ok: true,
+      message: committed ? `${setpoint}F command sent.` : "Command confirmed, but a newer cycle state was preserved.",
+      state: snapshot(state),
+    };
+  });
+}
+
+async function setPower(env, enabled) {
+  return withDeviceCommandLock(env, async () => {
+    const state = await loadState(env);
+    const cycleVersion = Number(state.cycle_version || 0);
+    await assertDeviceReady(state);
+    await sendDesiredWithSafety(env, state, { powerSwitch: enabled ? 1 : 0 }, "cf_power", [confirmBoolean("powerSwitch", enabled)]);
+    if (!enabled) {
+      state.running = false;
+      state.phase = "stopped";
+      bumpCycleVersion(state);
+      state.phase_end_at = null;
+    }
+    state.power_switch = enabled;
+    state.last_error = null;
+    const committed = await saveCommandState(env, state, cycleVersion);
+    return {
+      ok: true,
+      message: committed ? `AC power turned ${enabled ? "on" : "off"}.` : "Power command confirmed, but a newer cycle state was preserved.",
+      state: snapshot(state),
+    };
+  });
 }
 
 async function setSwing(env, enabled) {
-  const state = await loadState(env);
-  await assertDeviceReady(state, { requirePower: true });
-  await sendDesiredWithSafety(env, state, { swingWind: enabled ? 1 : 0 }, "cf_swing", [confirmBoolean("swingWind", enabled)]);
-  state.swing_wind = enabled;
-  state.last_error = null;
-  await saveState(env, state);
-  return { ok: true, message: `Swing turned ${enabled ? "on" : "off"}.`, state: snapshot(state) };
+  return withDeviceCommandLock(env, async () => {
+    const state = await loadState(env);
+    const cycleVersion = Number(state.cycle_version || 0);
+    await assertDeviceReady(state, { requirePower: true });
+    await sendDesiredWithSafety(env, state, { swingWind: enabled ? 1 : 0 }, "cf_swing", [confirmBoolean("swingWind", enabled)]);
+    state.swing_wind = enabled;
+    state.last_error = null;
+    const committed = await saveCommandState(env, state, cycleVersion);
+    return {
+      ok: true,
+      message: committed ? `Swing turned ${enabled ? "on" : "off"}.` : "Swing command confirmed, but a newer cycle state was preserved.",
+      state: snapshot(state),
+    };
+  });
 }
 
 async function runScheduledCycle(env) {
@@ -524,30 +560,37 @@ async function runScheduledCycle(env) {
   if (!state.running || !state.phase_end_at || nowSeconds() < Number(state.phase_end_at)) return;
   const expected = cycleRunToken(state);
 
-  const cfg = config(env);
-  const nextPhase = state.phase === "cooling" ? "resting" : "cooling";
-  const setpoint = nextPhase === "cooling" ? cfg.cycle.cooling_setpoint_f : cfg.cycle.resting_setpoint_f;
-  const minutes = nextPhase === "cooling" ? cfg.cycle.cooling_minutes : cfg.cycle.resting_minutes;
-  const now = nowSeconds();
-
   try {
-    await assertDeviceReady(state, { requirePower: true });
-    await sendDesiredWithSafety(env, state, buildSetpointDesired(setpoint), `cf_cron_${nextPhase}`, confirmTemperature(setpoint));
-  } catch (error) {
-    await deferCycleRetry(env, expected, error);
-    return;
-  }
+    await withDeviceCommandLock(env, async () => {
+      const current = await loadState(env);
+      if (!sameCycleRun(current, expected) || nowSeconds() < Number(current.phase_end_at)) return;
 
-  const latest = await loadState(env);
-  if (!sameCycleRun(latest, expected)) return;
-  copyDeviceObservations(latest, state);
-  latest.phase = nextPhase;
-  bumpCycleVersion(latest);
-  latest.phase_end_at = now + minutes * 60;
-  latest.active_temperature = temperatureState(setpoint, `cycle.${nextPhase}`);
-  latest.last_command_at = state.last_command_at;
-  latest.last_error = null;
-  await saveState(env, latest);
+      const cfg = config(env);
+      const nextPhase = current.phase === "cooling" ? "resting" : "cooling";
+      const setpoint = nextPhase === "cooling" ? cfg.cycle.cooling_setpoint_f : cfg.cycle.resting_setpoint_f;
+      const minutes = nextPhase === "cooling" ? cfg.cycle.cooling_minutes : cfg.cycle.resting_minutes;
+      const now = nowSeconds();
+      await assertDeviceReady(current, { requirePower: true });
+      await sendDesiredWithSafety(env, current, buildSetpointDesired(setpoint), `cf_cron_${nextPhase}`, confirmTemperature(setpoint));
+
+      const latest = await loadState(env);
+      if (!sameCycleRun(latest, expected)) {
+        await saveCommandObservations(env, latest, current);
+        return;
+      }
+      copyDeviceObservations(latest, current);
+      latest.phase = nextPhase;
+      bumpCycleVersion(latest);
+      latest.phase_end_at = now + minutes * 60;
+      latest.active_temperature = temperatureState(setpoint, `cycle.${nextPhase}`);
+      latest.last_command_at = current.last_command_at;
+      latest.last_error = null;
+      await saveState(env, latest);
+    });
+  } catch (error) {
+    if (isDeviceCommandBusy(error)) return;
+    await deferCycleRetry(env, expected, error);
+  }
 }
 
 async function deferCycleRetry(env, expected, error) {
@@ -580,6 +623,7 @@ function bumpCycleVersion(state) {
 function copyDeviceObservations(target, source) {
   target.power_switch = source.power_switch;
   target.swing_wind = source.swing_wind;
+  target.active_temperature = source.active_temperature;
   target.device_online = source.device_online;
   target.device_connection_verified = source.device_connection_verified;
   target.device_status_source = source.device_status_source;
@@ -664,9 +708,76 @@ async function sendDesiredWithSafety(env, state, desired, tokenPrefix, confirmat
     await waitForDeviceConfirmation(env, state, confirmation);
   } catch (error) {
     state.last_error = error instanceof HttpError && error.silent ? null : safeErrorMessage(error);
-    await saveState(env, state).catch(() => null);
+    await saveCommandFailure(env, state).catch(() => null);
     throw error;
   }
+}
+
+async function withDeviceCommandLock(env, operation) {
+  const token = await acquireDeviceCommandLock(env);
+  try {
+    return await operation();
+  } finally {
+    await releaseDeviceCommandLock(env, token).catch((error) => {
+      console.error("Could not release device command lock", safeErrorMessage(error));
+    });
+  }
+}
+
+async function acquireDeviceCommandLock(env) {
+  const token = crypto.randomUUID();
+  const expiresAt = nowSeconds() + DEVICE_COMMAND_LOCK_SECONDS;
+  const result = await runD1Operation(() =>
+    env.DB.prepare(
+      "INSERT INTO state (key, value, updated_at) VALUES (?, ?, ?) "
+      + "ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at "
+      + "WHERE state.updated_at <= ?",
+    ).bind(DEVICE_COMMAND_LOCK_KEY, token, expiresAt, nowSeconds()).run(),
+  );
+  if (Number(result && result.meta && result.meta.changes) !== 1) {
+    throw new HttpError(409, "Another AC command is already in progress.", { code: "device_command_busy" });
+  }
+  return token;
+}
+
+async function releaseDeviceCommandLock(env, token) {
+  await runD1Operation(() =>
+    env.DB.prepare("DELETE FROM state WHERE key = ? AND value = ?")
+      .bind(DEVICE_COMMAND_LOCK_KEY, token)
+      .run(),
+  );
+}
+
+function isDeviceCommandBusy(error) {
+  return error instanceof HttpError && error.code === "device_command_busy";
+}
+
+async function saveCommandFailure(env, state) {
+  const latest = await loadState(env);
+  if (Number(latest.cycle_version || 0) === Number(state.cycle_version || 0)) {
+    await saveState(env, state);
+    return;
+  }
+  await saveCommandObservations(env, latest, state);
+  Object.assign(state, latest);
+}
+
+async function saveCommandState(env, state, expectedCycleVersion) {
+  const latest = await loadState(env);
+  if (Number(latest.cycle_version || 0) !== expectedCycleVersion) {
+    await saveCommandObservations(env, latest, state);
+    Object.assign(state, latest);
+    return false;
+  }
+  await saveState(env, state);
+  return true;
+}
+
+async function saveCommandObservations(env, target, source) {
+  copyDeviceObservations(target, source);
+  target.last_command_at = Math.max(Number(target.last_command_at || 0), Number(source.last_command_at || 0));
+  target.last_error = source.last_error || null;
+  await saveState(env, target);
 }
 
 async function sendDesiredState(env, desired, tokenPrefix) {
@@ -684,12 +795,19 @@ async function waitForDeviceConfirmation(env, state, confirmation) {
   if (!checks.length) return;
 
   const deadline = Date.now() + DEVICE_COMMAND_CONFIRM_TIMEOUT_MS;
+  let lastReadError = null;
   while (Date.now() <= deadline) {
     await delay(DEVICE_CONFIRM_INTERVAL_MS);
-    const status = await readDeviceStatus(env).catch(() => null);
+    let status = null;
+    try {
+      status = await readDeviceStatus(env);
+    } catch (error) {
+      lastReadError = safeErrorMessage(error);
+      continue;
+    }
     if (!status) {
-      markDeviceUnverified(state, "Device status could not be verified.", { source: "shadow" });
-      throw new HttpError(504, "Device status could not be verified.", { silent: true });
+      lastReadError = "Device status could not be verified.";
+      continue;
     }
     applyDeviceStatus(state, status);
     if (confirmationMatches(status, checks)) {
@@ -702,8 +820,9 @@ async function waitForDeviceConfirmation(env, state, confirmation) {
     }
   }
 
-  state.device_status_error = "Device did not confirm command.";
-  throw new HttpError(504, "Device did not confirm command.", { silent: true });
+  const message = lastReadError || "Device did not confirm command.";
+  markDeviceUnverified(state, message, { source: "shadow" });
+  throw new HttpError(504, message, { silent: true });
 }
 
 function confirmTemperature(fahrenheit) {

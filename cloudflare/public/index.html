@@ -3490,6 +3490,7 @@
   let statusToastTimer = null;
   let wolWakeBusy = false;
   let deviceProbeBusy = false;
+  let acActionBusy = false;
   let powerButtonBusy = false;
   const tabSwipeState = { active: false, pointerId: null, startX: 0, startY: 0, lastX: 0, lastY: 0, suppressClickUntil: 0 };
 
@@ -3788,7 +3789,7 @@
     document.getElementById('remaining').textContent = deviceOnline ? formatRemaining(state.remaining_seconds) : '--:--';
     const cycleBtn = document.getElementById('cycleBtn');
     cycleBtn.textContent = state.running ? 'Stop Cycle' : 'Start Cycle';
-    cycleBtn.disabled = state.running ? false : (!deviceOnline || !powered);
+    cycleBtn.disabled = acActionBusy || (state.running ? false : (!deviceOnline || !powered));
     cycleBtn.classList.toggle('action-primary', !state.running);
     cycleBtn.classList.toggle('action-danger', Boolean(state.running));
 
@@ -3797,8 +3798,8 @@
     const compressorToggle = document.getElementById('compressorToggle');
     compressorToggle.checked = powered && compressorOn;
     compressorControl.classList.toggle('is-active', powered && compressorOn);
-    compressorControl.classList.toggle('is-disabled', !deviceOnline || !powered);
-    compressorControl.disabled = !deviceOnline || !powered;
+    compressorControl.classList.toggle('is-disabled', acActionBusy || !deviceOnline || !powered);
+    compressorControl.disabled = acActionBusy || !deviceOnline || !powered;
     compressorControl.setAttribute('aria-pressed', powered && compressorOn ? 'true' : 'false');
     compressorControl.title = deviceOnline ? (powered ? (compressorOn ? 'Set to ' + formatFahrenheit(restingSetpointF) + '.' : 'Set to ' + formatFahrenheit(coolingSetpointF) + '.') : 'Turn AC on first.') : 'Device is offline.';
 
@@ -3806,8 +3807,8 @@
     const swingControl = document.getElementById('swingControl');
     swingToggle.checked = powered && Boolean(state.swing_wind);
     swingControl.classList.toggle('is-active', powered && Boolean(state.swing_wind));
-    swingControl.classList.toggle('is-disabled', !deviceOnline || !powered);
-    swingControl.disabled = !deviceOnline || !powered;
+    swingControl.classList.toggle('is-disabled', acActionBusy || !deviceOnline || !powered);
+    swingControl.disabled = acActionBusy || !deviceOnline || !powered;
     swingControl.setAttribute('aria-pressed', powered && Boolean(state.swing_wind) ? 'true' : 'false');
 
     renderPowerButton();
@@ -3841,6 +3842,9 @@
   }
 
   async function postAction(path, body) {
+    if (acActionBusy) return;
+    acActionBusy = true;
+    if (latestState) renderState(latestState);
     setStatus('Sending...');
     try {
       const data = await requestJson(path, {
@@ -3853,6 +3857,9 @@
     } catch (error) {
       if (!error.silent) setStatus(error.message, true);
       await loadState().catch(() => {});
+    } finally {
+      acActionBusy = false;
+      if (latestState) renderState(latestState);
     }
   }
 
@@ -3894,7 +3901,7 @@
     button.classList.toggle('power-on', Boolean(on));
     button.classList.toggle('power-off', !on);
     button.classList.toggle('is-busy', powerButtonBusy);
-    button.disabled = powerButtonBusy || !deviceOnline;
+    button.disabled = powerButtonBusy || acActionBusy || !deviceOnline;
     button.setAttribute('aria-label', deviceOnline ? (on ? 'Turn AC power off' : 'Turn AC power on') : 'Device offline');
     button.setAttribute('aria-pressed', on ? 'true' : 'false');
     button.title = deviceOnline ? (on ? 'Turn AC power off' : 'Turn AC power on') : 'Device is offline.';

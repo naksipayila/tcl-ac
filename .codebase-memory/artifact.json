@@ -1,0 +1,11 @@
+{
+    "schema_version": 2,
+    "commit": "f22f32b538c5d64b18e98d4840d17e2ebde7b9a2",
+    "indexed_at": "2026-07-16T06:42:10Z",
+    "project": "TCL",
+    "nodes": 378,
+    "edges": 931,
+    "original_size": 2162688,
+    "compressed_size": 333046,
+    "compression_level": 9
+}

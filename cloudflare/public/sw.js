@@ -1,4 +1,4 @@
-const CACHE_NAME = "home-control-shell-v16";
+const CACHE_NAME = "home-control-shell-v17";
 const SHELL_ASSETS = [
   "/",
   "/favicon.png",

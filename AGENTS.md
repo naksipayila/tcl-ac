@@ -1,7 +1,7 @@
 # Agent Notes
 
 ## Safety
-- Live app is Cloudflare-only at `https://tcl-ac.qaliqtaha.workers.dev`; never use GitHub Pages or deploy `WakeOnLan/web` for production.
+- Live app is Cloudflare-only at `https://tcl-ac.qaliqtaha.workers.dev`; never use GitHub Pages or deploy a separate WOL worker for production.
 - Deploy only when explicitly asked. Use `cloudflare/` as the package root; the repo root is not a Node package.
 - Never print, commit, or paste `TCL_SSO_TOKEN`, captured `ssotoken`, AWS credentials, Authorization headers, cookies, `RELAY_TOKEN`, or presigned AWS/MQTT URLs.
 - AC-changing routes are `POST /api/start`, `/api/power`, `/api/swing`, and `/api/phase`; cron also sends AC commands when D1 `controller.running=true`.
@@ -20,7 +20,7 @@
 ## Architecture
 - `cloudflare/src/worker.js` owns API routing, auth cookies, D1 state, WOL relay endpoints, AWS SigV4, MQTT-over-WebSocket shadow publishing, and cron phase switching.
 - `cloudflare/public/index.html` is the full UI; there is no frontend build step. It polls `/api/state` every second and polls `/api/wol/status` only while the PC tab is open.
-- `cloudflare/wrangler.toml` owns bindings/env, assets, cron `* * * * *`, 70F/80F 20/20 cycle values, `MIN_SECONDS_BETWEEN_COMMANDS=5`, and WOL relay timing.
+- `cloudflare/wrangler.toml` owns bindings/env, assets, cron `* * * * *`, 20C/30C 20/20 cycle values, `MIN_SECONDS_BETWEEN_COMMANDS=5`, and WOL relay timing.
 - Keep `assets.run_worker_first = ["/api/*"]`; otherwise API requests fall through to static asset 404s.
 - D1 schema is `cloudflare/migrations/0001_state.sql`; the single `state` table stores `controller`, login-rate keys, and WOL keys when DB is bound.
 - WOL keys are `command:current` and `relay:last_seen`; Worker reads D1 first and only falls back to `WOL_STATE` KV. Avoid direct KV writes because the free-tier write limit has already been hit.
@@ -28,17 +28,16 @@
 - PWA files are `cloudflare/public/manifest.webmanifest`, `cloudflare/public/sw.js`, and `cloudflare/public/favicon.png`; service worker must not cache `/api/*` and should get a cache-name bump when cached assets change.
 
 ## AC Cycle Behavior
-- `POST /api/start` sends the 70F cooling setpoint and startup swing when `STARTUP_SWING=1`, then starts the stored 20/20 loop.
-- `POST /api/phase` sends a manual 70F/80F setpoint and stops the stored loop; the UI label is `Compressor` but it is setpoint control, not a real compressor sensor.
+- `POST /api/start` sends the 20C cooling setpoint and startup swing when `STARTUP_SWING=1`, then starts the stored 20/20 loop.
+- `POST /api/phase` sends a manual 20C/30C setpoint and stops the stored loop; the UI label is `Compressor` but it is setpoint control, not a real compressor sensor.
 - `Set Temp` / `active_temperature` comes from reported target setpoint fields, not ambient room temperature.
 - Cron transitions use `cycle_version` to avoid stale writes resurrecting a stopped cycle; failed cron transitions defer retry by `CYCLE_RETRY_SECONDS` (5 minutes), not every minute.
 - Device command confirmation waits 20 seconds and does not clear desired state on timeout, so slow power-on commands are not cancelled before the AC receives them.
 
 ## WOL Relay
-- Remote wake flow is `Browser -> Home Control Worker -> Android/Termux relay -> LAN magic packet`; browsers/Cloudflare cannot send UDP broadcast directly.
-- Active relay files are under `WakeOnLan/relay/`; `WakeOnLan/web` is only an old standalone prototype/reference. Follow `WakeOnLan/AGENTS.md` for that subtree.
-- Relay config must use `WOL_WEB_URL=https://tcl-ac.qaliqtaha.workers.dev`; test with `sh relay/run-web-relay.sh --check` then `sh relay/run-web-relay.sh --ping`.
-- Current PC defaults in examples are MAC `34:5A:60:4A:8E:47` and broadcast `192.168.1.255`; keep `relay/web-config.env` private because it contains `WOL_RELAY_TOKEN`.
+- Remote wake flow is `Browser -> Home Control Worker -> Android relay app -> PC`; the panel only queues a command and shows relay status.
+- The Android relay app uses `POST /api/relay/ping`, `GET /api/relay/next`, and `POST /api/relay/report` with the `RELAY_TOKEN` bearer token.
+- The Worker stores WOL command state under `command:current` and relay heartbeat state under `relay:last_seen`.
 
 ## UI Conventions
 - Keep visible labels English and do not show the AC model label unless asked.
@@ -50,4 +49,4 @@
 ## Repo Notes
 - Required Worker secrets are `TCL_SSO_TOKEN`, `PANEL_PASSWORD`, `PANEL_SESSION_SECRET`, and `RELAY_TOKEN`; keep them in Cloudflare secrets.
 - `cloudflare/package-lock.json` is the real lockfile; root `/package-lock.json` is ignored.
-- `node_modules/`, `.wrangler/`, `.dev.vars`, `.env*`, `WakeOnLan/relay/web-config.env`, `WakeOnLan/phone/config.env`, Python bytecode, and `opencode.json` are local-only and should not be committed. `opencode.json` is user-specific HTTP Toolkit MCP config.
+- `node_modules/`, `.wrangler/`, `.dev.vars`, `.env*`, Python bytecode, and `opencode.json` are local-only and should not be committed. `opencode.json` is user-specific HTTP Toolkit MCP config.

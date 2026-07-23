@@ -128,13 +128,13 @@ async function handleApi(request, env, url) {
 
   if (url.pathname === "/api/power" && request.method === "POST") {
     const body = await readJsonBody(request);
-    const result = await setPower(env, Boolean(body.enabled));
+    const result = await setPower(env, requiredBoolean(body, "enabled"));
     return jsonResponse(result);
   }
 
   if (url.pathname === "/api/swing" && request.method === "POST") {
     const body = await readJsonBody(request);
-    const result = await setSwing(env, Boolean(body.enabled));
+    const result = await setSwing(env, requiredBoolean(body, "enabled"));
     return jsonResponse(result);
   }
 
@@ -447,9 +447,9 @@ async function startCycle(env) {
 
     const cycleVersion = Number(state.cycle_version || 0);
     const now = nowSeconds();
-    const setpoint = config(env).cycle.cooling_setpoint_f;
+    const setpoint = config(env).cycle.cooling_setpoint_c;
     const desired = buildSetpointDesired(setpoint);
-    const confirmation = confirmTemperature(setpoint);
+    const confirmation = [...confirmTemperature(setpoint), confirmBoolean("powerSwitch", true)];
     if (config(env).startup_swing) {
       desired.swingWind = 1;
       confirmation.push(confirmBoolean("swingWind", true));
@@ -461,7 +461,7 @@ async function startCycle(env) {
     state.cycle_number = Number(state.cycle_number || 0) + 1;
     bumpCycleVersion(state);
     state.phase_end_at = now + config(env).cycle.cooling_minutes * 60;
-    state.active_temperature = temperatureState(config(env).cycle.cooling_setpoint_f, "cycle.cooling");
+    state.active_temperature = temperatureState(config(env).cycle.cooling_setpoint_c, "cycle.cooling");
     if (config(env).startup_swing) state.swing_wind = true;
     state.last_error = null;
     const committed = await saveCommandState(env, state, cycleVersion);
@@ -474,14 +474,16 @@ async function startCycle(env) {
 }
 
 async function stopCycle(env) {
-  const state = await loadState(env);
-  state.running = false;
-  state.phase = "stopped";
-  bumpCycleVersion(state);
-  state.phase_end_at = null;
-  state.last_error = null;
-  await saveState(env, state);
-  return { ok: true, message: "Cycle stopped.", state: snapshot(state) };
+  return withDeviceCommandLock(env, async () => {
+    const state = await loadState(env);
+    state.running = false;
+    state.phase = "stopped";
+    bumpCycleVersion(state);
+    state.phase_end_at = null;
+    state.last_error = null;
+    await saveState(env, state);
+    return { ok: true, message: "Cycle stopped.", state: snapshot(state) };
+  });
 }
 
 async function sendPhase(env, phase) {
@@ -489,9 +491,9 @@ async function sendPhase(env, phase) {
     const cfg = config(env);
     let setpoint;
     if (phase === "cooling") {
-      setpoint = cfg.cycle.cooling_setpoint_f;
+      setpoint = cfg.cycle.cooling_setpoint_c;
     } else if (phase === "resting") {
-      setpoint = cfg.cycle.resting_setpoint_f;
+      setpoint = cfg.cycle.resting_setpoint_c;
     } else {
       throw new HttpError(400, "phase must be cooling or resting");
     }
@@ -499,7 +501,10 @@ async function sendPhase(env, phase) {
     const state = await loadState(env);
     const cycleVersion = Number(state.cycle_version || 0);
     await assertDeviceReady(state, { requirePower: true });
-    await sendDesiredWithSafety(env, state, buildSetpointDesired(setpoint), `cf_${phase}`, confirmTemperature(setpoint));
+    await sendDesiredWithSafety(env, state, buildSetpointDesired(setpoint), `cf_${phase}`, [
+      ...confirmTemperature(setpoint),
+      confirmBoolean("powerSwitch", true),
+    ]);
     state.running = false;
     state.phase = "stopped";
     bumpCycleVersion(state);
@@ -509,7 +514,7 @@ async function sendPhase(env, phase) {
     const committed = await saveCommandState(env, state, cycleVersion);
     return {
       ok: true,
-      message: committed ? `${setpoint}F command sent.` : "Command confirmed, but a newer cycle state was preserved.",
+      message: committed ? `${setpoint} C command sent.` : "Command confirmed, but a newer cycle state was preserved.",
       state: snapshot(state),
     };
   });
@@ -543,7 +548,10 @@ async function setSwing(env, enabled) {
     const state = await loadState(env);
     const cycleVersion = Number(state.cycle_version || 0);
     await assertDeviceReady(state, { requirePower: true });
-    await sendDesiredWithSafety(env, state, { swingWind: enabled ? 1 : 0 }, "cf_swing", [confirmBoolean("swingWind", enabled)]);
+    await sendDesiredWithSafety(env, state, { swingWind: enabled ? 1 : 0 }, "cf_swing", [
+      confirmBoolean("swingWind", enabled),
+      confirmBoolean("powerSwitch", true),
+    ]);
     state.swing_wind = enabled;
     state.last_error = null;
     const committed = await saveCommandState(env, state, cycleVersion);
@@ -567,11 +575,14 @@ async function runScheduledCycle(env) {
 
       const cfg = config(env);
       const nextPhase = current.phase === "cooling" ? "resting" : "cooling";
-      const setpoint = nextPhase === "cooling" ? cfg.cycle.cooling_setpoint_f : cfg.cycle.resting_setpoint_f;
+      const setpoint = nextPhase === "cooling" ? cfg.cycle.cooling_setpoint_c : cfg.cycle.resting_setpoint_c;
       const minutes = nextPhase === "cooling" ? cfg.cycle.cooling_minutes : cfg.cycle.resting_minutes;
       const now = nowSeconds();
       await assertDeviceReady(current, { requirePower: true });
-      await sendDesiredWithSafety(env, current, buildSetpointDesired(setpoint), `cf_cron_${nextPhase}`, confirmTemperature(setpoint));
+      await sendDesiredWithSafety(env, current, buildSetpointDesired(setpoint), `cf_cron_${nextPhase}`, [
+        ...confirmTemperature(setpoint),
+        confirmBoolean("powerSwitch", true),
+      ]);
 
       const latest = await loadState(env);
       if (!sameCycleRun(latest, expected)) {
@@ -702,10 +713,12 @@ async function sendDesiredWithSafety(env, state, desired, tokenPrefix, confirmat
   if (state.last_command_at && wait > 0) {
     throw new HttpError(429, `Safety wait: try again in ${Math.ceil(wait)} seconds.`);
   }
+  const baselineStatus = confirmation.length ? await readDeviceStatus(env).catch(() => null) : null;
+  const commandIssuedAt = nowSeconds();
   try {
     await sendDesiredState(env, desired, tokenPrefix);
     state.last_command_at = nowSeconds();
-    await waitForDeviceConfirmation(env, state, confirmation);
+    await waitForDeviceConfirmation(env, state, confirmation, { baselineStatus, commandIssuedAt });
   } catch (error) {
     state.last_error = error instanceof HttpError && error.silent ? null : safeErrorMessage(error);
     await saveCommandFailure(env, state).catch(() => null);
@@ -790,9 +803,11 @@ async function sendDesiredState(env, desired, tokenPrefix) {
   return mqttWsPublish(env, topic, payload);
 }
 
-async function waitForDeviceConfirmation(env, state, confirmation) {
+async function waitForDeviceConfirmation(env, state, confirmation, options = {}) {
   const checks = Array.isArray(confirmation) ? confirmation : [];
   if (!checks.length) return;
+  const baselineStatus = options.baselineStatus || null;
+  const commandIssuedAt = Number(options.commandIssuedAt || 0);
 
   const deadline = Date.now() + DEVICE_COMMAND_CONFIRM_TIMEOUT_MS;
   let lastReadError = null;
@@ -810,14 +825,11 @@ async function waitForDeviceConfirmation(env, state, confirmation) {
       continue;
     }
     applyDeviceStatus(state, status);
-    if (confirmationMatches(status, checks)) {
-      markDeviceOnline(state, status);
-      return;
-    }
     if (extractExplicitOnlineStatus(status) === false) {
       markDeviceOffline(state, "Device is offline.");
       throw new HttpError(409, "Device is offline.", { silent: true });
     }
+    if (confirmationMatches(status, checks) && confirmationIsFresh(status, checks, baselineStatus, commandIssuedAt)) return;
   }
 
   const message = lastReadError || "Device did not confirm command.";
@@ -825,8 +837,8 @@ async function waitForDeviceConfirmation(env, state, confirmation) {
   throw new HttpError(504, message, { silent: true });
 }
 
-function confirmTemperature(fahrenheit) {
-  return [{ type: "temperature", fahrenheit: Math.round(fahrenheit) }];
+function confirmTemperature(celsius) {
+  return [{ type: "temperature", celsius: Math.round(celsius) }];
 }
 
 function confirmBoolean(property, value) {
@@ -849,7 +861,7 @@ function confirmationMatches(status, checks) {
   for (const check of checks) {
     if (check.type === "temperature") {
       const temp = extractActiveTemperature(status);
-      if (!Number.isFinite(temp.fahrenheit) || Math.abs(temp.fahrenheit - check.fahrenheit) > 0.5) return false;
+      if (!Number.isFinite(temp.celsius) || Math.abs(temp.celsius - check.celsius) > 0.5) return false;
       continue;
     }
     if (check.type === "boolean") {
@@ -859,6 +871,33 @@ function confirmationMatches(status, checks) {
     return false;
   }
   return true;
+}
+
+function confirmationIsFresh(status, checks, baselineStatus, commandIssuedAt) {
+  if (!baselineStatus || confirmationMatches(baselineStatus, checks)) return true;
+
+  const currentVersion = shadowVersion(status);
+  const baselineVersion = shadowVersion(baselineStatus);
+  if (currentVersion !== null && baselineVersion !== null) return currentVersion > baselineVersion;
+
+  const currentTimestamp = latestReportedTimestamp(status);
+  const baselineTimestamp = latestReportedTimestamp(baselineStatus);
+  if (currentTimestamp !== null && baselineTimestamp !== null) return currentTimestamp > baselineTimestamp;
+  if (currentTimestamp !== null && commandIssuedAt > 0) return currentTimestamp >= commandIssuedAt;
+
+  return true;
+}
+
+function shadowVersion(status) {
+  const candidates = [
+    valueAtPath(status, ["version"]),
+    valueAtPath(status, ["state", "version"]),
+  ];
+  for (const candidate of candidates) {
+    const version = numericValue(candidate);
+    if (version !== null) return version;
+  }
+  return null;
 }
 
 async function readDeviceStatus(env) {
@@ -907,8 +946,13 @@ async function mqttWsPublish(env, topic, payload) {
     if (connackBytes.length < 4 || connackBytes[0] !== 0x20 || connackBytes[3] !== 0) {
       throw new HttpError(502, `MQTT CONNACK failed: ${hexFromBytes(connackBytes)}`);
     }
-    ws.send(mqttPublishPacket(topic, payload));
-    await delay(500);
+    const packetId = 1;
+    ws.send(mqttPublishPacket(topic, payload, packetId));
+    const puback = await waitForMessage(ws, 5000, (bytes) => bytes[0] === 0x40 && bytes[2] === (packetId >> 8) && bytes[3] === (packetId & 0xff));
+    const pubackBytes = await messageBytes(puback);
+    if (pubackBytes.length < 4 || pubackBytes[0] !== 0x40 || pubackBytes[3] !== (packetId & 0xff)) {
+      throw new HttpError(502, `MQTT PUBACK failed: ${hexFromBytes(pubackBytes)}`);
+    }
   } finally {
     if (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING) {
       ws.close(1000, "done");
@@ -924,14 +968,13 @@ async function awsPresignedMqttUrl(env) {
   const now = new Date();
   const amzDate = isoAmzDate(now);
   const dateStamp = amzDate.slice(0, 8);
-  const credentialScope = `${dateStamp}/${cfg.region}/iotdata/aws4_request`;
+  const credentialScope = `${dateStamp}/${cfg.region}/iotdevicegateway/aws4_request`;
   const params = {
     "X-Amz-Algorithm": "AWS4-HMAC-SHA256",
     "X-Amz-Credential": `${credentials.accessKey}/${credentialScope}`,
     "X-Amz-Date": amzDate,
     "X-Amz-SignedHeaders": "host",
   };
-  const urlParams = { ...params, "X-Amz-Security-Token": credentials.sessionToken };
   const canonicalQuery = canonicalQueryString(params);
   const canonicalRequest = [
     "GET",
@@ -947,9 +990,9 @@ async function awsPresignedMqttUrl(env) {
     credentialScope,
     await sha256Hex(canonicalRequest),
   ].join("\n");
-  const signingKey = await awsSignatureKey(credentials.secretKey, dateStamp, cfg.region, "iotdata");
+  const signingKey = await awsSignatureKey(credentials.secretKey, dateStamp, cfg.region, "iotdevicegateway");
   const signature = hexFromBytes(await hmacBytes(signingKey, stringToSign));
-  return `https://${host}/mqtt?${canonicalQueryString(urlParams)}&X-Amz-Signature=${signature}`;
+  return `https://${host}/mqtt?${canonicalQuery}&X-Amz-Security-Token=${uriEncode(credentials.sessionToken)}&X-Amz-Signature=${signature}`;
 }
 
 function mqttConnectPacket(clientId) {
@@ -959,10 +1002,10 @@ function mqttConnectPacket(clientId) {
   return concatBytes(new Uint8Array([0x10]), mqttRemainingLength(remaining.length), remaining);
 }
 
-function mqttPublishPacket(topic, payload) {
+function mqttPublishPacket(topic, payload, packetId = 1) {
   const body = utf8(JSON.stringify(payload));
-  const remaining = concatBytes(mqttString(topic), body);
-  return concatBytes(new Uint8Array([0x30]), mqttRemainingLength(remaining.length), remaining);
+  const remaining = concatBytes(mqttString(topic), uint16Bytes(packetId), body);
+  return concatBytes(new Uint8Array([0x32]), mqttRemainingLength(remaining.length), remaining);
 }
 
 function mqttRemainingLength(length) {
@@ -997,7 +1040,7 @@ function concatBytes(...arrays) {
   return result;
 }
 
-function waitForMessage(ws, timeoutMs) {
+function waitForMessage(ws, timeoutMs, predicate = null) {
   return new Promise((resolve, reject) => {
     const timeout = setTimeout(() => {
       cleanup();
@@ -1009,7 +1052,16 @@ function waitForMessage(ws, timeoutMs) {
       ws.removeEventListener("error", onError);
       ws.removeEventListener("close", onClose);
     };
-    const onMessage = (event) => {
+    const onMessage = async (event) => {
+      if (predicate) {
+        try {
+          if (!predicate(await messageBytes(event.data))) return;
+        } catch (error) {
+          cleanup();
+          reject(error);
+          return;
+        }
+      }
       cleanup();
       resolve(event.data);
     };
@@ -1381,10 +1433,10 @@ function extractReportedBoolProperty(status, propertyName) {
 
 function extractActiveTemperature(status) {
   const paths = [
-    [["state", "reported", "targetFahrenheitDegree"], "F"],
     [["state", "reported", "targetCelsiusDegree"], "C"],
-    [["reported", "targetFahrenheitDegree"], "F"],
     [["reported", "targetCelsiusDegree"], "C"],
+    [["state", "reported", "targetFahrenheitDegree"], "F"],
+    [["reported", "targetFahrenheitDegree"], "F"],
   ];
   for (const [path, unit] of paths) {
     const raw = numericValue(valueAtPath(status, path));
@@ -1559,8 +1611,8 @@ function emptyTemperature() {
   return { fahrenheit: null, celsius: null, source: null, updated_at: nowSeconds(), error: null };
 }
 
-function temperatureState(fahrenheit, source) {
-  const normalized = normalizeTemperature(fahrenheit, "F");
+function temperatureState(celsius, source) {
+  const normalized = normalizeTemperature(celsius, "C");
   return { fahrenheit: normalized.fahrenheit, celsius: normalized.celsius, source, updated_at: nowSeconds(), error: null };
 }
 
@@ -1570,10 +1622,10 @@ function normalizeTemperature(value, unit) {
   return { fahrenheit: round1(fahrenheit), celsius: round1(celsius) };
 }
 
-function buildSetpointDesired(setpointF) {
+function buildSetpointDesired(setpointC) {
   return {
-    targetCelsiusDegree: Math.trunc((setpointF - 32) * 5 / 9),
-    targetFahrenheitDegree: Math.round(setpointF),
+    targetCelsiusDegree: Math.round(setpointC),
+    targetFahrenheitDegree: Math.round(setpointC * 9 / 5 + 32),
   };
 }
 
@@ -1589,8 +1641,8 @@ function config(env) {
     min_seconds_between_commands: numberEnv(env.MIN_SECONDS_BETWEEN_COMMANDS, 30),
     startup_swing: String(env.STARTUP_SWING || "1") !== "0",
     cycle: {
-      cooling_setpoint_f: numberEnv(env.COOLING_SETPOINT_F, 70),
-      resting_setpoint_f: numberEnv(env.RESTING_SETPOINT_F, 80),
+      cooling_setpoint_c: numberEnv(env.COOLING_SETPOINT_C, 20),
+      resting_setpoint_c: numberEnv(env.RESTING_SETPOINT_C, 30),
       cooling_minutes: numberEnv(env.COOLING_MINUTES, 20),
       resting_minutes: numberEnv(env.RESTING_MINUTES, 20),
     },
@@ -1709,6 +1761,13 @@ async function readJsonBody(request) {
   }
 }
 
+function requiredBoolean(body, field) {
+  if (!body || typeof body[field] !== "boolean") {
+    throw new HttpError(400, `${field} must be a boolean.`);
+  }
+  return body[field];
+}
+
 function jsonResponse(data, status = 200, headers = {}) {
   return new Response(JSON.stringify(data), {
     status,
@@ -1801,3 +1860,12 @@ function safeEqual(a, b) {
   }
   return result === 0;
 }
+
+export {
+  buildSetpointDesired,
+  confirmationIsFresh,
+  confirmationMatches,
+  extractActiveTemperature,
+  mqttPublishPacket,
+  normalizeTemperature,
+};

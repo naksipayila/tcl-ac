@@ -3728,16 +3728,13 @@
     }
   }
 
-  function formatFahrenheit(value) {
-    return Number.isFinite(value) ? Math.round(value) + '°F' : '--';
+  function formatCelsius(value) {
+    return Number.isFinite(value) ? Math.round(value) + '°C' : '--';
   }
 
   function formatTemperature(temp) {
-    const fahrenheit = Number(temp && temp.fahrenheit);
     const celsius = Number(temp && temp.celsius);
-    if (Number.isFinite(celsius) && Number.isFinite(fahrenheit)) return Math.round(celsius) + '°C / ' + Math.round(fahrenheit) + '°F';
-    if (Number.isFinite(celsius)) return Math.round(celsius) + '°C';
-    return formatFahrenheit(fahrenheit);
+    return formatCelsius(celsius);
   }
 
   function normalizePhase(state) {
@@ -3772,9 +3769,9 @@
     const powered = deviceOnline && Boolean(state.power_switch);
     const phase = normalizePhase(state);
     const visualPhase = deviceOnline ? (powered ? phase : 'off') : 'offline';
-    const activeTempF = Number(state.active_temperature && state.active_temperature.fahrenheit);
-    const coolingSetpointF = Number(state.cycle && state.cycle.cooling_setpoint_f);
-    const restingSetpointF = Number(state.cycle && state.cycle.resting_setpoint_f);
+    const activeTempC = Number(state.active_temperature && state.active_temperature.celsius);
+    const coolingSetpointC = Number(state.cycle && state.cycle.cooling_setpoint_c);
+    const restingSetpointC = Number(state.cycle && state.cycle.resting_setpoint_c);
 
     appShell.dataset.phase = visualPhase;
     appShell.dataset.deviceOnline = deviceOnline ? 'true' : 'false';
@@ -3793,7 +3790,7 @@
     cycleBtn.classList.toggle('action-primary', !state.running);
     cycleBtn.classList.toggle('action-danger', Boolean(state.running));
 
-    const compressorOn = Number.isFinite(activeTempF) && Number.isFinite(coolingSetpointF) && Math.abs(activeTempF - coolingSetpointF) < 0.5;
+    const compressorOn = Number.isFinite(activeTempC) && Number.isFinite(coolingSetpointC) && Math.abs(activeTempC - coolingSetpointC) < 0.5;
     const compressorControl = document.getElementById('compressorControl');
     const compressorToggle = document.getElementById('compressorToggle');
     compressorToggle.checked = powered && compressorOn;
@@ -3801,7 +3798,7 @@
     compressorControl.classList.toggle('is-disabled', acActionBusy || !deviceOnline || !powered);
     compressorControl.disabled = acActionBusy || !deviceOnline || !powered;
     compressorControl.setAttribute('aria-pressed', powered && compressorOn ? 'true' : 'false');
-    compressorControl.title = deviceOnline ? (powered ? (compressorOn ? 'Set to ' + formatFahrenheit(restingSetpointF) + '.' : 'Set to ' + formatFahrenheit(coolingSetpointF) + '.') : 'Turn AC on first.') : 'Device is offline.';
+    compressorControl.title = deviceOnline ? (powered ? (compressorOn ? 'Set to ' + formatCelsius(restingSetpointC) + '.' : 'Set to ' + formatCelsius(coolingSetpointC) + '.') : 'Turn AC on first.') : 'Device is offline.';
 
     const swingToggle = document.getElementById('swingToggle');
     const swingControl = document.getElementById('swingControl');

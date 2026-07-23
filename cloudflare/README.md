@@ -10,9 +10,10 @@ Serverless home control panel for the TCL AC and Wake-on-LAN PC wake commands.
 - `WOL_STATE` KV is a legacy read fallback; production writes WOL state to D1 when `DB` is bound.
 - Minute cron trigger for phase changes.
 - Device commands are sent with AWS IoT MQTT-over-WebSocket publish to the device shadow update topic.
-- PC wake commands are queued for the Android/Termux relay. The Worker does not send UDP packets directly.
-- The WOL relay polls for commands every few seconds; persisted heartbeat writes are throttled.
+- PC wake commands are queued for the Android relay app. The Worker does not wake the PC directly.
+- The Android relay app polls for commands and reports relay heartbeats and command results.
 - The panel loads stored state before it appears, then probes AC status once. If AWS connectivity is unavailable but the shadow has usable reported state, the panel shows `Last Known`; controls are disabled only when the device is definitely offline or status cannot be read.
+- The AC cycle uses 20C for cooling and 30C for resting. The Worker also sends the corresponding Fahrenheit shadow fields, 68F and 86F.
 - Secrets in Cloudflare Worker secrets, not in git.
 
 ## Required Secrets
